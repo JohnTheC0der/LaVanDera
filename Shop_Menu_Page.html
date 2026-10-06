@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Partner Shops - LAVANDERA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: #fff7fb;
+            color: #333333;
+        }
+
+        /* HEADER */
+        header {
+            background-color: #e58db5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 5%;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #800055;
+            font-size: 26px;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .logo-circle {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background-color: #800055;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            border: 3px solid white;
+        }
+
+        .menu-container {
+            position: relative;
+        }
+
+        .menu-btn {
+            background-color: #800055;
+            color: white;
+            border: none;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-btn:hover {
+            background-color: #9d0e6b;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 56px;
+            background-color: #800055;
+            width: 170px;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+            z-index: 1001;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            color: white;
+            padding: 14px 18px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #9d0e6b;
+        }
+
+        /* PAGE BANNER */
+        .page-banner {
+            background: linear-gradient(135deg, #ffe3f1, #e0f5f6);
+            text-align: center;
+            padding: 50px 8% 45px 8%;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: #800055;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .page-banner h1 {
+            font-size: 44px;
+            color: #800055;
+            font-weight: 900;
+            margin-bottom: 12px;
+        }
+
+        .page-banner p {
+            font-size: 17px;
+            color: #444;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* CATEGORY BUTTONS + SEARCH */
+        .toolbar {
+            max-width: 1100px;
+            margin: 35px auto 10px auto;
+            padding: 0 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .category-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            background-color: white;
+            color: #800055;
+            border: 2px solid #e58db5;
+            border-radius: 30px;
+            padding: 9px 20px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .category-btn:hover {
+            background-color: #ffe3f1;
+        }
+
+        .category-btn.active {
+            background-color: #800055;
+            border-color: #800055;
+            color: white;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            max-width: 340px;
+            min-width: 230px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 11px 45px 11px 20px;
+            border-radius: 30px;
+            border: 2px solid #e58db5;
+            background-color: white;
+            outline: none;
+            font-size: 15px;
+        }
+
+        .search-box input:focus {
+            border-color: #800055;
+        }
+
+        .search-box i {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #800055;
+        }
+
+        .result-count {
+            max-width: 1100px;
+            margin: 0 auto 20px auto;
+            padding: 0 15px;
+            font-size: 14px;
+            color: #777;
+        }
+
+        /* SHOP CARDS */
+        .shops-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        .shop-card {
+            background-color: white;
+            border-radius: 22px;
+            padding: 14px;
+            box-shadow: 0 4px 12px rgba(128, 0, 85, 0.12);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .shop-card:hover {
+            box-shadow: 0 8px 20px rgba(128, 0, 85, 0.25);
+        }
+
+        .card-image {
+            position: relative;
+            margin-bottom: 14px;
+        }
+
+        .card-image img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 16px;
+            display: block;
+        }
+
+        .badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: #800055;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+
+        .shop-card h3 {
+            font-size: 20px;
+            color: #800055;
+            margin-bottom: 8px;
+        }
+
+        .shop-card p {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            flex-grow: 1;
+        }
+
+        .card-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 14px;
+        }
+
+        .card-info i {
+            color: #3bb2b8;
+            margin-right: 4px;
+        }
+
+        .card-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #f3d3e3;
+            padding-top: 12px;
+        }
+
+        .stars {
+            color: #ffb800;
+            font-size: 15px;
+        }
+
+        .btn-view {
+            background-color: #e58db5;
+            color: #5a003c;
+            padding: 9px 22px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 13px;
+            text-decoration: none;
+        }
+
+        .btn-view:hover {
+            background-color: #800055;
+            color: white;
+        }
+
+        .no-results {
+            display: none;
+            text-align: center;
+            font-size: 16px;
+            color: #800055;
+            padding: 50px 20px;
+        }
+
+        /* PARTNER BANNER */
+        .join-box {
+            max-width: 1100px;
+            margin: 60px auto 0 auto;
+            background-color: #800055;
+            color: white;
+            border-radius: 25px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .join-box h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .join-box p {
+            font-size: 15px;
+            color: #f1d3e3;
+            margin-bottom: 20px;
+        }
+
+        .join-box a {
+            background-color: #e58db5;
+            color: #5a003c;
+            padding: 12px 32px;
+            border-radius: 30px;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .join-box a:hover {
+            background-color: white;
+        }
+
+        /* FOOTER */
+        footer {
+            background-color: #800055;
+            color: white;
+            padding: 40px 8% 20px 8%;
+            margin-top: 60px;
+        }
+
+        .footer-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 30px;
+            max-width: 1100px;
+            margin: 0 auto 30px auto;
+        }
+
+        .footer-info {
+            max-width: 350px;
+        }
+
+        .footer-info h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #e58db5;
+        }
+
+        .footer-info p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #ddd;
+        }
+
+        .footer-links h4,
+        .footer-contact h4 {
+            font-size: 17px;
+            margin-bottom: 15px;
+            color: #e58db5;
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links ul li {
+            margin-bottom: 8px;
+        }
+
+        .footer-links ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .footer-links ul li a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-contact p {
+            font-size: 14px;
+            color: #ddd;
+            margin-bottom: 8px;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 13px;
+            color: #ccc;
+        }
+
+        @media (max-width: 768px) {
+            .page-banner h1 {
+                font-size: 34px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <a href="index.html" class="logo">
+            <div class="logo-circle"><i class="fa-solid fa-soap"></i></div>
+            LAVANDERA
+        </a>
+        <div class="menu-container">
+            <button class="menu-btn" onclick="toggleMenu()">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="dropdown-menu" id="navDropdown">
+                <a href="Home_Screen_Page.html">HOME</a>
+                <a href="Home_Screen_Page.html#account">ACCOUNT</a>
+                <a href="Shop_Menu_Page.html">SHOPS</a>
+                <a href="Home_Screen_Page.html#about">ABOUT</a>
+                <a href="Home_Screen_Page.html#contact">CONTACT</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- PAGE BANNER -->
+    <section class="page-banner">
+        <a href="Home_Screen_Page.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to home</a>
+        <h1>Our Partner Laundry Shops</h1>
+        <p>These are the laundry shops we work with. Pick one, send your clothes, and we will handle the pickup and
+            delivery.</p>
+    </section>
+
+    <!-- CATEGORY BUTTONS AND SEARCH -->
+    <div class="toolbar">
+        <div class="category-buttons">
+            <button class="category-btn active" onclick="chooseCategory('all', this)">All</button>
+            <button class="category-btn" onclick="chooseCategory('wash-fold', this)">Wash &amp; Fold</button>
+            <button class="category-btn" onclick="chooseCategory('dry-clean', this)">Dry Cleaning</button>
+            <button class="category-btn" onclick="chooseCategory('express', this)">Express</button>
+            <button class="category-btn" onclick="chooseCategory('self-service', this)">Self-Service</button>
+        </div>
+        <div class="search-box">
+            <input type="text" id="searchInput" onkeyup="filterShops()" placeholder="Search shop name...">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+    </div>
+
+    <p class="result-count" id="resultCount">Showing 12 shops</p>
+
+    <!-- ALL SHOPS -->
+    <div class="shops-grid">
+
+        <div class="shop-card" data-category="wash-fold">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?w=400&q=80"
+                    alt="Mama Mo Laundry">
+                <span class="badge">Wash &amp; Fold</span>
+            </div>
+            <h3>Mama Mo Laundry Store</h3>
+            <p>Everyday wash and fold for the whole family. Clothes come back clean, folded, and smelling fresh.</p>
+            <div class="card-info">
+                <span><i class="fa-regular fa-clock"></i> 8AM - 8PM</span>
+                <span><i class="fa-solid fa-truck"></i> Free pickup</span>
+            </div>
+            <div class="card-bottom">
+                <div class="stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i
+                        class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i>
+                </div>
+                <a href="Shop_Menu_Page.html" class="btn-view">View shop</a>
+            </div>
+        </div>
+
+        <div class="shop-card" data-category="express">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1545173168-9f1947eebb7f?w=400&q=80" alt="Papa Mo Laundry">
+                <span class="badge">Express</span>
+            </div>
+            <h3>Papa Mo Laundry Store</h3>
+            <p>Need it fast? Get your laundry back in just 3 hours with our express service.</p>
+            <div class="card-info">
+                <span><i class="fa-regular fa-clock"></i> 7AM - 9PM</span>
+                <span><i class="fa-solid fa-truck"></i> Free pickup</span>
+            </div>
+            <div class="card-bottom">
+                <div class="stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i
+                        class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i>
+                </div>
+                <a href="Shop_Menu_Page.html" class="btn-view">View shop</a>
+            </div>
+        </div>
+
+        <div class="shop-card" data-category="dry-clean">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1521656693074-0ef32e80a5d5?w=400&q=80"
+                    alt="Lola Mo Laundry">
+                <span class="badge">Dry Cleaning</span>
+            </div>
+            <h3>Lola Mo Laundry Store</h3>
+            <p>Careful dry cleaning for barong, gowns, suits, and other delicate clothes.</p>
+            <div class="card-info">
+                <span><i class="fa-regular fa-clock"></i> 9AM - 6PM</span>
+                <span><i class="fa-solid fa-truck"></i> Delivery available</span>
+            </div>
+            <div class="card-bottom">
+                <div class="stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i
+                        class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                </div>
+                <a href="#" class="btn-view">View shop</a>
+            </div>
+        </div>
+
+        <div class="shop-card" data-category="self-service">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1582735689369-4fe89db7114c?w=400&q=80"
+                    alt="Kuya Mo Laundry">
+                <span class="badge">Self-Service</span>
+            </div>
+            <h3>Kuya Mo Laundromat</h3>
+            <p>Use our clean washers and dryers at your own pace. Soap and fabric softener are sold in the shop.</p>
+            <div class="card-info">
+                <span><i class="fa-regular fa-clock"></i> 6AM - 10PM</span>
+                <span><i class="fa-solid fa-store"></i> Walk-in only</span>
+            </div>
+            <div class="card-bottom">
+                <div class="stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i
+                        class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i>
+                </div>
+                <a href="#" class="btn-view">View shop</a>
+            </div>
+        </div>
+
+        <div class="shop-card" data-category="wash-fold">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1545173168-9f1947eebb7f?w=400&q=80" alt="Crush Mo Laundry">
+                <span class="badge">Wash &amp; Fold</span>
+            </div>
+            <h3>Crush Mo Laundry Store</h3>
+            <p>Sorted by color, washed gently, and folded neatly. Great for weekly laundry.</p>
+            <div class="card-info">
+                <span><i class="fa-regular fa-clock"></i> 8AM - 7PM</span>
+                <span><i class="fa-solid fa-truck"></i> Free pickup</span>
+            </div>
+            <div class="card-bottom">
+                <div class="stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i
+                        class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                </div>
+                <a href="#" class="btn-view">View shop</a>
+            </div>
+        </div>
+
+        <div class="shop-card" data-category="express">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?w=400&q=80" alt="Ikaw Laundry">
+                <span class="badge">Express</span>
+            </div>
+            <h3>Ikaw Laundry Store</h3>
+            <p>Same-day washing, drying, and folding. Drop off in the morning, get it back by evening.</p>
+            <div class="card-info">
+                <span><i class="fa-regular fa-clock"></i> 7AM - 8PM</span>
+                <span><i class="fa-solid fa-truck"></i> Delivery available</span>
+            </div>
+            <div class="card-bottom">
+                <div class="stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i
+                        class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i>
+                </div>
+                <a href="#" class="btn-view">View shop</a>
+            </div>
+        </div>
+
+        <div class="shop-card" data-category="wash-fold">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1582735689369-4fe89db7114c?w=400&q=80"
+                    alt="Anak Mo Laundry">
+                <span class="badge">Wash &amp; Fold</span>
+            </div>
+            <h3>Anak Mo Laundry Store</h3>
+            <p>Gentle, baby-safe detergent for soft clothes and bedsheets. Good for sensitive skin.</p>
+            <div class="card-info">
+                <span><i class="fa-regular fa-clock"></i> 8AM - 6PM</span>
+                <span><i class="fa-solid fa-truck"></i> Free pickup</span>
+            </div>
+            <div class="card-bottom">
+                <div class="stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i
+                        class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i>
+                </div>
+                <a href="#" class="btn-view">View shop</a>
+            </div>
+        </div>
+
+        <div class="shop-card" data-category="dry-clean">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1521656693074-0ef32e80a5d5?w=400&q=80" alt="Ate Mo Laundry">
+                <span class="badge">Dry Cleaning</span>
+            </div>
+            <h3>Ate Mo Dry Cleaners</h3>
+            <p>Dry cleaning and pressing for uniforms, jackets, curtains, and comforters.</p>
+            <div class="card-info">
+                <span><i class="fa-regular fa-clock"></i> 9AM - 7PM</span>
+                <span><i class="fa-solid fa-truck"></i> Delivery available</span>
+            </div>
+            <div class="card-bottom">
+                <div class="stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i
+                        class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i>
+                </div>
+                <a href="#" class="btn-view">View shop</a>
+            </div>
+        </div>
+
+        <div class="shop-card" data-category="self-service">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1545173168-9f1947eebb7f?w=400&q=80" alt="Tita Mo Laundry">
+                <span class="badge">Self-Service</span>
+            </div>
+            <h3>Tita Mo Coin Laundry</h3>
+            <p>Coin-operated washers and dryers with a comfortable waiting area and free Wi-Fi.</p>
+            <div class="card-info">
+                <span><i class="fa-regular fa-clock"></i> 24 hours</span>
+                <span><i class="fa-solid fa-store"></i> Walk-in only</span>
+            </div>
+            <div class="card-bottom">
+                <div class="stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i
+                        class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i>
+                </div>
+                <a href="#" class="btn-view">View shop</a>
+            </div>
+        </div>
+
+        <div class="shop-card" data-category="express">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?w=400&q=80" alt="Bilis Laundry">
+                <span class="badge">Express</span>
+            </div>
+            <h3>Bilis Labada Express</h3>
+            <p>Rush laundry in 2 hours. Perfect when you need clean clothes for tomorrow.</p>
+            <div class="card-info">
+                <span><i class="fa-regular fa-clock"></i> 7AM - 10PM</span>
+                <span><i class="fa-solid fa-truck"></i> Free pickup</span>
+            </div>
+            <div class="card-bottom">
+                <div class="stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i
+                        class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                </div>
+                <a href="#" class="btn-view">View shop</a>
+            </div>
+        </div>
+
+        <div class="shop-card" data-category="wash-fold">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1582735689369-4fe89db7114c?w=400&q=80" alt="Linis Laundry">
+                <span class="badge">Wash &amp; Fold</span>
+            </div>
+            <h3>Linis Damit Laundry</h3>
+            <p>Affordable wash by the kilo. Pick the scent you like, and we do the rest.</p>
+            <div class="card-info">
+                <span><i class="fa-regular fa-clock"></i> 8AM - 8PM</span>
+                <span><i class="fa-solid fa-truck"></i> Delivery available</span>
+            </div>
+            <div class="card-bottom">
+                <div class="stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i
+                        class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i>
+                </div>
+                <a href="#" class="btn-view">View shop</a>
+            </div>
+        </div>
+
+        <div class="shop-card" data-category="dry-clean">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1521656693074-0ef32e80a5d5?w=400&q=80" alt="Kinis Laundry">
+                <span class="badge">Dry Cleaning</span>
+            </div>
+            <h3>Kinis Premium Cleaners</h3>
+            <p>Premium dry cleaning and stain removal with careful hand finishing.</p>
+            <div class="card-info">
+                <span><i class="fa-regular fa-clock"></i> 10AM - 7PM</span>
+                <span><i class="fa-solid fa-truck"></i> Free pickup</span>
+            </div>
+            <div class="card-bottom">
+                <div class="stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i
+                        class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                </div>
+                <a href="#" class="btn-view">View shop</a>
+            </div>
+        </div>
+
+    </div>
+
+    <p class="no-results" id="noResults">No shops found. Try another name or category.</p>
+
+    <!-- JOIN BOX -->
+    <div class="join-box">
+        <h2>Own a laundry shop?</h2>
+        <p>Partner with LAVANDERA and reach more customers with pickup and delivery.</p>
+        <a href="Become_Partner_Page.html">Become a partner</a>
+    </div>
+
+    <!-- FOOTER -->
+    <footer id="contact">
+        <div class="footer-content">
+            <div class="footer-info">
+                <h3>LAVANDERA</h3>
+                <p>Providing the best, easiest, and fastest laundry pickup and delivery service right to your doorstep.
+                    Clean clothes in just one click!</p>
+            </div>
+            <div class="footer-links">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="shops.html">Shops</a></li>
+                    <li><a href="index.html#about">About Us</a></li>
+                    <li><a href="#contact">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-contact">
+                <h4>Contact Us</h4>
+                <p><i class="fa-solid fa-envelope"></i> support@lavandera.com</p>
+                <p><i class="fa-solid fa-phone"></i> +63 912 345 6789</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 LAVANDERA. All Rights Reserved.
+        </div>
+    </footer>
+
+    <script>
+        // Open and close the menu
+        function toggleMenu() {
+            var menu = document.getElementById("navDropdown");
+            if (menu.classList.contains("show")) {
+                menu.classList.remove("show");
+            } else {
+                menu.classList.add("show");
+            }
+        }
+
+        window.onclick = function (event) {
+            if (!event.target.matches('.menu-btn') && !event.target.matches('.menu-btn *')) {
+                document.getElementById("navDropdown").classList.remove('show');
+            }
+        }
+
+        // This remembers which category button is chosen
+        var currentCategory = "all";
+
+        function chooseCategory(category, button) {
+            currentCategory = category;
+
+            // remove the purple look from all buttons
+            var buttons = document.getElementsByClassName("category-btn");
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove("active");
+            }
+            // give it to the clicked button
+            button.classList.add("active");
+
+            filterShops();
+        }
+
+        // Show only the shops that match the category AND the search words
+        function filterShops() {
+            var searchWords = document.getElementById("searchInput").value.toLowerCase();
+            var cards = document.getElementsByClassName("shop-card");
+            var count = 0;
+
+            for (var i = 0; i < cards.length; i++) {
+                var name = cards[i].getElementsByTagName("h3")[0].innerText.toLowerCase();
+                var category = cards[i].getAttribute("data-category");
+
+                var categoryMatch = (currentCategory == "all" || currentCategory == category);
+                var nameMatch = (name.indexOf(searchWords) > -1);
+
+                if (categoryMatch && nameMatch) {
+                    cards[i].style.display = "flex";
+                    count = count + 1;
+                } else {
+                    cards[i].style.display = "none";
+                }
+            }
+
+            document.getElementById("resultCount").innerText = "Showing " + count + " shops";
+
+            if (count == 0) {
+                document.getElementById("noResults").style.display = "block";
+            } else {
+                document.getElementById("noResults").style.display = "none";
+            }
+        }
+    </script>
+</body>
+
+</html>
