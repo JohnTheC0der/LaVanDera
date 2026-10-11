@@ -40,25 +40,18 @@
         .logo {
             display: flex;
             align-items: center;
-            gap: 12px;
-            color: #800055;
-            font-size: 26px;
-            font-weight: bold;
             text-decoration: none;
-            letter-spacing: 1px;
         }
 
-        .logo-circle {
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            background-color: #800055;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            border: 3px solid white;
+        /* LOGO IMAGE - Frame removed & image darkened */
+        .logo-img {
+            height: 80px;
+            width: auto;
+            display: block;
+            filter: brightness(0.6) contrast(1.2);
+            /* Makes the logo image darker */
+            margin-top: -10px;
+            margin-bottom: -10px;
         }
 
         .menu-container {
@@ -66,7 +59,7 @@
         }
 
         .menu-btn {
-            background-color: #800055;
+            background-color: #5a003c;
             color: white;
             border: none;
             width: 46px;
@@ -80,7 +73,7 @@
         }
 
         .menu-btn:hover {
-            background-color: #9d0e6b;
+            background-color: #800055;
         }
 
         .dropdown-menu {
@@ -88,7 +81,7 @@
             position: absolute;
             right: 0;
             top: 56px;
-            background-color: #800055;
+            background-color: #5a003c;
             width: 170px;
             border-radius: 14px;
             overflow: hidden;
@@ -111,7 +104,7 @@
         }
 
         .dropdown-menu a:hover {
-            background-color: #9d0e6b;
+            background-color: #800055;
         }
 
         /* WAIT HERE BANNER */
@@ -448,19 +441,19 @@
 
     <!-- HEADER -->
     <header>
-        <a href="index.html" class="logo">
-            <div class="logo-circle"><i class="fa-solid fa-soap"></i></div>
-            LAVANDERA
+        <a href="Home_Screen_Page.html" class="logo">
+            <img src="lavandera_logo.png" alt="Lavandera Logo" class="logo-img">
         </a>
         <div class="menu-container">
             <button class="menu-btn" onclick="toggleMenu()">
                 <i class="fa-solid fa-bars"></i>
             </button>
             <div class="dropdown-menu" id="navDropdown">
-                <a href="index.html">HOME</a>
-                <a href="shops.html">SHOPS</a>
-                <a href="partner.html">PARTNER WITH US</a>
-                <a href="#contact">CONTACT</a>
+                <a href="Home_Screen_Page.html">HOME</a>
+                <a href="Log_In_Page.html">ACCOUNT</a>
+                <a href="Shop_Menu_Page.html">SHOPS</a>
+                <a href="Home_Screen_Page.html#about">ABOUT</a>
+                <a href="Home_Screen_Page.html#contact">CONTACT</a>
             </div>
         </div>
     </header>
@@ -560,8 +553,8 @@
         </div>
 
         <div class="home-buttons">
-            <a href="index.html" class="btn-main"><i class="fa-solid fa-house"></i> Back to home</a>
-            <a href="shops.html" class="btn-second">See our shops</a>
+            <a href="Home_Screen_Page.html" class="btn-main"><i class="fa-solid fa-house"></i> Back to home</a>
+            <a href="Shop_Menu_Page.html" class="btn-second">See our shops</a>
         </div>
     </section>
 

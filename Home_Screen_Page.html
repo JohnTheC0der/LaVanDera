@@ -40,26 +40,18 @@
         .logo {
             display: flex;
             align-items: center;
-            gap: 12px;
-            color: #800055;
-            font-size: 26px;
-            font-weight: bold;
             text-decoration: none;
-            letter-spacing: 1px;
         }
 
-        /* round badge behind the soap icon */
-        .logo-circle {
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            background-color: #800055;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            border: 3px solid white;
+        /* LOGO IMAGE - Frame removed & image darkened */
+        .logo-img {
+            height: 80px;
+            width: auto;
+            display: block;
+            filter: brightness(0.6) contrast(1.2);
+            /* Makes the logo image darker */
+            margin-top: -10px;
+            margin-bottom: -10px;
         }
 
         .menu-container {
@@ -67,7 +59,7 @@
         }
 
         .menu-btn {
-            background-color: #800055;
+            background-color: #5a003c;
             color: white;
             border: none;
             width: 46px;
@@ -81,7 +73,7 @@
         }
 
         .menu-btn:hover {
-            background-color: #9d0e6b;
+            background-color: #800055;
         }
 
         .dropdown-menu {
@@ -89,7 +81,7 @@
             position: absolute;
             right: 0;
             top: 56px;
-            background-color: #800055;
+            background-color: #5a003c;
             width: 170px;
             border-radius: 14px;
             overflow: hidden;
@@ -112,12 +104,12 @@
         }
 
         .dropdown-menu a:hover {
-            background-color: #9d0e6b;
+            background-color: #800055;
         }
 
         /* HERO */
         .hero {
-            background: linear-gradient(135deg, #ffe3f1, #e0f5f6);
+            background: url('linear-gradient(135deg, #ffe3f1, #e0f5f6)') no-repeat center center;
             padding: 60px 8%;
         }
 
@@ -140,7 +132,7 @@
             font-size: 60px;
             line-height: 1.05;
             font-weight: 900;
-            color: #800055;
+            color: #45002e;
             margin-bottom: 18px;
         }
 
@@ -160,18 +152,18 @@
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            background-color: #800055;
+            background-color: #5a003c;
             color: white;
             padding: 16px 32px;
             border-radius: 30px;
             text-decoration: none;
             font-weight: bold;
             font-size: 17px;
-            box-shadow: 0 6px 12px rgba(128, 0, 85, 0.3);
+            box-shadow: 0 6px 12px rgba(90, 0, 60, 0.3);
         }
 
         .btn-pick:hover {
-            background-color: #9d0e6b;
+            background-color: #800055;
         }
 
         .hero-stats {
@@ -225,20 +217,20 @@
             object-fit: cover;
             border: 10px solid white;
             outline: 6px solid #e58db5;
-            box-shadow: 0 15px 35px rgba(128, 0, 85, 0.3);
+            box-shadow: 0 15px 35px rgba(90, 0, 60, 0.3);
         }
 
         /* SECTION TITLES */
         .section-title {
             text-align: center;
             font-size: 30px;
-            color: #800055;
+            color: #45002e;
             font-weight: bold;
             margin: 60px 0 30px 0;
         }
 
         .section-title span {
-            border-bottom: 4px solid #800055;
+            border-bottom: 4px solid #5a003c;
             padding-bottom: 6px;
         }
 
@@ -249,10 +241,10 @@
             margin: 0 auto 50px auto;
             border-radius: 25px;
             overflow: hidden;
-            background-color: #800055;
+            background-color: #5a003c;
             color: white;
             min-height: 400px;
-            box-shadow: 0 10px 25px rgba(128, 0, 85, 0.25);
+            box-shadow: 0 10px 25px rgba(90, 0, 60, 0.25);
         }
 
         .carousel-slide {
@@ -283,7 +275,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(90, 0, 60, 0.7);
+            background: rgba(70, 0, 45, 0.75);
         }
 
         .carousel-content {
@@ -301,7 +293,7 @@
 
         .carousel-content h3 {
             font-size: 24px;
-            color: #ff9bd2;
+            color: #ffb8df;
             margin-bottom: 15px;
             letter-spacing: 2px;
         }
@@ -321,7 +313,7 @@
 
         .btn-visit {
             background-color: #e58db5;
-            color: #5a003c;
+            color: #45002e;
             padding: 12px 40px;
             border-radius: 30px;
             font-weight: bold;
@@ -339,7 +331,7 @@
             top: 50%;
             transform: translateY(-50%);
             background-color: rgba(255, 255, 255, 0.9);
-            color: #800055;
+            color: #5a003c;
             border: none;
             width: 44px;
             height: 44px;
@@ -376,7 +368,7 @@
 
         .filter-btn {
             background-color: white;
-            color: #800055;
+            color: #5a003c;
             border: 2px solid #e58db5;
             border-radius: 30px;
             padding: 10px 28px;
@@ -403,7 +395,7 @@
         }
 
         .search-box input:focus {
-            border-color: #800055;
+            border-color: #5a003c;
         }
 
         .search-box i {
@@ -411,7 +403,7 @@
             right: 18px;
             top: 50%;
             transform: translateY(-50%);
-            color: #800055;
+            color: #5a003c;
         }
 
         /* SHOP CARDS */
@@ -428,13 +420,13 @@
             background-color: white;
             border-radius: 22px;
             padding: 14px;
-            box-shadow: 0 4px 12px rgba(128, 0, 85, 0.12);
+            box-shadow: 0 4px 12px rgba(90, 0, 60, 0.12);
             display: flex;
             flex-direction: column;
         }
 
         .shop-card:hover {
-            box-shadow: 0 8px 20px rgba(128, 0, 85, 0.25);
+            box-shadow: 0 8px 20px rgba(90, 0, 60, 0.25);
         }
 
         .card-image {
@@ -452,7 +444,7 @@
 
         .shop-card h3 {
             font-size: 20px;
-            color: #800055;
+            color: #45002e;
             margin-bottom: 8px;
         }
 
@@ -486,7 +478,6 @@
             padding-top: 12px;
         }
 
-        /* the carousel stars have a bottom space, so remove it inside the cards */
         .card-bottom .stars {
             font-size: 15px;
             margin-bottom: 0;
@@ -494,7 +485,7 @@
 
         .btn-view {
             background-color: #e58db5;
-            color: #5a003c;
+            color: #45002e;
             padding: 9px 22px;
             border-radius: 30px;
             font-weight: bold;
@@ -503,7 +494,7 @@
         }
 
         .btn-view:hover {
-            background-color: #800055;
+            background-color: #5a003c;
             color: white;
         }
 
@@ -514,7 +505,7 @@
         }
 
         .btn-see-more {
-            background-color: #800055;
+            background-color: #5a003c;
             color: white;
             border: none;
             padding: 14px 40px;
@@ -525,12 +516,12 @@
         }
 
         .btn-see-more:hover {
-            background-color: #9d0e6b;
+            background-color: #800055;
         }
 
         /* FOOTER */
         footer {
-            background-color: #800055;
+            background-color: #45002e;
             color: white;
             padding: 40px 8% 20px 8%;
             margin-top: 50px;
@@ -626,9 +617,8 @@
 
     <!-- HEADER -->
     <header>
-        <a href="#" class="logo">
-            <div class="logo-circle"><i class="fa-solid fa-soap"></i></div>
-            LAVANDERA
+        <a href="Home_Screen_Page.html" class="logo">
+            <img src="lavandera_logo.png" alt="Lavandera Logo" class="logo-img">
         </a>
         <div class="menu-container">
             <button class="menu-btn" onclick="toggleMenu()">
@@ -636,7 +626,7 @@
             </button>
             <div class="dropdown-menu" id="navDropdown">
                 <a href="Home_Screen_Page.html">HOME</a>
-                <a href="Home_Screen_Page.html#account">ACCOUNT</a>
+                <a href="Log_In_Page.html">ACCOUNT</a>
                 <a href="Shop_Menu_Page.html">SHOPS</a>
                 <a href="Home_Screen_Page.html#about">ABOUT</a>
                 <a href="Home_Screen_Page.html#contact">CONTACT</a>
@@ -653,7 +643,7 @@
                     Enjoy a quick, hassle-free laundry experience at nearby laundry shops, where pickup, delivery, and
                     payment for your fresh new clothes are just one click away!
                 </p>
-                <a href="#shops" class="btn-pick">
+                <a href="Shop_Menu_page.html" class="btn-pick">
                     <i class="fa-solid fa-truck-fast"></i> Pick A Shop
                 </a>
                 <div class="hero-stats">
@@ -725,17 +715,6 @@
 
     <div class="section-title" id="shops">
         <span>OUR OTHER SHOPS</span>
-    </div>
-
-    <!-- SEARCH -->
-    <div class="filter-search-container">
-        <button class="filter-btn">
-            <i class="fa-solid fa-chevron-down"></i> All
-        </button>
-        <div class="search-box">
-            <input type="text" id="searchInput" onkeyup="searchShops()" placeholder="Search shop name...">
-            <i class="fa-solid fa-magnifying-glass"></i>
-        </div>
     </div>
 
     <!-- SHOP CARDS -->
@@ -972,8 +951,7 @@
         }
 
         function seeMore() {
-            // For demonstration, we'll just alert the user. In a real application, you would load more shops dynamically.
-            window.location.href("Shop_Menu_Page.html");
+            window.location.href = "Shop_Menu_Page.html";
         }
     </script>
 </body>
