@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customers - LaVanDera</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="lavandera_theme.css">
+    <style>
+        /* Page-level addition: lightweight customer detail modal
+           (the shared theme has no modal component). */
+        .lv-modal-overlay {
+            position: fixed; inset: 0; z-index: 80;
+            background: rgba(43, 13, 30, 0.45);
+            -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+            display: grid; place-items: center; padding: 20px 0;
+            visibility: hidden; opacity: 0; pointer-events: none;
+            transition: opacity 0.18s ease;
+        }
+        .lv-modal-overlay.open { visibility: visible; opacity: 1; pointer-events: auto; }
+        .lv-modal {
+            background: #fff; border: 1px solid var(--lv-line); border-radius: 24px;
+            box-shadow: var(--lv-shadow-lg);
+            width: calc(100% - 40px); max-width: 560px; max-height: 85vh;
+            overflow-y: auto; padding: 26px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="lv-nav"></div>
+
+    <main class="lv-container">
+
+        <!-- PAGE HEAD -->
+        <section class="lv-page-head">
+            <div class="lv-eyebrow">User management</div>
+            <h1 class="lv-title">Customers</h1>
+            <p class="lv-sub">Everyone registered on the platform &mdash; <span id="custCount"
+                    style="font-weight:800; color:var(--lv-plum);">0</span> accounts and counting.</p>
+        </section>
+
+        <!-- STATS STRIP -->
+        <section class="lv-grid lv-grid-3" id="statStrip"></section>
+
+        <!-- SEARCH TOOLBAR -->
+        <section class="lv-card lv-card-pad lv-mt">
+            <div class="lv-row-between" style="flex-wrap:wrap; gap:14px;">
+                <div class="lv-search" style="flex:1; min-width:260px;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input id="custSearch" class="lv-input" type="text" autocomplete="off"
+                        placeholder="Search by name, email or contact number..." oninput="renderTable()">
+                </div>
+                <span class="lv-muted" id="showingNote" style="font-size:13.5px; white-space:nowrap;"></span>
+            </div>
+        </section>
+
+        <!-- CUSTOMERS TABLE -->
+        <section class="lv-mt" id="tableCard"></section>
+
+    </main>
+
+    <!-- CUSTOMER DETAIL MODAL -->
+    <div class="lv-modal-overlay" id="custOverlay" onclick="if (event.target === this) closeModal();">
+        <div class="lv-modal" role="dialog" aria-modal="true" aria-label="Customer details" id="custModal"></div>
+    </div>
+
+    <script src="lavandera_demo.js"></script>
+    <script>
+        const me = LV.requireRole('admin', 'Log_In_Page.html');
+        if (me) {
+            LV.renderNav('admin', 'customers');
+            render();
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') closeModal();
+            });
+        }
+
+        function render() {
+            const customers = LV.customers();
+            const allOrders = LV.orders();
+            const completed = allOrders.filter(function (o) { return o.status === 'completed'; });
+            const lifetime = completed.reduce(function (t, o) { return t + Number(o.total); }, 0);
+
+            document.getElementById('custCount').textContent = customers.length;
+
+            const stats = [
+                { icon: 'fa-users',        value: customers.length,      label: 'Total customers' },
+                { icon: 'fa-basket-shopping', value: allOrders.length,   label: 'Orders placed by customers' },
+                { icon: 'fa-sack-dollar',  value: LV.peso(lifetime),     label: 'Customer lifetime value' }
+            ];
+            document.getElementById('statStrip').innerHTML = stats.map(function (t) {
+                return '<div class="lv-card lv-stat">' +
+                    '<div class="lv-stat-icon"><i class="fa-solid ' + t.icon + '"></i></div>' +
+                    '<div class="lv-stat-value">' + t.value + '</div>' +
+                    '<div class="lv-stat-label">' + t.label + '</div></div>';
+            }).join('');
+
+            renderTable();
+        }
+
+        /* ------------------------------------------ table render ----- */
+        function renderTable() {
+            const all = LV.customers();
+            const q = (document.getElementById('custSearch').value || '').trim().toLowerCase();
+            const list = all.filter(function (c) {
+                const haystack = String(c.name || '') + ' ' + String(c.email || '') + ' ' + String(c.contact || '');
+                return !q || haystack.toLowerCase().indexOf(q) > -1;
+            });
+
+            document.getElementById('showingNote').textContent =
+                'Showing ' + list.length + ' of ' + all.length + ' customer' + (all.length === 1 ? '' : 's');
+
+            const host = document.getElementById('tableCard');
+            if (!list.length) {
+                host.innerHTML = '<div class="lv-card lv-empty"><i class="fa-solid fa-users-slash"></i>' +
+                    '<h3>No customers found</h3>' +
+                    '<p>Try a different name, email or contact number.</p></div>';
+                return;
+            }
+
+            const head = '<thead><tr>' +
+                '<th>Customer</th><th>Contact number</th><th>Address</th>' +
+                '<th>Orders</th><th>Spent</th><th>Actions</th></tr></thead>';
+
+            const body = list.map(function (c) {
+                const orders = LV.ordersOfCustomer(c.id);
+                const spent = orders.filter(function (o) { return o.status === 'completed'; })
+                    .reduce(function (t, o) { return t + Number(o.total); }, 0);
+                const addr = LV.esc(c.address || 'Address to be confirmed');
+                return '<tr>' +
+                    '<td><div class="lv-row" style="gap:12px;">' +
+                        '<div class="lv-avatar lv-avatar-sm">' + LV.esc(LV.initials(c.name)) + '</div>' +
+                        '<div style="min-width:0;">' +
+                            '<div style="font-weight:800; color:var(--lv-plum);">' + LV.esc(c.name) + '</div>' +
+                            '<div class="lv-muted" style="font-size:12.5px;">' + LV.esc(c.email || '-') + '</div>' +
+                        '</div></div></td>' +
+                    '<td style="white-space:nowrap;">' + LV.esc(c.contact || '-') + '</td>' +
+                    '<td><span style="display:inline-block; max-width:220px; white-space:nowrap; ' +
+                        'overflow:hidden; text-overflow:ellipsis; vertical-align:middle;" title="' + addr + '">' +
+                        addr + '</span></td>' +
+                    '<td style="font-weight:800;">' + orders.length + '</td>' +
+                    '<td style="font-weight:800;">' + LV.peso(spent) + '</td>' +
+                    '<td><button class="lv-btn lv-btn-outline lv-btn-sm" onclick="openCustomer(' + c.id + ')">' +
+                        '<i class="fa-solid fa-eye" style="font-size:12px;"></i> View details</button></td>' +
+                '</tr>';
+            }).join('');
+
+            host.innerHTML = '<div class="lv-card"><div class="lv-table-wrap">' +
+                '<table class="lv-table">' + head + '<tbody>' + body + '</tbody></table></div></div>';
+        }
+
+        /* ------------------------------------------ detail modal ----- */
+        function openCustomer(id) {
+            const c = LV.customer(id);
+            if (!c) return;
+
+            const orders = LV.ordersOfCustomer(c.id);
+            const done = orders.filter(function (o) { return o.status === 'completed'; });
+            const spend = done.reduce(function (t, o) { return t + Number(o.total); }, 0);
+            const oldest = orders.length ? orders[orders.length - 1].createdAt : null;
+
+            const orderRows = orders.length ? orders.map(function (o) {
+                const st = LV.store(o.storeId), bag = LV.bagOf(o.bag);
+                return '<div style="padding:11px 0; border-bottom:1px dashed var(--lv-line);">' +
+                    '<div class="lv-row" style="flex-wrap:wrap; gap:8px;">' +
+                        '<span style="font-weight:800; color:var(--lv-plum);">#' + o.id + '</span>' +
+                        '<span class="lv-muted">&middot; ' + (st ? LV.esc(st.name) : 'Store') + '</span>' +
+                        '<span class="lv-muted">&middot; ' + LV.esc(bag.name) + '</span>' +
+                        '<span style="font-weight:800;">' + LV.peso(o.total) + '</span>' +
+                        LV.statusBadge(o.status) +
+                        '<span class="lv-muted" style="font-size:12.5px;">' + LV.when(o.createdAt) + '</span>' +
+                    '</div></div>';
+            }).join('') : '<div class="lv-muted" style="font-size:14px; padding:12px 0;">' +
+                'No orders placed yet.</div>';
+
+            document.getElementById('custModal').innerHTML =
+                '<div class="lv-row-between" style="margin-bottom:18px;">' +
+                    '<span class="lv-eyebrow" style="margin:0;">Customer details</span>' +
+                    '<button class="lv-btn lv-btn-outline lv-btn-sm" onclick="closeModal()" aria-label="Close">' +
+                        '<i class="fa-solid fa-xmark"></i> Close</button>' +
+                '</div>' +
+                '<div class="lv-row" style="gap:16px; margin-bottom:16px;">' +
+                    '<div class="lv-avatar lv-avatar-lg">' + LV.esc(LV.initials(c.name)) + '</div>' +
+                    '<div style="min-width:0;">' +
+                        '<div style="font-weight:800; font-size:20px; color:var(--lv-plum);">' + LV.esc(c.name) + '</div>' +
+                        '<div class="lv-muted" style="font-size:13.5px; word-break:break-all;">' + LV.esc(c.email || '-') + '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div>' +
+                    '<div class="lv-kv"><span>Contact number</span><span>' + LV.esc(c.contact || '-') + '</span></div>' +
+                    '<div class="lv-kv"><span>Address</span><span>' + LV.esc(c.address || '-') + '</span></div>' +
+                    '<div class="lv-kv"><span>Member since</span><span>' +
+                        (oldest ? LV.when(oldest) : 'Recently registered') + '</span></div>' +
+                '</div>' +
+                '<hr class="lv-divider">' +
+                '<div class="lv-eyebrow" style="margin-bottom:8px;">Orders (' + orders.length + ')</div>' +
+                orderRows +
+                '<div style="margin-top:16px; padding:14px 16px; background:var(--lv-pink-tint); border-radius:16px; ' +
+                    'font-size:14px; font-weight:700; color:var(--lv-plum);">' +
+                    'Lifetime spend: ' + LV.peso(spend) + ' across ' + done.length +
+                    ' completed order' + (done.length === 1 ? '' : 's') + '</div>';
+
+            document.getElementById('custOverlay').classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('custOverlay').classList.remove('open');
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Sign Up - LaVanDera</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="lavandera_theme.css">
+</head>
+
+<body>
+    <main class="lv-auth">
+        <div class="lv-auth-card" style="max-width:520px;">
+
+            <div class="lv-auth-brand">
+                <a href="Log_In_Page.html" class="lv-row" style="justify-content:center; gap:8px; margin-bottom:10px;">
+                    <i class="fa-solid fa-arrow-left" style="color:var(--lv-pink);"></i>
+                    <span class="lv-link" style="font-size:13.5px;">Back to sign in</span>
+                </a>
+                <img src="LAVANDERA.svg" alt="LaVanDera" style="height:62px;"
+                    onerror="this.onerror=null; this.src='Lavandera_logo.png';">
+                <h1 style="font-size:24px;">Create your account</h1>
+                <p>Customer registration</p>
+            </div>
+
+            <form onsubmit="doSignup(event)" novalidate>
+                <div class="lv-field">
+                    <label class="lv-label" for="suName">Full Name</label>
+                    <input class="lv-input" type="text" id="suName" required placeholder="e.g. Maria Santos">
+                </div>
+                <div class="lv-field">
+                    <label class="lv-label" for="suEmail">Email Address</label>
+                    <input class="lv-input" type="email" id="suEmail" required placeholder="name@example.com">
+                </div>
+                <div class="lv-field">
+                    <label class="lv-label" for="suPassword">Password</label>
+                    <input class="lv-input" type="password" id="suPassword" required minlength="6"
+                        placeholder="At least 6 characters">
+                </div>
+                <div class="lv-field">
+                    <label class="lv-label" for="suContact">Contact Number</label>
+                    <input class="lv-input" type="tel" id="suContact" required placeholder="09XX XXX XXXX">
+                </div>
+                <div class="lv-field">
+                    <label class="lv-label" for="suAddress">Pickup / Delivery Address</label>
+                    <textarea class="lv-textarea" id="suAddress" required
+                        placeholder="Unit / street, barangay, city"></textarea>
+                    <p class="lv-form-note" style="margin-top:6px;">
+                        Used to compute the rider send &amp; return fees on every order.
+                    </p>
+                </div>
+
+                <label class="lv-row" style="gap:9px; font-size:13.5px; color:var(--lv-muted); margin: 4px 0 14px; cursor:pointer;">
+                    <input type="checkbox" id="suTerms" required style="accent-color:var(--lv-pink);">
+                    I agree to the <a href="javascript:void(0)" class="lv-link"
+                        onclick="LV.toast('Terms of Service loaded.', 'fa-file-lines')">Terms &amp; Conditions</a>
+                </label>
+
+                <p class="lv-error" id="suError"></p>
+
+                <button type="submit" class="lv-btn lv-btn-pink lv-btn-block">
+                    Create Account <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <p class="lv-form-note" style="text-align:center; margin-top:18px;">
+                Already registered? <a href="Log_In_Page.html" class="lv-link">Sign in</a>
+            </p>
+
+        </div>
+    </main>
+
+    <script src="lavandera_demo.js"></script>
+    <script>
+        function doSignup(event) {
+            event.preventDefault();
+            const errBox = document.getElementById('suError');
+            errBox.textContent = '';
+
+            const name = document.getElementById('suName').value.trim();
+            const email = document.getElementById('suEmail').value.trim();
+            const password = document.getElementById('suPassword').value;
+            const contact = document.getElementById('suContact').value.trim();
+            const address = document.getElementById('suAddress').value.trim();
+            const terms = document.getElementById('suTerms').checked;
+
+            if (!name || !email || !password || !contact || !address) {
+                errBox.textContent = 'Please fill in every field.'; return;
+            }
+            if (!/^\S+@\S+\.\S+$/.test(email)) { errBox.textContent = 'Please enter a valid email address.'; return; }
+            if (password.length < 6) { errBox.textContent = 'Password must be at least 6 characters.'; return; }
+            if (!terms) { errBox.textContent = 'Please accept the Terms & Conditions.'; return; }
+
+            const res = LV.signupCustomer({ name: name, email: email, contact: contact, address: address });
+            if (!res.ok) { errBox.textContent = res.error; return; }
+
+            LV.toast('Welcome to LaVanDera, ' + name.split(' ')[0] + '!');
+            location.href = 'Customer_Home_Page.html';
+        }
+    </script>
+</body>
+
+</html>
