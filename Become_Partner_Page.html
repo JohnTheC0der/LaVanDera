@@ -508,7 +508,7 @@
 
     <!-- HEADER -->
     <header>
-        <a href="#" class="logo">
+        <a href="Home_Screen_Page.html" class="logo">
             <img src="lavandera_logo.png" alt="Lavandera Logo" class="logo-img">
         </a>
         <div class="menu-container">
@@ -527,7 +527,7 @@
 
     <!-- BANNER -->
     <section class="banner">
-        <a href="shops.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to shops</a>
+        <a href="Shop_Menu_Page.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to shops</a>
         <h1>Own a laundry shop?</h1>
         <p>Partner with LAVANDERA and reach more customers with pickup and delivery.</p>
         <div class="banner-buttons">
@@ -627,8 +627,7 @@
         <div class="section-title"><span>Apply to become a partner</span></div>
         <p class="section-sub">Fill up the form below. It only takes a minute.</p>
 
-        <!-- When the form is sent, the browser opens partner-thanks.html -->
-        <form class="form-box" action="partner-thanks.html" method="get">
+        <form class="form-box" onsubmit="sendApplication(event)">
             <div class="form-row">
                 <div class="form-group">
                     <label for="owner">Your full name</label>
@@ -674,10 +673,10 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn-submit" onclick="sendApplication()">
+            <button type="submit" class="btn-submit">
                 <i class="fa-solid fa-paper-plane"></i> Send my application
             </button>
-            <p class="form-note">We will call you after we read your application.</p>
+            <p class="form-note">Frontend demo only: applications are not sent or saved yet. A backend endpoint can be connected when one is ready.</p>
         </form>
     </section>
 
@@ -692,9 +691,9 @@
             <div class="footer-links">
                 <h4>Quick Links</h4>
                 <ul>
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="shops.html">Shops</a></li>
-                    <li><a href="partner.html">Partner With Us</a></li>
+                    <li><a href="Home_Screen_Page.html">Home</a></li>
+                    <li><a href="Shop_Menu_Page.html">Shops</a></li>
+                    <li><a href="Become_Partner_Page.html">Partner With Us</a></li>
                     <li><a href="#contact">Contact Us</a></li>
                 </ul>
             </div>
@@ -726,10 +725,9 @@
             }
         }
 
-        function sendApplication() {
-            // This function can be used to handle form submission if needed
-            // For now, it just redirects to the thank you page
-            window.location.href = "Partner_Thanks_Page.html";
+        function sendApplication(event) {
+            event.preventDefault();
+            window.location.href = "Partner_Thanks_page.html";
         }
     </script>
 </body>

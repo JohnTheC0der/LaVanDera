@@ -270,8 +270,8 @@
                 <div class="input-group">
                     <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Username / Email</label>
                     <div class="relative">
-                        <input type="text" id="loginUsername" required placeholder="Enter your username or email"
-                            class="input-field">
+                        <input type="email" id="loginUsername" name="email" autocomplete="username" required
+                            placeholder="Enter your email address" class="input-field">
                         <i class="fa-solid fa-user input-icon"></i>
                     </div>
                 </div>
@@ -280,8 +280,8 @@
                 <div class="input-group">
                     <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Password</label>
                     <div class="relative">
-                        <input type="password" id="loginPassword" required placeholder="••••••••••••"
-                            class="input-field">
+                        <input type="password" id="loginPassword" name="password" autocomplete="current-password"
+                            required placeholder="••••••••••••" class="input-field">
                         <i class="fa-solid fa-lock input-icon"></i>
                         <i class="fa-solid fa-eye password-toggle"
                             onclick="togglePasswordVisibility('loginPassword', this)"></i>
@@ -296,7 +296,7 @@
                         <span>Remember me</span>
                     </label>
                     <a href="javascript:void(0)"
-                        onclick="showNotification('Password reset link sent to your registered email!')"
+                        onclick="showNotification('Password reset is not available in this frontend demo yet.')"
                         class="text-pink-300 hover:text-pink-100 font-bold hover:underline transition">Forgot
                         Password?</a>
                 </div>
@@ -328,7 +328,8 @@
                 <div class="input-group">
                     <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Full Name</label>
                     <div class="relative">
-                        <input type="text" id="signupName" required placeholder="e.g. Maria Santos" class="input-field">
+                        <input type="text" id="signupName" name="name" autocomplete="name" required
+                            placeholder="e.g. Maria Santos" class="input-field">
                         <i class="fa-solid fa-id-card input-icon"></i>
                     </div>
                 </div>
@@ -337,8 +338,8 @@
                 <div class="input-group">
                     <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Email Address</label>
                     <div class="relative">
-                        <input type="email" id="signupEmail" required placeholder="name@example.com"
-                            class="input-field">
+                        <input type="email" id="signupEmail" name="email" autocomplete="email" required
+                            placeholder="name@example.com" class="input-field">
                         <i class="fa-solid fa-envelope input-icon"></i>
                     </div>
                 </div>
@@ -347,19 +348,33 @@
                 <div class="input-group">
                     <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Create Password</label>
                     <div class="relative">
-                        <input type="password" id="signupPassword" required placeholder="••••••••••••"
-                            class="input-field">
+                        <input type="password" id="signupPassword" name="password" autocomplete="new-password"
+                            minlength="6" required placeholder="At least 6 characters" class="input-field">
                         <i class="fa-solid fa-key input-icon"></i>
                         <i class="fa-solid fa-eye password-toggle"
                             onclick="togglePasswordVisibility('signupPassword', this)"></i>
                     </div>
                 </div>
 
+                <div class="input-group">
+                    <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1"
+                        for="signupContact">Contact Number</label>
+                    <input type="tel" id="signupContact" name="contact" autocomplete="tel" required
+                        placeholder="09XX XXX XXXX" class="input-field">
+                </div>
+
+                <div class="input-group">
+                    <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1"
+                        for="signupAddress">Pickup / Delivery Address</label>
+                    <input type="text" id="signupAddress" name="address" autocomplete="street-address" required
+                        placeholder="Street, barangay, city" class="input-field">
+                </div>
+
                 <!-- Terms Checkbox -->
                 <div class="flex items-center gap-2 text-xs mb-6 px-1 select-none">
                     <input type="checkbox" required class="custom-checkbox" id="termsCheck">
                     <label for="termsCheck" class="text-pink-100/80 cursor-pointer">I agree to the <a
-                            href="javascript:void(0)" onclick="showNotification('LAVANDERA Terms of Service loaded.')"
+                            href="javascript:void(0)" onclick="showNotification('Terms and Conditions are not available in this frontend demo yet.')"
                             class="text-pink-300 font-bold hover:underline">Terms & Conditions</a></label>
                 </div>
 
@@ -378,6 +393,10 @@
             </div>
         </div>
     </main>
+    <p class="text-xs text-pink-100/70 text-center mt-5 px-4">
+        Frontend demo only. Seeded accounts use <strong>password</strong>; new demo accounts are stored in this browser.
+        Do not use real credentials.
+    </p>
 
     <div id="toast"
         class="fixed bottom-6 right-6 bg-pink-500 text-slate-950 font-bold px-5 py-3 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-20 opacity-0 z-50 flex items-center gap-2.5 border border-pink-300">
@@ -385,6 +404,7 @@
         <span id="toastMsg" class="text-sm">Success!</span>
     </div>
 
+    <script src="lavandera_demo.js"></script>
     <script>
         // Toggle Tab Functions (Login vs Sign Up)
         function switchTab(type) {
@@ -436,15 +456,55 @@
             }, 3200);
         }
 
-        // Form Submission Simulation
-        function handleAuthSubmit(event, type) {
+        async function handleAuthSubmit(event, type) {
             event.preventDefault();
-            const userVal = type === 'login'
-                ? (document.getElementById('loginUsername').value || 'User')
-                : (document.getElementById('signupName').value || 'User');
+            try {
+                if (type === 'login') {
+                    const result = await LV.login(
+                        document.getElementById('loginUsername').value,
+                        document.getElementById('loginPassword').value
+                    );
+                    if (!result.ok) {
+                        showNotification(result.error);
+                        return;
+                    }
+                    const destinations = {
+                        admin: 'Admin_Dashboard_Page.html',
+                        customer: 'Customer_Home_Page.html',
+                        rider: 'lavandera_rider_dashboard.html'
+                    };
+                    const allowedNext = {
+                        admin: ['Admin_Dashboard_Page.html', 'Admin_Customers_Page.html', 'Admin_Riders_Page.html', 'Admin_Stores_Page.html'],
+                        customer: ['Customer_Home_Page.html', 'Customer_Stores_Page.html', 'Customer_View_Store_Page.html',
+                            'Customer_Place_Order_Page.html', 'Customer_Confirm_Order.html', 'Customer_My_Orders_Page.html',
+                            'Customer_Profile_Page.html'],
+                        rider: ['lavandera_rider_dashboard.html', 'Rider_Orders_Page.html',
+                            'Rider_Order_History_Page.html', 'Rider_Profile_Page.html']
+                    };
+                    const requested = new URLSearchParams(location.search).get('next');
+                    const requestedPage = requested ? requested.split(/[?#]/)[0] : '';
+                    const destination = allowedNext[result.user.role] &&
+                        allowedNext[result.user.role].indexOf(requestedPage) !== -1
+                        ? requested
+                        : destinations[result.user.role];
+                    location.href = destination;
+                    return;
+                }
 
-            const actionText = type === 'login' ? `Welcome back, ${userVal}!` : `Account created for ${userVal}!`;
-            showNotification(actionText);
+                const result = await LV.signupCustomer({
+                    name: document.getElementById('signupName').value.trim(),
+                    email: document.getElementById('signupEmail').value.trim(),
+                    contact: document.getElementById('signupContact').value.trim(),
+                    address: document.getElementById('signupAddress').value.trim()
+                }, document.getElementById('signupPassword').value);
+                if (!result.ok) {
+                    showNotification(result.error);
+                    return;
+                }
+                location.href = 'Customer_Home_Page.html';
+            } catch (error) {
+                showNotification(error.message || 'Unable to complete the request. Please try again.');
+            }
         }
     </script>
 </body>

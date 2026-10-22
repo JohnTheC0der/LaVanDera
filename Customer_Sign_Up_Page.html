@@ -57,7 +57,7 @@
                 <label class="lv-row" style="gap:9px; font-size:13.5px; color:var(--lv-muted); margin: 4px 0 14px; cursor:pointer;">
                     <input type="checkbox" id="suTerms" required style="accent-color:var(--lv-pink);">
                     I agree to the <a href="javascript:void(0)" class="lv-link"
-                        onclick="LV.toast('Terms of Service loaded.', 'fa-file-lines')">Terms &amp; Conditions</a>
+                        onclick="LV.toast('Terms and Conditions are not available in this frontend demo yet.', 'fa-file-lines')">Terms &amp; Conditions</a>
                 </label>
 
                 <p class="lv-error" id="suError"></p>
@@ -70,13 +70,16 @@
             <p class="lv-form-note" style="text-align:center; margin-top:18px;">
                 Already registered? <a href="Log_In_Page.html" class="lv-link">Sign in</a>
             </p>
+            <p class="lv-form-note" style="text-align:center; margin-top:10px;">
+                Frontend demo only. This account is stored in this browser; do not use real credentials.
+            </p>
 
         </div>
     </main>
 
     <script src="lavandera_demo.js"></script>
     <script>
-        function doSignup(event) {
+        async function doSignup(event) {
             event.preventDefault();
             const errBox = document.getElementById('suError');
             errBox.textContent = '';
@@ -95,11 +98,16 @@
             if (password.length < 6) { errBox.textContent = 'Password must be at least 6 characters.'; return; }
             if (!terms) { errBox.textContent = 'Please accept the Terms & Conditions.'; return; }
 
-            const res = LV.signupCustomer({ name: name, email: email, contact: contact, address: address });
-            if (!res.ok) { errBox.textContent = res.error; return; }
-
-            LV.toast('Welcome to LaVanDera, ' + name.split(' ')[0] + '!');
-            location.href = 'Customer_Home_Page.html';
+            try {
+                const res = await LV.signupCustomer(
+                    { name: name, email: email, contact: contact, address: address },
+                    password
+                );
+                if (!res.ok) { errBox.textContent = res.error; return; }
+                location.href = 'Customer_Home_Page.html';
+            } catch (error) {
+                errBox.textContent = error.message || 'Unable to create your account. Please try again.';
+            }
         }
     </script>
 </body>

@@ -1,8 +1,8 @@
 /* =====================================================================
    LaVanDera - demo data + shared helpers (frontend prototype layer)
-   Everything here is stored in-memory / localStorage.  When the PHP +
-   MySQL backend lands, only this file's accessors get rewritten to
-   fetch() real endpoints - page code stays the same.
+   This frontend demo uses localStorage for persistence and simulated
+   authentication. Keep page code on the LV API; replace its implementations
+   with server requests when a backend is added. Never use demo auth in production.
    ===================================================================== */
 
 const LV = (function () {
@@ -259,7 +259,7 @@ const LV = (function () {
     function write(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 
     const K = { session: 'lv_session', extraCustomers: 'lv_extra_customers', extraOrders: 'lv_extra_orders',
-                orderState: 'lv_order_state', userState: 'lv_user_state' };
+                orderState: 'lv_order_state', userState: 'lv_user_state', credentials: 'lv_credentials' };
 
     /* ------------------------------------------------- accessors ---- */
     function customers() {
@@ -344,21 +344,41 @@ const LV = (function () {
     }
 
     /* Demo password for every seeded account is "password". */
-    function login(email, password) {
+    async function passwordHash(password) {
+        if (!window.crypto || !window.crypto.subtle) {
+            throw new Error('Secure password hashing is unavailable. Open this demo through a secure local server.');
+        }
+        const bytes = new TextEncoder().encode(String(password));
+        const digest = await window.crypto.subtle.digest('SHA-256', bytes);
+        return Array.from(new Uint8Array(digest)).map(function (byte) {
+            return byte.toString(16).padStart(2, '0');
+        }).join('');
+    }
+
+    async function login(email, password) {
         const u = allLogins().find(function (x) { return x.email.toLowerCase() === String(email).trim().toLowerCase(); });
         if (!u) return { ok: false, error: 'No account found for that email.' };
-        if (String(password) !== 'password') return { ok: false, error: 'Incorrect password. Demo accounts use "password".' };
+        if (u.role === 'store') return { ok: false, error: 'Store accounts do not have a portal page in this frontend demo yet.' };
         if (u.status === 'pending_approval') return { ok: false, error: 'Your account is still pending admin approval.' };
         if (u.status === 'setup_required') return { ok: false, error: 'Please finish your Store Setup first.' };
         if (u.status === 'rejected') return { ok: false, error: 'This account was rejected by the admin.' };
+        const credentials = read(K.credentials, {});
+        const validPassword = credentials[u.id]
+            ? credentials[u.id] === await passwordHash(password)
+            : String(password) === 'password';
+        if (!validPassword) return { ok: false, error: 'Incorrect password. Demo accounts use "password".' };
         write(K.session, { id: u.id, role: u.role, name: u.name, email: u.email });
         return { ok: true, user: u };
     }
 
-    function signupCustomer(data) {
+    async function signupCustomer(data, password) {
         const exists = allLogins().some(function (u) { return u.email.toLowerCase() === String(data.email).toLowerCase(); });
         if (exists) return { ok: false, error: 'That email is already registered.' };
+        const hash = await passwordHash(password);
         const rec = addCustomer(data);
+        const credentials = read(K.credentials, {});
+        credentials[rec.id] = hash;
+        write(K.credentials, credentials);
         write(K.session, { id: rec.id, role: 'customer', name: rec.name, email: rec.email });
         return { ok: true, user: rec };
     }
@@ -368,7 +388,11 @@ const LV = (function () {
 
     function requireRole(role, loginPage) {
         const s = session();
-        if (!s || s.role !== role) { location.replace(loginPage || 'Log_In_Page.html'); return null; }
+        if (!s || s.role !== role) {
+            const returnTo = location.pathname.split('/').pop() + location.search + location.hash;
+            location.replace((loginPage || 'Log_In_Page.html') + '?next=' + encodeURIComponent(returnTo));
+            return null;
+        }
         return s;
     }
 

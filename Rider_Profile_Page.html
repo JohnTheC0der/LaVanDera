@@ -794,13 +794,15 @@
             }
         }
     </style>
+    <script src="lavandera_demo.js"></script>
+    <script>LV.requireRole('rider');</script>
 </head>
 
 <body>
 
     <!-- HEADER -->
     <header>
-        <a href="#" class="logo" aria-label="Lavandera Home">
+        <a href="lavandera_rider_dashboard.html" class="logo" aria-label="Lavandera Home">
             <img src="lavandera_logo.png" alt="Lavandera Logo" class="logo-img">
         </a>
 
@@ -818,7 +820,7 @@
                 <a href="lavandera_rider_dashboard.html"><i class="fa-solid fa-house"></i>Dashboard</a>
                 <a href="Rider_Orders_Page.html"><i class="fa-solid fa-boxes-stacked"></i>Current Orders</a>
                 <a href="Rider_Profile_Page.html"><i class="fa-solid fa-user"></i>Profile</a>
-                <a href="Rider_Logout_Page.html"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
+                <a href="Log_In_Page.html" onclick="LV.logout(); return false;"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
             </div>
         </div>
     </header>

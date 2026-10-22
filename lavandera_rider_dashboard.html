@@ -921,13 +921,15 @@
             opacity: 0.85;
         }
     </style>
+    <script src="lavandera_demo.js"></script>
+    <script>LV.requireRole('rider');</script>
 </head>
 
 <body>
 
     <!-- HEADER -->
     <header>
-        <a href="#" class="logo">
+        <a href="lavandera_rider_dashboard.html" class="logo">
             <img src="lavandera_logo.png" alt="Lavandera Logo" class="logo-img">
         </a>
 
@@ -944,7 +946,7 @@
                 <a href="lavandera_rider_dashboard.html"><i class="fa-solid fa-house"></i>Dashboard</a>
                 <a href="Rider_Orders_Page.html"><i class="fa-solid fa-boxes-stacked"></i>Current Orders</a>
                 <a href="Rider_Profile_Page.html"><i class="fa-solid fa-user"></i>Profile</a>
-                <a href="Rider_Logout_Page.html"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
+                <a href="Log_In_Page.html" onclick="LV.logout(); return false;"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
             </div>
         </div>
     </header>
@@ -953,7 +955,7 @@
     <div class="dashboard-wrapper">
 
         <!-- WELCOME SECTION -->
-        <a href="#" class="card-wrapper">
+        <a href="Rider_Orders_Page.html" class="card-wrapper">
             <div class="welcome-section">
                 <div class="welcome-header">
                     <div class="welcome-profile">
@@ -1222,6 +1224,10 @@
         function toggleMenu() {
             const menu = document.getElementById("navDropdown");
             menu.classList.toggle("show");
+        }
+
+        function confirmLogout() {
+            LV.logout();
         }
 
         // Close menu when clicking elsewhere
