@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAVANDERA - Rider Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: #fff7fb;
+            color: #333333;
+        }
+
+        /* HEADER */
+        header {
+            background-color: #e58db5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 5%;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .logo-img {
+            height: 80px;
+            width: auto;
+            display: block;
+            filter: brightness(0.6) contrast(1.2);
+            margin-top: -10px;
+            margin-bottom: -10px;
+        }
+
+        .menu-container {
+            position: relative;
+        }
+
+        .menu-btn {
+            background-color: #5a003c;
+            color: white;
+            border: none;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-btn:hover {
+            background-color: #800055;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 56px;
+            background-color: white;
+            width: 280px;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            z-index: 1001;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-header {
+            background-color: #f8f3f7;
+            padding: 20px 18px;
+            border-bottom: 1px solid #e8d4e0;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e58db5, #5a003c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #45002e;
+            margin-bottom: 4px;
+        }
+
+        .user-email {
+            font-size: 12px;
+            color: #999;
+            word-break: break-word;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background-color: #e8d4e0;
+            margin: 12px 0;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            color: #45002e;
+            padding: 14px 18px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 1px solid #f3d3e3;
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #fff5fa;
+            color: #5a003c;
+            padding-left: 24px;
+        }
+
+        .dropdown-menu a i {
+            margin-right: 8px;
+            color: #e58db5;
+            width: 16px;
+        }
+
+        /* MAIN DASHBOARD CONTAINER */
+        .dashboard-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 5%;
+            padding-top: 30px;
+            padding-bottom: 40px;
+        }
+
+        /* WELCOME SECTION */
+        .card-wrapper {
+            display: block;
+            /* Ensures the anchor behaves like a block container */
+            text-decoration: none;
+            color: inherit;
+            /* Prevents all text inside from turning blue */
+        }
+
+
+        .welcome-section {
+            background: linear-gradient(135deg, #ffe3f1, #f8e5ff);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 12px rgba(90, 0, 60, 0.12);
+        }
+
+        .welcome-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .welcome-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .welcome-profile img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e58db5;
+        }
+
+        .welcome-text h1 {
+            font-size: 35px;
+            color: #45002e;
+            font-weight: 900;
+            margin-bottom: 8px;
+            margin-right: 180px;
+        }
+
+        .welcome-text p {
+            font-size: 16px;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #5a003c;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: bold;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            background-color: #4ade80;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* QUICK STATS */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background-color: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(90, 0, 60, 0.12);
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: #e58db5;
+            box-shadow: 0 8px 20px rgba(90, 0, 60, 0.18);
+        }
+
+        .stat-icon {
+            font-size: 32px;
+            color: #e58db5;
+            margin-bottom: 12px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 900;
+            color: #45002e;
+            margin-bottom: 6px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* MAIN CONTENT AREA */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ACTIVE DELIVERIES SECTION */
+        .deliveries-panel {
+            background-color: white;
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(90, 0, 60, 0.12);
+        }
+
+        .panel-title {
+            font-size: 20px;
+            font-weight: 900;
+            color: #45002e;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title i {
+            color: #e58db5;
+            font-size: 24px;
+        }
+
+        .delivery-item {
+            background-color: #f8f3f7;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 15px;
+            border-left: 4px solid #e58db5;
+            transition: all 0.3s ease;
+        }
+
+        .delivery-item:hover {
+            background-color: #fff5fa;
+            box-shadow: 0 4px 12px rgba(229, 141, 181, 0.2);
+        }
+
+        .delivery-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .delivery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .delivery-shop {
+            font-weight: bold;
+            color: #45002e;
+            font-size: 15px;
+        }
+
+        .delivery-distance {
+            background-color: #e58db5;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .delivery-address {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: start;
+            gap: 6px;
+        }
+
+        .delivery-address i {
+            color: #3bb2b8;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .delivery-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .delivery-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .delivery-meta i {
+            color: #3bb2b8;
+        }
+
+        .delivery-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-accept {
+            flex: 1;
+            background-color: #e58db5;
+            color: #45002e;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-accept:hover {
+            background-color: #5a003c;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-decline {
+            flex: 1;
+            background-color: white;
+            color: #5a003c;
+            border: 2px solid #e58db5;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-decline:hover {
+            border-color: #5a003c;
+            background-color: #f8f3f7;
+        }
+
+        /* EARNINGS SECTION */
+        .earnings-panel {
+            background: linear-gradient(135deg, #5a003c, #800055);
+            border-radius: 18px;
+            padding: 25px;
+            color: white;
+            box-shadow: 0 8px 20px rgba(90, 0, 60, 0.25);
+        }
+
+        .earnings-main {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .earnings-label {
+            font-size: 13px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .earnings-amount {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 12px;
+        }
+
+        .earnings-period {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        .earnings-breakdown {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .breakdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .breakdown-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .breakdown-value {
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        /* PERFORMANCE SECTION */
+        .performance-section {
+            background-color: white;
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(90, 0, 60, 0.12);
+            margin-bottom: 40px;
+        }
+
+        .performance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .performance-metric {
+            background: linear-gradient(135deg, #ffe3f1, #f8e5ff);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .metric-icon {
+            font-size: 28px;
+            color: #e58db5;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 20px;
+            font-weight: 900;
+            color: #45002e;
+            margin-bottom: 4px;
+        }
+
+        .metric-name {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* REVIEWS SECTION */
+        .reviews-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .review-item {
+            background-color: #f8f3f7;
+            border-radius: 12px;
+            padding: 16px;
+            border-left: 4px solid #3bb2b8;
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .review-author {
+            font-weight: bold;
+            color: #45002e;
+            font-size: 14px;
+        }
+
+        .review-stars {
+            color: #ffb800;
+            font-size: 13px;
+        }
+
+        .review-text {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        /* BOTTOM BUTTON SECTION */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn-primary {
+            background-color: #5a003c;
+            color: white;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-primary:hover {
+            background-color: #800055;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(90, 0, 60, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: #5a003c;
+            padding: 16px 24px;
+            border: 2px solid #e58db5;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-secondary:hover {
+            background-color: #fff5fa;
+            border-color: #5a003c;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .welcome-header {
+                flex-direction: column;
+            }
+
+            .welcome-text h1 {
+                font-size: 26px;
+            }
+
+            .quick-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .stat-value {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-wrapper {
+                padding: 0 4%;
+                padding-top: 20px;
+            }
+
+            .welcome-section {
+                padding: 20px;
+            }
+
+            .quick-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .welcome-text h1 {
+                font-size: 22px;
+            }
+
+            .performance-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* ===== MODAL ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 18px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--color-dark), var(--color-darker));
+            color: white;
+            padding: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .modal-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .close-btn:hover,
+        .close-btn:focus {
+            transform: scale(1.1);
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-section {
+            margin-bottom: 25px;
+        }
+
+        .modal-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--color-text);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-section-title i {
+            color: var(--color-primary);
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-item-label {
+            color: #888;
+            font-size: 13px;
+            min-width: 100px;
+            font-weight: 600;
+        }
+
+        .detail-item-value {
+            color: var(--color-text);
+            flex: 1;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            padding-top: 20px;
+            border-top: 2px solid var(--color-border);
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn-primary {
+            background-color: var(--color-dark);
+            color: white;
+        }
+
+        .modal-btn-primary:hover,
+        .modal-btn-primary:focus {
+            background-color: var(--color-darker);
+            transform: translateY(-2px);
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        .modal-btn-secondary {
+            background-color: white;
+            color: var(--color-dark);
+            border: 2px solid var(--color-primary);
+        }
+
+        .modal-btn-secondary:hover,
+        .modal-btn-secondary:focus {
+            background-color: #ffe3f1;
+            outline: 2px solid var(--color-dark);
+            outline-offset: 2px;
+        }
+
+        /* ===== LOGOUT MODAL SPECIFIC STYLES ===== */
+        #logoutModal .modal-content {
+            max-width: 420px;
+        }
+
+        #logoutModal .modal-header {
+            flex-direction: column;
+            text-align: center;
+            gap: 0;
+        }
+
+        #logoutModal .modal-title {
+            justify-content: center;
+            font-size: 22px;
+            width: 100%;
+        }
+
+        #logoutModal .close-btn {
+            position: absolute;
+            right: 25px;
+            top: 25px;
+        }
+
+        #logoutModal .modal-body {
+            text-align: center;
+            padding: 35px 30px 30px;
+        }
+
+        #logoutModal .modal-body p {
+            font-size: 16px;
+            color: var(--color-text);
+            margin-bottom: 28px;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        #logoutModal .modal-actions {
+            flex-direction: column;
+            gap: 10px;
+            border-top: none;
+            padding-top: 0;
+        }
+
+        #logoutModal .modal-btn {
+            padding: 14px;
+            font-size: 15px;
+        }
+
+        /* FOOTER */
+        footer {
+            background-color: #45002e;
+            color: white;
+            padding: 30px 8%;
+            text-align: center;
+            margin-top: 50px;
+            font-size: 13px;
+        }
+
+        footer p {
+            opacity: 0.85;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <a href="#" class="logo">
+            <img src="lavandera_logo.png" alt="Lavandera Logo" class="logo-img">
+        </a>
+
+        <div class="menu-container">
+            <button class="menu-btn" onclick="toggleMenu()">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="dropdown-menu" id="navDropdown">
+                <div class="dropdown-header">
+                    <div class="user-avatar">A</div>
+                    <div class="user-name">Alex Rodriguez</div>
+                    <div class="user-email">alex.rodriguez@email.com</div>
+                </div>
+                <a href="lavandera_rider_dashboard.html"><i class="fa-solid fa-house"></i>Dashboard</a>
+                <a href="Rider_Orders_Page.html"><i class="fa-solid fa-boxes-stacked"></i>Current Orders</a>
+                <a href="Rider_Profile_Page.html"><i class="fa-solid fa-user"></i>Profile</a>
+                <a href="Rider_Logout_Page.html"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <div class="dashboard-wrapper">
+
+        <!-- WELCOME SECTION -->
+        <a href="#" class="card-wrapper">
+            <div class="welcome-section">
+                <div class="welcome-header">
+                    <div class="welcome-profile">
+                        <img src="jaime-rider.jpg" alt="Rider Avatar" class="welcome-avatar">
+                    </div>
+                    <div class="welcome-text">
+                        <h1>Welcome back, Alex! 👋</h1>
+                        <p>You're on fire today! Keep up the momentum.</p>
+                    </div>
+                    <div class="status-badge">
+                        <div class="status-indicator"></div>
+                        Online
+                    </div>
+                </div>
+            </div>
+        </a>
+
+        <!-- QUICK STATS -->
+        <div class="quick-stats">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fa-solid fa-box"></i>
+                </div>
+                <div class="stat-value">12</div>
+                <div class="stat-label">Deliveries Today</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fa-solid fa-star"></i>
+                </div>
+                <div class="stat-value">4.8</div>
+                <div class="stat-label">Rating</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div class="stat-value">8h 42m</div>
+                <div class="stat-label">Active Time</div>
+            </div>
+        </div>
+
+        <!-- MAIN DASHBOARD GRID -->
+        <div class="dashboard-grid">
+
+            <!-- ACTIVE DELIVERIES -->
+            <div class="deliveries-panel">
+                <div class="panel-title">
+                    <i class="fa-solid fa-truck-fast"></i>
+                    Active Deliveries
+                </div>
+
+                <div class="delivery-item">
+                    <div class="delivery-header">
+                        <div class="delivery-shop">Mama Mo Laundry</div>
+                        <div class="delivery-distance">2.3 km</div>
+                    </div>
+                    <div class="delivery-address">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <span>123 Maple Street, Marikina</span>
+                    </div>
+                    <div class="delivery-meta">
+                        <span><i class="fa-solid fa-clock"></i> 18 mins away</span>
+                        <span><i class="fa-solid fa-money-bill"></i> ₱150</span>
+                    </div>
+                    <div class="delivery-actions">
+                        <button class="btn-accept">Accept</button>
+                        <button class="btn-decline">Skip</button>
+                    </div>
+                </div>
+
+                <div class="delivery-item">
+                    <div class="delivery-header">
+                        <div class="delivery-shop">Kuya Mo Laundry</div>
+                        <div class="delivery-distance">3.1 km</div>
+                    </div>
+                    <div class="delivery-address">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <span>456 Oak Avenue, Quezon City</span>
+                    </div>
+                    <div class="delivery-meta">
+                        <span><i class="fa-solid fa-clock"></i> 24 mins away</span>
+                        <span><i class="fa-solid fa-money-bill"></i> ₱200</span>
+                    </div>
+                    <div class="delivery-actions">
+                        <button class="btn-accept">Accept</button>
+                        <button class="btn-decline">Skip</button>
+                    </div>
+                </div>
+
+                <div class="delivery-item">
+                    <div class="delivery-header">
+                        <div class="delivery-shop">Lola Mo Dry Cleaning</div>
+                        <div class="delivery-distance">1.8 km</div>
+                    </div>
+                    <div class="delivery-address">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <span>789 Pine Road, Makati</span>
+                    </div>
+                    <div class="delivery-meta">
+                        <span><i class="fa-solid fa-clock"></i> 12 mins away</span>
+                        <span><i class="fa-solid fa-money-bill"></i> ₱175</span>
+                    </div>
+                    <div class="delivery-actions">
+                        <button class="btn-accept">Accept</button>
+                        <button class="btn-decline">Skip</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EARNINGS PANEL -->
+            <div class="earnings-panel">
+                <div class="earnings-main">
+                    <div class="earnings-label">Today's Earnings</div>
+                    <div class="earnings-amount">₱2,450</div>
+                    <div class="earnings-period">Updated 2 minutes ago</div>
+                </div>
+
+                <div class="earnings-breakdown">
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">Completed Deliveries</span>
+                        <span class="breakdown-value">12 × ₱175</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">Bonus Incentives</span>
+                        <span class="breakdown-value">+₱250</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">Surge Pricing</span>
+                        <span class="breakdown-value">+₱100</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">Estimated Weekly</span>
+                        <span class="breakdown-value">₱15,200</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- PERFORMANCE SECTION -->
+        <div class="performance-section">
+            <div class="panel-title">
+                <i class="fa-solid fa-chart-line"></i>
+                Your Performance
+            </div>
+
+            <div class="performance-grid">
+                <div class="performance-metric">
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                    <div class="metric-value">98%</div>
+                    <div class="metric-name">On-Time Rate</div>
+                </div>
+
+                <div class="performance-metric">
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-face-smile"></i>
+                    </div>
+                    <div class="metric-value">89</div>
+                    <div class="metric-name">5-Star Reviews</div>
+                </div>
+
+                <div class="performance-metric">
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-check-circle"></i>
+                    </div>
+                    <div class="metric-value">428</div>
+                    <div class="metric-name">Total Completed</div>
+                </div>
+
+                <div class="performance-metric">
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-shield"></i>
+                    </div>
+                    <div class="metric-value">0</div>
+                    <div class="metric-name">Incidents</div>
+                </div>
+            </div>
+
+            <h3 style="font-size: 18px; color: #45002e; margin-bottom: 15px; font-weight: bold;">
+                Recent Reviews
+            </h3>
+
+            <div class="reviews-container">
+                <div class="review-item">
+                    <div class="review-header">
+                        <div class="review-author">Maria Santos</div>
+                        <div class="review-stars">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                    </div>
+                    <div class="review-text">
+                        "Fast delivery and the clothes were perfectly handled. Will definitely request Alex again!"
+                    </div>
+                </div>
+
+                <div class="review-item">
+                    <div class="review-header">
+                        <div class="review-author">Juan Dela Cruz</div>
+                        <div class="review-stars">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-regular fa-star"></i>
+                        </div>
+                    </div>
+                    <div class="review-text">
+                        "Great service! Arrived on time and was very professional throughout the delivery."
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="action-buttons">
+            <button class="btn-primary">
+                <i class="fa-solid fa-pause"></i>
+                Go Offline
+            </button>
+            <button class="btn-secondary">
+                <i class="fa-solid fa-history"></i>
+                View History
+            </button>
+        </div>
+    </div>
+
+    <!-- LOGOUT MODAL -->
+    <div class="modal" id="logoutModal" role="dialog" aria-labelledby="logoutTitle" aria-hidden="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="logoutTitle">
+                    <i class="fa-solid fa-sign-out-alt" aria-hidden="true"></i>
+                    Log Out
+                </div>
+                <button class="close-btn" onclick="closeLogoutModal()" aria-label="Close logout dialog">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <p>Are you sure you want to log out?</p>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-primary" onclick="confirmLogout()">Yes, Log Out</button>
+                    <button class="modal-btn modal-btn-secondary" onclick="closeLogoutModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <p>&copy; 2026 LAVANDERA. Rider Dashboard. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        // Toggle menu
+        function toggleMenu() {
+            const menu = document.getElementById("navDropdown");
+            menu.classList.toggle("show");
+        }
+
+        // Close menu when clicking elsewhere
+        window.onclick = function (event) {
+            if (!event.target.matches('.menu-btn') && !event.target.matches('.menu-btn *')) {
+                const dropdown = document.getElementById("navDropdown");
+                dropdown.classList.remove('show');
+            }
+        }
+
+        // Accept delivery button functionality
+        const acceptBtns = document.querySelectorAll('.btn-accept');
+        acceptBtns.forEach(btn => {
+            btn.addEventListener('click', function () {
+                const deliveryItem = this.closest('.delivery-item');
+                const shopName = deliveryItem.querySelector('.delivery-shop').textContent;
+                alert(`Delivery from ${shopName} accepted!`);
+            });
+        });
+
+        // Decline delivery button functionality
+        const declineBtns = document.querySelectorAll('.btn-decline');
+        declineBtns.forEach(btn => {
+            btn.addEventListener('click', function () {
+                const deliveryItem = this.closest('.delivery-item');
+                deliveryItem.style.opacity = '0.5';
+                this.closest('.delivery-actions').innerHTML = '<span style="color: #999; font-size: 12px;">Declined</span>';
+            });
+        });
+    </script>
+
+</body>
+
+</html>

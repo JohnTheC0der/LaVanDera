@@ -5,15 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LAVANDERA - Modern Laundry Service Portal</title>
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Fredoka:wght@500;600;700&display=swap"
         rel="stylesheet">
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -21,21 +18,18 @@
             --brand-pink: #FF66CC;
             --brand-pink-glow: rgba(255, 102, 204, 0.45);
             --brand-purple: #E056FD;
-            --brand-cyan: #00F2FE;
             --dark-plum: #140613;
             --card-bg: rgba(30, 10, 27, 0.65);
             --card-border: rgba(255, 102, 204, 0.28);
             --input-bg: rgba(255, 255, 255, 0.07);
             --input-border: rgba(255, 102, 204, 0.22);
-            --font-main: 'Plus Jakarta Sans', sans-serif;
-            --font-display: 'Fredoka', cursive, sans-serif;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: var(--font-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         body {
@@ -54,29 +48,17 @@
             backdrop-filter: blur(32px);
             -webkit-backdrop-filter: blur(32px);
             border: 1px solid var(--card-border);
-            box-shadow:
-                0 30px 60px rgba(0, 0, 0, 0.7),
-                0 0 50px rgba(255, 102, 204, 0.18),
-                inset 0 1px 1px rgba(255, 255, 255, 0.25);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7), 0 0 50px rgba(255, 102, 204, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.25);
             border-radius: 32px;
-            z-index: 10;
             width: 100%;
             max-width: 460px;
             padding: 2.5rem 2.25rem;
             position: relative;
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .glass-card:hover {
-            box-shadow:
-                0 35px 70px rgba(0, 0, 0, 0.8),
-                0 0 60px rgba(255, 102, 204, 0.28),
-                inset 0 1px 2px rgba(255, 255, 255, 0.35);
-        }
-
-        /* Brand Header Logo Typography */
         .brand-header {
-            font-family: var(--font-display);
+            font-family: 'Fredoka', sans-serif;
             letter-spacing: 0.08em;
             color: #FFFFFF;
             text-shadow: 0 0 16px var(--brand-pink-glow);
@@ -116,12 +98,7 @@
             top: 50%;
             transform: translateY(-50%);
             color: rgba(255, 255, 255, 0.45);
-            transition: color 0.25s ease;
             pointer-events: none;
-        }
-
-        .input-field:focus~.input-icon {
-            color: var(--brand-pink);
         }
 
         .password-toggle {
@@ -138,7 +115,6 @@
             color: var(--brand-pink);
         }
 
-        /* Custom Checkbox */
         .custom-checkbox {
             appearance: none;
             width: 18px;
@@ -196,7 +172,6 @@
             transform: translateY(0);
         }
 
-        /* Tab Switcher Pills */
         .tab-switcher {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 20px;
@@ -226,7 +201,6 @@
             box-shadow: 0 4px 18px var(--brand-pink-glow);
         }
 
-        /* Form Switching Animation */
         .form-container {
             transition: opacity 0.3s ease, transform 0.3s ease;
         }
@@ -236,13 +210,96 @@
             opacity: 0;
             transform: scale(0.96);
         }
+
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: var(--brand-pink);
+            color: #140613;
+            padding: 0.75rem 1.25rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(255, 102, 204, 0.4);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            z-index: 50;
+            font-weight: 700;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .role-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 0.85rem;
+            background: var(--input-bg);
+            border: 1.5px solid var(--input-border);
+            border-radius: 18px;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .role-btn.selected {
+            background: var(--brand-pink);
+            border-color: var(--brand-pink);
+            color: #140613;
+            box-shadow: 0 0 20px var(--brand-pink-glow);
+        }
+
+        .waiting-container {
+            text-align: center;
+        }
+
+        .spinner {
+            margin: 2rem auto;
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 102, 204, 0.2);
+            border-top: 4px solid var(--brand-pink);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: rgba(255, 102, 204, 0.2);
+            border: 1px solid var(--brand-pink);
+            color: var(--brand-pink);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
     </style>
 </head>
 
 <body>
     <main class="glass-card">
 
-        <!-- Brand Logo Header -->
+        <!-- Logo Section -->
         <div class="flex flex-col items-center justify-center mb-6">
             <img src="Lavandera_logo.png" alt="Lavandera Logo"
                 class="mx-auto h-20 w-auto object-contain drop-shadow-[0_0_15px_rgba(255,102,204,0.6)] mb-2"
@@ -252,159 +309,222 @@
                 Service</p>
         </div>
 
-        <div class="tab-switcher">
-            <button class="tab-btn active" id="loginTab" onclick="switchTab('login')">LOG IN</button>
-            <button class="tab-btn" id="signupTab" onclick="switchTab('signup')">SIGN UP</button>
+        <!-- Login/Signup Tabs -->
+        <div id="authPage">
+            <div class="tab-switcher">
+                <button class="tab-btn active" onclick="switchTab('login')">LOG IN</button>
+                <button class="tab-btn" onclick="switchTab('signup')">SIGN UP</button>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <div id="loginForm" class="form-container">
+                <div class="text-center mb-5">
+                    <h2 class="text-2xl font-bold text-white tracking-wide mb-2">Welcome Back</h2>
+                    <p class="text-xs font-semibold text-pink-200/70 uppercase tracking-wider">Select your role</p>
+                </div>
+
+                <!-- Role Selection for Login -->
+                <div class="role-selector">
+                    <button type="button" class="role-btn selected" onclick="selectLoginRole(this, 'rider')">
+                        <i class="fas fa-person"></i> Rider
+                    </button>
+                    <button type="button" class="role-btn" onclick="selectLoginRole(this, 'shop')">
+                        <i class="fas fa-store"></i> Shop Owner
+                    </button>
+                    <button type="button" class="role-btn" onclick="selectLoginRole(this, 'Customer')">
+                        <i class="fas fa-user"></i> Customer
+                    </button>
+                </div>
+
+                <form onsubmit="handleLogin(event)">
+                    <div class="input-group">
+                        <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Username /
+                            Email</label>
+                        <div class="relative">
+                            <input type="text" id="loginUsername" required placeholder="Enter your username or email"
+                                class="input-field">
+                            <i class="fa-solid fa-user input-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Password</label>
+                        <div class="relative">
+                            <input type="password" id="loginPassword" required placeholder="••••••••••••"
+                                class="input-field">
+                            <i class="fa-solid fa-lock input-icon"></i>
+                            <i class="fa-solid fa-eye password-toggle"
+                                onclick="togglePasswordVisibility('loginPassword', this)"></i>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs mb-6 px-1">
+                        <label
+                            class="flex items-center gap-2 cursor-pointer text-pink-100/80 hover:text-white font-medium select-none">
+                            <input type="checkbox" class="custom-checkbox">
+                            <span>Remember me</span>
+                        </label>
+                        <a href="javascript:void(0)"
+                            onclick="showNotification('Password reset link sent to your email!')"
+                            class="text-pink-300 hover:text-pink-100 font-bold hover:underline">Forgot Password?</a>
+                    </div>
+
+                    <button type="submit" class="btn-submit mb-4">Log In</button>
+                </form>
+
+                <div class="text-center">
+                    <p class="text-xs text-pink-200/60 font-medium">Don't have an account? <a href="javascript:void(0)"
+                            onclick="switchTab('signup')" class="text-pink-300 font-extrabold hover:underline">Sign up
+                            here</a></p>
+                </div>
+            </div>
+
+            <!-- SIGNUP FORM -->
+            <div id="signupForm" class="form-container form-hidden">
+                <div class="text-center mb-5">
+                    <h2 class="text-2xl font-bold text-white tracking-wide mb-2">Create Account</h2>
+                    <p class="text-xs font-semibold text-pink-200/70 uppercase tracking-wider">Select your role</p>
+                </div>
+
+                <!-- Role Selection for Signup -->
+                <div class="role-selector">
+                    <button type="button" class="role-btn selected" onclick="selectSignupRole(this, 'rider')">
+                        <i class="fas fa-person"></i> Rider
+                    </button>
+                    <button type="button" class="role-btn" onclick="selectSignupRole(this, 'shop')">
+                        <i class="fas fa-store"></i> Shop Owner
+                    </button>
+                    <button type="button" class="role-btn" onclick="selectSignupRole(this, 'customer')">
+                        <i class="fas fa-user"></i> Customer
+                    </button>
+                </div>
+
+                <form onsubmit="handleSignup(event)">
+                    <div class="input-group">
+                        <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Full Name</label>
+                        <div class="relative">
+                            <input type="text" id="signupName" required placeholder="e.g. Maria Santos"
+                                class="input-field">
+                            <i class="fa-solid fa-id-card input-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Email Address</label>
+                        <div class="relative">
+                            <input type="email" id="signupEmail" required placeholder="name@example.com"
+                                class="input-field">
+                            <i class="fa-solid fa-envelope input-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Create
+                            Password</label>
+                        <div class="relative">
+                            <input type="password" id="signupPassword" required placeholder="••••••••••••"
+                                class="input-field">
+                            <i class="fa-solid fa-key input-icon"></i>
+                            <i class="fa-solid fa-eye password-toggle"
+                                onclick="togglePasswordVisibility('signupPassword', this)"></i>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 text-xs mb-6 px-1 select-none">
+                        <input type="checkbox" required class="custom-checkbox" id="termsCheck">
+                        <label for="termsCheck" class="text-pink-100/80 cursor-pointer">I agree to the <a
+                                href="javascript:void(0)" onclick="showNotification('Terms & Conditions loaded.')"
+                                class="text-pink-300 font-bold hover:underline">Terms & Conditions</a></label>
+                    </div>
+
+                    <button type="submit" class="btn-submit mb-4">Create Account</button>
+                </form>
+
+                <div class="text-center">
+                    <p class="text-xs text-pink-200/60 font-medium">Already have an account? <a
+                            href="javascript:void(0)" onclick="switchTab('login')"
+                            class="text-pink-300 font-extrabold hover:underline">Log in</a></p>
+                </div>
+            </div>
         </div>
 
-        <div id="loginForm" class="form-container">
-            <div class="text-center mb-5">
-                <h2 class="text-xl font-bold text-white tracking-wide" style="font-size: 30px; padding-bottom: 10px;">
-                    Welcome Back</h2>
-                <p class="text-xs font-semibold text-pink-200/70 uppercase tracking-wider mt-1">Enter your details to
-                    manage your laundry</p>
-            </div>
-
-            <form onsubmit="handleAuthSubmit(event, 'login')">
-                <!-- Username / Email Input -->
-                <div class="input-group">
-                    <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Username / Email</label>
-                    <div class="relative">
-                        <input type="text" id="loginUsername" required placeholder="Enter your username or email"
-                            class="input-field">
-                        <i class="fa-solid fa-user input-icon"></i>
-                    </div>
+        <!-- WAITING PAGE (shown after rider signup) -->
+        <div id="waitingPage" class="form-container form-hidden">
+            <div class="waiting-container">
+                <div class="flex justify-center mb-4">
+                    <i class="fas fa-hourglass-half text-4xl text-pink-300/80"></i>
                 </div>
+                <h2 class="text-2xl font-bold text-white tracking-wide mb-2">Account Under Review</h2>
+                <p class="text-xs font-semibold text-pink-200/70 uppercase tracking-wider mb-4">Thank you for signing
+                    up!</p>
 
-                <!-- Password Input -->
-                <div class="input-group">
-                    <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Password</label>
-                    <div class="relative">
-                        <input type="password" id="loginPassword" required placeholder="••••••••••••"
-                            class="input-field">
-                        <i class="fa-solid fa-lock input-icon"></i>
-                        <i class="fa-solid fa-eye password-toggle"
-                            onclick="togglePasswordVisibility('loginPassword', this)"></i>
-                    </div>
-                </div>
+                <div class="spinner"></div>
 
-                <!-- Options Row -->
-                <div class="flex items-center justify-between text-xs mb-6 px-1">
-                    <label
-                        class="flex items-center gap-2 cursor-pointer text-pink-100/80 hover:text-white font-medium select-none">
-                        <input type="checkbox" class="custom-checkbox">
-                        <span>Remember me</span>
-                    </label>
-                    <a href="javascript:void(0)"
-                        onclick="showNotification('Password reset link sent to your registered email!')"
-                        class="text-pink-300 hover:text-pink-100 font-bold hover:underline transition">Forgot
-                        Password?</a>
-                </div>
-
-                <!-- Main CTA Button -->
-                <button type="submit" class="btn-submit mb-4">
-                    <span>Log In</span>
-                </button>
-            </form>
-
-            <div class="text-center">
-                <p class="text-xs text-pink-200/60 font-medium">
-                    Don't have an account yet?
-                    <a href="javascript:void(0)" onclick="switchTab('signup')"
-                        class="text-pink-300 font-extrabold hover:underline ml-0.5">Sign up for free!</a>
+                <p class="text-sm text-pink-100/70 mt-4 leading-relaxed">
+                    Your account is waiting for admin approval. We'll review your details and notify you via email once
+                    you're approved.
                 </p>
-            </div>
-        </div>
 
-        <div id="signupForm" class="form-container form-hidden">
-            <div class="text-center mb-5">
-                <h2 class="text-xl font-bold text-white tracking-wide">Create Account</h2>
-                <p class="text-xs font-semibold text-pink-200/70 uppercase tracking-wider mt-1">Join LAVANDERA for quick
-                    scheduling</p>
-            </div>
-
-            <form onsubmit="handleAuthSubmit(event, 'signup')">
-                <!-- Full Name -->
-                <div class="input-group">
-                    <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Full Name</label>
-                    <div class="relative">
-                        <input type="text" id="signupName" required placeholder="e.g. Maria Santos" class="input-field">
-                        <i class="fa-solid fa-id-card input-icon"></i>
-                    </div>
+                <div class="status-badge">
+                    <i class="fas fa-clock-circle mr-2"></i> Pending Approval
                 </div>
 
-                <!-- Email Input -->
-                <div class="input-group">
-                    <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Email Address</label>
-                    <div class="relative">
-                        <input type="email" id="signupEmail" required placeholder="name@example.com"
-                            class="input-field">
-                        <i class="fa-solid fa-envelope input-icon"></i>
-                    </div>
+                <div class="mt-6 pt-6 border-t border-pink-300/20">
+                    <p class="text-xs text-pink-200/60 mb-4">What happens next?</p>
+                    <ul class="text-xs text-pink-100/70 space-y-2 text-left">
+                        <li><i class="fas fa-check text-pink-300 mr-2"></i> Admin reviews your information</li>
+                        <li><i class="fas fa-envelope text-pink-300 mr-2"></i> Confirmation email sent to you</li>
+                        <li><i class="fas fa-sign-in-alt text-pink-300 mr-2"></i> Log in when approved</li>
+                    </ul>
                 </div>
 
-                <!-- Create Password -->
-                <div class="input-group">
-                    <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Create Password</label>
-                    <div class="relative">
-                        <input type="password" id="signupPassword" required placeholder="••••••••••••"
-                            class="input-field">
-                        <i class="fa-solid fa-key input-icon"></i>
-                        <i class="fa-solid fa-eye password-toggle"
-                            onclick="togglePasswordVisibility('signupPassword', this)"></i>
-                    </div>
-                </div>
-
-                <!-- Terms Checkbox -->
-                <div class="flex items-center gap-2 text-xs mb-6 px-1 select-none">
-                    <input type="checkbox" required class="custom-checkbox" id="termsCheck">
-                    <label for="termsCheck" class="text-pink-100/80 cursor-pointer">I agree to the <a
-                            href="javascript:void(0)" onclick="showNotification('LAVANDERA Terms of Service loaded.')"
-                            class="text-pink-300 font-bold hover:underline">Terms & Conditions</a></label>
-                </div>
-
-                <!-- Submit Button -->
-                <button type="submit" class="btn-submit mb-4">
-                    <span>Create Account</span>
-                </button>
-            </form>
-
-            <div class="text-center">
-                <p class="text-xs text-pink-200/60 font-medium">
-                    Already have an account?
-                    <a href="javascript:void(0)" onclick="switchTab('login')"
-                        class="text-pink-300 font-extrabold hover:underline ml-0.5">Log in here!</a>
-                </p>
+                <button onclick="backToLogin()" class="btn-submit mt-6">Back to Login</button>
             </div>
         </div>
 
     </main>
 
-    <div id="toast"
-        class="fixed bottom-6 right-6 bg-pink-500 text-slate-950 font-bold px-5 py-3 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-20 opacity-0 z-50 flex items-center gap-2.5 border border-pink-300">
-        <i class="fa-solid fa-circle-check text-lg"></i>
-        <span id="toastMsg" class="text-sm">Success!</span>
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <i class="fa-solid fa-circle-check mr-2"></i>
+        <span id="toastMsg">Success!</span>
     </div>
 
     <script>
-        // Toggle Tab Functions (Login vs Sign Up)
+        let selectedLoginRole = 'rider';
+        let selectedSignupRole = 'rider';
+
+        // Tab Switching
         function switchTab(type) {
             const loginForm = document.getElementById('loginForm');
             const signupForm = document.getElementById('signupForm');
-            const loginTab = document.getElementById('loginTab');
-            const signupTab = document.getElementById('signupTab');
+            const tabs = document.querySelectorAll('.tab-btn');
 
             if (type === 'login') {
                 signupForm.classList.add('form-hidden');
                 loginForm.classList.remove('form-hidden');
-                loginTab.classList.add('active');
-                signupTab.classList.remove('active');
+                tabs[0].classList.add('active');
+                tabs[1].classList.remove('active');
             } else {
                 loginForm.classList.add('form-hidden');
                 signupForm.classList.remove('form-hidden');
-                signupTab.classList.add('active');
-                loginTab.classList.remove('active');
+                tabs[1].classList.add('active');
+                tabs[0].classList.remove('active');
             }
+        }
+
+        // Role Selection for Login
+        function selectLoginRole(btn, role) {
+            document.querySelectorAll('#loginForm .role-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedLoginRole = role;
+        }
+
+        // Role Selection for Signup
+        function selectSignupRole(btn, role) {
+            document.querySelectorAll('#signupForm .role-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedSignupRole = role;
         }
 
         // Toggle Password Visibility
@@ -412,40 +532,80 @@
             const input = document.getElementById(inputId);
             if (input.type === 'password') {
                 input.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
             } else {
                 input.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
             }
         }
 
-        // Toast Notification Handler
-        let toastTimeout;
+        // Show Toast Notification
         function showNotification(msg) {
             const toast = document.getElementById('toast');
             const toastMsg = document.getElementById('toastMsg');
             toastMsg.innerText = msg;
-
-            toast.classList.remove('translate-y-20', 'opacity-0');
-
-            if (toastTimeout) clearTimeout(toastTimeout);
-
-            toastTimeout = setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3200);
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        // Form Submission Simulation
-        function handleAuthSubmit(event, type) {
+        // Handle Login
+        function handleLogin(event) {
             event.preventDefault();
-            const userVal = type === 'login'
-                ? (document.getElementById('loginUsername').value || 'User')
-                : (document.getElementById('signupName').value || 'User');
+            const username = document.getElementById('loginUsername').value;
+            const role = selectedLoginRole;
+            showNotification(`Welcome back, ${username}! (${role})`);
+            // In production, validate credentials here
+            setTimeout(() => {
+                document.getElementById('loginUsername').value = '';
+                document.getElementById('loginPassword').value = '';
+            }, 500);
+        }
 
-            const actionText = type === 'login' ? `Welcome back, ${userVal}!` : `Account created for ${userVal}!`;
-            showNotification(actionText);
+        // Handle Signup
+        function handleSignup(event) {
+            event.preventDefault();
+            const name = document.getElementById('signupName').value;
+            const role = selectedSignupRole;
+
+            // If rider, show waiting page. If shop owner, show success and redirect to login
+            if (role === 'rider') {
+                showNotification(`Welcome, ${name}!`);
+                setTimeout(() => showWaitingPage(), 1000);
+            } else {
+                showNotification(`Shop Owner account created for ${name}!`);
+                setTimeout(() => {
+                    // Reset and switch to login
+                    resetSignupForm();
+                    switchTab('login');
+                }, 1000);
+            }
+        }
+
+        // Show Waiting Page (for riders after signup)
+        function showWaitingPage() {
+            const authPage = document.getElementById('authPage');
+            const waitingPage = document.getElementById('waitingPage');
+            authPage.classList.add('form-hidden');
+            waitingPage.classList.remove('form-hidden');
+        }
+
+        // Back to Login from Waiting Page
+        function backToLogin() {
+            const authPage = document.getElementById('authPage');
+            const waitingPage = document.getElementById('waitingPage');
+            waitingPage.classList.add('form-hidden');
+            authPage.classList.remove('form-hidden');
+            resetSignupForm();
+            switchTab('login');
+        }
+
+        // Reset Signup Form
+        function resetSignupForm() {
+            document.getElementById('signupName').value = '';
+            document.getElementById('signupEmail').value = '';
+            document.getElementById('signupPassword').value = '';
+            document.getElementById('termsCheck').checked = false;
+            selectedSignupRole = 'rider';
         }
     </script>
 </body>
