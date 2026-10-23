@@ -179,6 +179,13 @@
         function confirmOrder() {
             const draft = readDraft();
             if (!draft) { location.replace('Customer_Place_Order_Page.html'); return; }
+            const selectedStore = LV.store(draft.storeId);
+            if (!selectedStore || selectedStore.status !== 'active' || selectedStore.accepting === false) {
+                LV.toast('This store is no longer accepting orders. Choose another store to continue.', 'fa-circle-info');
+                sessionStorage.removeItem('lv_order_draft');
+                location.href = 'Customer_Place_Order_Page.html';
+                return;
+            }
 
             const f = computeFees(draft);
             const newOrder = LV.addOrder({

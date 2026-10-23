@@ -61,7 +61,7 @@
         /* ---------------------------------------------------------- init */
         function availableStores() {
             return LV.publicStores().filter(function (s) {
-                return s.accepting !== false && s.prices && s.lat != null;
+                return s.accepting !== false && s.prices;
             });
         }
 

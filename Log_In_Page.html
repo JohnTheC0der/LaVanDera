@@ -236,6 +236,41 @@
             opacity: 0;
             transform: scale(0.96);
         }
+
+        .role-options {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 1.25rem;
+        }
+
+        .role-option {
+            padding: 11px 6px;
+            color: rgba(255, 255, 255, 0.72);
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--input-border);
+            border-radius: 14px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .role-option.active {
+            color: #140613;
+            background: var(--brand-pink);
+            border-color: var(--brand-pink);
+        }
+
+        .form-message {
+            color: #ffd2e7;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin: 0 0 1rem;
+        }
+
+        .input-field.no-icon {
+            padding-left: 1.25rem;
+        }
     </style>
 </head>
 
@@ -268,7 +303,8 @@
             <form onsubmit="handleAuthSubmit(event, 'login')">
                 <!-- Username / Email Input -->
                 <div class="input-group">
-                    <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Username / Email</label>
+                    <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1"
+                        for="loginUsername">Email Address</label>
                     <div class="relative">
                         <input type="email" id="loginUsername" name="email" autocomplete="username" required
                             placeholder="Enter your email address" class="input-field">
@@ -319,14 +355,23 @@
         <div id="signupForm" class="form-container form-hidden">
             <div class="text-center mb-5">
                 <h2 class="text-xl font-bold text-white tracking-wide">Create Account</h2>
-                <p class="text-xs font-semibold text-pink-200/70 uppercase tracking-wider mt-1">Join LAVANDERA for quick
-                    scheduling</p>
+                <p class="text-xs font-semibold text-pink-200/70 uppercase tracking-wider mt-1">Choose an account type to
+                    get started</p>
             </div>
 
             <form onsubmit="handleAuthSubmit(event, 'signup')">
-                <!-- Full Name -->
+                <div class="role-options" role="group" aria-label="Choose account type">
+                    <button type="button" class="role-option active" data-role="customer"
+                        aria-pressed="true" onclick="setSignupRole('customer')">Customer</button>
+                    <button type="button" class="role-option" data-role="rider"
+                        aria-pressed="false" onclick="setSignupRole('rider')">Rider</button>
+                    <button type="button" class="role-option" data-role="store"
+                        aria-pressed="false" onclick="setSignupRole('store')">Store</button>
+                </div>
+
                 <div class="input-group">
-                    <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Full Name</label>
+                    <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1"
+                        id="signupNameLabel" for="signupName">Full Name</label>
                     <div class="relative">
                         <input type="text" id="signupName" name="name" autocomplete="name" required
                             placeholder="e.g. Maria Santos" class="input-field">
@@ -360,23 +405,26 @@
                     <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1"
                         for="signupContact">Contact Number</label>
                     <input type="tel" id="signupContact" name="contact" autocomplete="tel" required
-                        placeholder="09XX XXX XXXX" class="input-field">
+                        placeholder="09XX XXX XXXX" class="input-field no-icon">
                 </div>
 
-                <div class="input-group">
+                <div class="input-group" id="signupAddressGroup">
                     <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1"
                         for="signupAddress">Pickup / Delivery Address</label>
                     <input type="text" id="signupAddress" name="address" autocomplete="street-address" required
-                        placeholder="Street, barangay, city" class="input-field">
+                        placeholder="Street, barangay, city" class="input-field no-icon">
                 </div>
 
                 <!-- Terms Checkbox -->
                 <div class="flex items-center gap-2 text-xs mb-6 px-1 select-none">
                     <input type="checkbox" required class="custom-checkbox" id="termsCheck">
                     <label for="termsCheck" class="text-pink-100/80 cursor-pointer">I agree to the <a
-                            href="javascript:void(0)" onclick="showNotification('Terms and Conditions are not available in this frontend demo yet.')"
+                            href="javascript:void(0)"
+                            onclick="showNotification('Terms and Conditions are not available in this frontend demo yet.')"
                             class="text-pink-300 font-bold hover:underline">Terms & Conditions</a></label>
                 </div>
+
+                <p class="form-message" id="signupMessage" aria-live="polite"></p>
 
                 <!-- Submit Button -->
                 <button type="submit" class="btn-submit mb-4">
@@ -393,10 +441,6 @@
             </div>
         </div>
     </main>
-    <p class="text-xs text-pink-100/70 text-center mt-5 px-4">
-        Frontend demo only. Seeded accounts use <strong>password</strong>; new demo accounts are stored in this browser.
-        Do not use real credentials.
-    </p>
 
     <div id="toast"
         class="fixed bottom-6 right-6 bg-pink-500 text-slate-950 font-bold px-5 py-3 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-20 opacity-0 z-50 flex items-center gap-2.5 border border-pink-300">
@@ -423,6 +467,7 @@
                 signupForm.classList.remove('form-hidden');
                 signupTab.classList.add('active');
                 loginTab.classList.remove('active');
+                setSignupRole(signupRole);
             }
         }
 
@@ -456,6 +501,36 @@
             }, 3200);
         }
 
+        let signupRole = 'customer';
+
+        function setSignupRole(role) {
+            signupRole = role;
+            document.querySelectorAll('.role-option').forEach(function (button) {
+                const selected = button.dataset.role === role;
+                button.classList.toggle('active', selected);
+                button.setAttribute('aria-pressed', String(selected));
+            });
+
+            const isCustomer = role === 'customer';
+            const isStore = role === 'store';
+            const nameLabel = document.getElementById('signupNameLabel');
+            const nameInput = document.getElementById('signupName');
+            const address = document.getElementById('signupAddress');
+            const addressGroup = document.getElementById('signupAddressGroup');
+            const message = document.getElementById('signupMessage');
+
+            nameLabel.textContent = isStore ? 'Store Name' : 'Full Name';
+            nameInput.placeholder = isStore ? 'e.g. Kapitolyo Wash Hub' : 'e.g. Maria Santos';
+            nameInput.autocomplete = isStore ? 'organization' : 'name';
+            addressGroup.hidden = !isCustomer;
+            address.required = isCustomer;
+            message.textContent = isCustomer
+                ? 'Customer accounts can start ordering after sign-up.'
+                : role === 'store'
+                    ? 'After sign-up, complete your store profile and pricing for admin review.'
+                    : 'This account needs admin approval before you can sign in.';
+        }
+
         async function handleAuthSubmit(event, type) {
             event.preventDefault();
             try {
@@ -471,7 +546,10 @@
                     const destinations = {
                         admin: 'Admin_Dashboard_Page.html',
                         customer: 'Customer_Home_Page.html',
-                        rider: 'lavandera_rider_dashboard.html'
+                        rider: 'lavandera_rider_dashboard.html',
+                        store: result.user.status === 'setup_required'
+                            ? 'Store_Setup_Page.html'
+                            : 'Store_Dashboard_Page.html'
                     };
                     const allowedNext = {
                         admin: ['Admin_Dashboard_Page.html', 'Admin_Customers_Page.html', 'Admin_Riders_Page.html', 'Admin_Stores_Page.html'],
@@ -479,32 +557,64 @@
                             'Customer_Place_Order_Page.html', 'Customer_Confirm_Order.html', 'Customer_My_Orders_Page.html',
                             'Customer_Profile_Page.html'],
                         rider: ['lavandera_rider_dashboard.html', 'Rider_Orders_Page.html',
-                            'Rider_Order_History_Page.html', 'Rider_Profile_Page.html']
+                            'Rider_Order_History_Page.html', 'Rider_Profile_Page.html'],
+                        store: ['Store_Dashboard_Page.html', 'Store_Orders_Page.html']
                     };
                     const requested = new URLSearchParams(location.search).get('next');
                     const requestedPage = requested ? requested.split(/[?#]/)[0] : '';
-                    const destination = allowedNext[result.user.role] &&
+                    const requestedDestination = allowedNext[result.user.role] &&
                         allowedNext[result.user.role].indexOf(requestedPage) !== -1
                         ? requested
                         : destinations[result.user.role];
+                    const destination = result.user.role === 'store' && result.user.status === 'setup_required'
+                        ? 'Store_Setup_Page.html'
+                        : requestedDestination;
                     location.href = destination;
                     return;
                 }
 
-                const result = await LV.signupCustomer({
+                const account = {
                     name: document.getElementById('signupName').value.trim(),
                     email: document.getElementById('signupEmail').value.trim(),
-                    contact: document.getElementById('signupContact').value.trim(),
-                    address: document.getElementById('signupAddress').value.trim()
-                }, document.getElementById('signupPassword').value);
+                    contact: document.getElementById('signupContact').value.trim()
+                };
+                if (signupRole === 'customer') {
+                    account.address = document.getElementById('signupAddress').value.trim();
+                }
+                const result = await LV.signupAccount(
+                    signupRole,
+                    account,
+                    document.getElementById('signupPassword').value
+                );
                 if (!result.ok) {
                     showNotification(result.error);
+                    return;
+                }
+                if (signupRole === 'store') {
+                    location.href = 'Store_Setup_Page.html';
+                    return;
+                }
+                if (result.pending) {
+                    const message = document.getElementById('signupMessage');
+                    message.textContent = 'Your ' + signupRole +
+                        ' application was saved in this browser and is pending admin approval. You can sign in after approval.';
+                    showNotification('Application submitted for admin approval.');
+                    event.target.reset();
                     return;
                 }
                 location.href = 'Customer_Home_Page.html';
             } catch (error) {
                 showNotification(error.message || 'Unable to complete the request. Please try again.');
             }
+        }
+
+        const authParams = new URLSearchParams(location.search);
+        setSignupRole('customer');
+        if (authParams.get('mode') === 'signup') {
+            switchTab('signup');
+            setSignupRole(['customer', 'rider', 'store'].indexOf(authParams.get('role')) > -1
+                ? authParams.get('role')
+                : 'customer');
         }
     </script>
 </body>

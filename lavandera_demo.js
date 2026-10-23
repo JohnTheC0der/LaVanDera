@@ -258,8 +258,9 @@ const LV = (function () {
     }
     function write(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 
-    const K = { session: 'lv_session', extraCustomers: 'lv_extra_customers', extraOrders: 'lv_extra_orders',
-                orderState: 'lv_order_state', userState: 'lv_user_state', credentials: 'lv_credentials' };
+    const K = { session: 'lv_session', extraCustomers: 'lv_extra_customers', extraRiders: 'lv_extra_riders',
+                extraStores: 'lv_extra_stores', extraOrders: 'lv_extra_orders', orderState: 'lv_order_state',
+                userState: 'lv_user_state', credentials: 'lv_credentials' };
 
     /* ------------------------------------------------- accessors ---- */
     function customers() {
@@ -267,10 +268,12 @@ const LV = (function () {
             .map(function (c) { return Object.assign({}, c, read(K.userState, {})[c.id] || {}); });
     }
     function riders() {
-        return SEED.riders.map(function (r) { return Object.assign({}, r, read(K.userState, {})[r.id] || {}); });
+        return SEED.riders.concat(read(K.extraRiders, []))
+            .map(function (r) { return Object.assign({}, r, read(K.userState, {})[r.id] || {}); });
     }
     function stores() {
-        return SEED.stores.map(function (s) { return Object.assign({}, s, read(K.userState, {})[s.id] || {}); });
+        return SEED.stores.concat(read(K.extraStores, []))
+            .map(function (s) { return Object.assign({}, s, read(K.userState, {})[s.id] || {}); });
     }
     function orders() {
         const state = read(K.orderState, {});
@@ -299,6 +302,39 @@ const LV = (function () {
         return rec;
     }
 
+    function addRider(data) {
+        const list = read(K.extraRiders, []);
+        const rec = Object.assign({
+            id: 500 + list.length + 1,
+            status: 'pending_approval',
+            joined: new Date().toISOString().slice(0, 10)
+        }, data);
+        list.push(rec);
+        write(K.extraRiders, list);
+        return rec;
+    }
+
+    function addStore(data) {
+        const list = read(K.extraStores, []);
+        const rec = Object.assign({
+            id: 600 + list.length + 1,
+            address: null,
+            description: null,
+            prices: null,
+            benefits: [],
+            featured: false,
+            accepting: false,
+            status: 'setup_required',
+            rating: 0,
+            image: null,
+            banner: null,
+            joined: new Date().toISOString().slice(0, 10)
+        }, data);
+        list.push(rec);
+        write(K.extraStores, list);
+        return rec;
+    }
+
     function addOrder(data) {
         const list = read(K.extraOrders, []);
         const id = 2000 + list.length + 1;
@@ -317,9 +353,21 @@ const LV = (function () {
         const patch = Object.assign({}, o);
         patch.status = status;
         patch.history = (o.history || []).concat([{ status: status, by: by || null, note: note || '', at: new Date().toISOString() }]);
+        if (status === 'enroute_to_store' || status === 'enroute_to_customer') patch.riderId = by || null;
+        if (status === 'rejected') patch.storeRejectionReason = note || 'Rejected by store';
+        if (status === 'at_laundromat' && o.payment === 'cash') patch.paymentStatus = 'paid';
         if (status === 'completed') patch.completedAt = new Date().toISOString();
         state[id] = patch; write(K.orderState, state);
         return patch;
+    }
+
+    function updateStore(id, changes) {
+        const current = store(id);
+        if (!current) return null;
+        const state = read(K.userState, {});
+        state[id] = Object.assign({}, state[id] || {}, changes);
+        write(K.userState, state);
+        return store(id);
     }
 
     function updateCustomer(id, patch) {
@@ -358,42 +406,55 @@ const LV = (function () {
     async function login(email, password) {
         const u = allLogins().find(function (x) { return x.email.toLowerCase() === String(email).trim().toLowerCase(); });
         if (!u) return { ok: false, error: 'No account found for that email.' };
-        if (u.role === 'store') return { ok: false, error: 'Store accounts do not have a portal page in this frontend demo yet.' };
-        if (u.status === 'pending_approval') return { ok: false, error: 'Your account is still pending admin approval.' };
-        if (u.status === 'setup_required') return { ok: false, error: 'Please finish your Store Setup first.' };
-        if (u.status === 'rejected') return { ok: false, error: 'This account was rejected by the admin.' };
         const credentials = read(K.credentials, {});
         const validPassword = credentials[u.id]
             ? credentials[u.id] === await passwordHash(password)
             : String(password) === 'password';
         if (!validPassword) return { ok: false, error: 'Incorrect password. Demo accounts use "password".' };
+        if (u.status === 'pending_approval') return { ok: false, error: 'Your account is still pending admin approval.' };
+        if (u.status === 'rejected') return { ok: false, error: 'This account was rejected by the admin.' };
+        if (u.status === 'setup_required' && u.role !== 'store') return { ok: false, error: 'Please finish your account setup first.' };
+        if (u.status === 'suspended') return { ok: false, error: 'This account is suspended. Please contact support.' };
         write(K.session, { id: u.id, role: u.role, name: u.name, email: u.email });
         return { ok: true, user: u };
     }
 
-    async function signupCustomer(data, password) {
+    async function signupAccount(role, data, password) {
+        if (['customer', 'rider', 'store'].indexOf(role) === -1) {
+            return { ok: false, error: 'Choose a valid account type.' };
+        }
         const exists = allLogins().some(function (u) { return u.email.toLowerCase() === String(data.email).toLowerCase(); });
         if (exists) return { ok: false, error: 'That email is already registered.' };
         const hash = await passwordHash(password);
-        const rec = addCustomer(data);
+        const addAccount = { customer: addCustomer, rider: addRider, store: addStore }[role];
+        const rec = addAccount(data);
         const credentials = read(K.credentials, {});
         credentials[rec.id] = hash;
         write(K.credentials, credentials);
-        write(K.session, { id: rec.id, role: 'customer', name: rec.name, email: rec.email });
-        return { ok: true, user: rec };
+        if (role === 'customer' || role === 'store') {
+            write(K.session, { id: rec.id, role: role, name: rec.name, email: rec.email });
+        }
+        return { ok: true, user: Object.assign({}, rec, { role: role }), pending: role === 'rider' };
     }
 
-    function session() { return read(K.session, null); }
-    function logout() { localStorage.removeItem(K.session); location.href = 'Log_In_Page.html'; }
+    function signupCustomer(data, password) { return signupAccount('customer', data, password); }
 
-    function requireRole(role, loginPage) {
+    function session() { return read(K.session, null); }
+    function clearSession() { localStorage.removeItem(K.session); }
+    function logout() { clearSession(); location.href = 'Log_In_Page.html'; }
+
+    function requireRole(role) {
         const s = session();
-        if (!s || s.role !== role) {
-            const returnTo = location.pathname.split('/').pop() + location.search + location.hash;
-            location.replace((loginPage || 'Log_In_Page.html') + '?next=' + encodeURIComponent(returnTo));
-            return null;
-        }
-        return s;
+        if (s && s.role === role) return s;
+
+        const demoUsers = {
+            admin: SEED.admin,
+            customer: customers()[0],
+            rider: riders()[0],
+            store: stores()[0]
+        };
+        const user = demoUsers[role];
+        return user ? { id: user.id, role: role, name: user.name, email: user.email } : null;
     }
 
     /* ------------------------------------------------------ nav ----- */
@@ -409,48 +470,85 @@ const LV = (function () {
             { key: 'customers', href: 'Admin_Customers_Page.html',  label: 'Customers',  icon: 'fa-users' },
             { key: 'riders',    href: 'Admin_Riders_Page.html',     label: 'Riders',     icon: 'fa-motorcycle' },
             { key: 'stores',    href: 'Admin_Stores_Page.html',     label: 'Stores',     icon: 'fa-store' }
+        ],
+        store: [
+            { key: 'dashboard', href: 'Store_Dashboard_Page.html', label: 'Dashboard', icon: 'fa-store' },
+            { key: 'orders', href: 'Store_Orders_Page.html', label: 'Orders', icon: 'fa-boxes-stacked' }
         ]
     };
 
     const DROPDOWN = {
         customer: [{ href: 'Customer_Profile_Page.html', label: 'My Profile', icon: 'fa-user' }],
-        admin: []
+        admin: [],
+        store: []
     };
 
     function renderNav(role, activeKey) {
         const host = document.getElementById('lv-nav');
         if (!host) return;
-        const s = session() || { name: 'Guest', email: '' };
+        const loggedInUser = session();
+        const demoUsers = {
+            admin: SEED.admin,
+            customer: customers()[0],
+            rider: riders()[0],
+            store: stores()[0]
+        };
+        const s = loggedInUser && loggedInUser.role === role
+            ? loggedInUser
+            : demoUsers[role] || { name: 'Guest', email: '' };
+        const currentPage = location.pathname.split('/').pop();
         const links = (NAV[role] || []).map(function (l) {
-            return '<a class="lv-navlink' + (l.key === activeKey ? ' active' : '') + '" href="' + l.href + '">' + l.label + '</a>';
+            const isActive = l.key === activeKey || l.href === currentPage;
+            return '<a class="lv-dropdown-item' + (isActive ? ' active' : '') + '" href="' + l.href + '"' +
+                (isActive ? ' aria-current="page"' : '') + '><i class="fa-solid ' + l.icon + '"></i>' +
+                l.label + '</a>';
         }).join('');
         const extra = (DROPDOWN[role] || []).map(function (l) {
-            return '<a class="lv-dropdown-item" href="' + l.href + '"><i class="fa-solid ' + l.icon + '"></i>' + l.label + '</a>';
+            const isActive = l.href === currentPage;
+            return '<a class="lv-dropdown-item' + (isActive ? ' active' : '') + '" href="' + l.href + '"' +
+                (isActive ? ' aria-current="page"' : '') + '><i class="fa-solid ' + l.icon + '"></i>' +
+                l.label + '</a>';
         }).join('');
 
         host.innerHTML =
             '<header class="lv-nav"><div class="lv-nav-inner">' +
-                '<a class="lv-brand" href="' + (role === 'admin' ? 'Admin_Dashboard_Page.html' : 'Customer_Home_Page.html') + '">' +
+                '<a class="lv-brand" href="' + (role === 'admin' ? 'Admin_Dashboard_Page.html' :
+                    role === 'store' ? 'Store_Dashboard_Page.html' : 'Customer_Home_Page.html') + '">' +
                     '<img src="LAVANDERA.svg" alt="LaVanDera" onerror="this.onerror=null; this.src=\'Lavandera_logo.png\';">' +
                 '</a>' +
-                '<nav class="lv-navlinks">' + links + '</nav>' +
                 '<div class="lv-menu-wrap">' +
-                    '<button class="lv-menu-btn" id="lvMenuBtn" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>' +
-                    '<div class="lv-dropdown" id="lvDropdown">' +
+                    '<button class="lv-menu-btn" id="lvMenuBtn" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="lvDropdown"><i class="fa-solid fa-bars"></i></button>' +
+                    '<nav class="lv-dropdown" id="lvDropdown" aria-label="Main navigation">' +
                         '<div class="lv-dropdown-head">' +
                             '<div class="lv-avatar">' + esc(initials(s.name)) + '</div>' +
-                            '<div><div class="lv-dropdown-name">' + esc(s.name) + '</div>' +
+                            '<div class="lv-dropdown-user"><div class="lv-dropdown-name">' + esc(s.name) + '</div>' +
                             '<div class="lv-dropdown-mail">' + esc(s.email) + '</div></div>' +
                         '</div>' +
+                        links +
                         extra +
-                        '<button class="lv-dropdown-item danger" onclick="LV.logout()"><i class="fa-solid fa-right-from-bracket"></i>Logout</button>' +
-                    '</div>' +
+                        '<button class="lv-dropdown-item danger" type="button" onclick="LV.logout()"><i class="fa-solid fa-right-from-bracket"></i>Logout</button>' +
+                    '</nav>' +
                 '</div>' +
             '</div></header>';
 
         const btn = document.getElementById('lvMenuBtn'), dd = document.getElementById('lvDropdown');
-        btn.addEventListener('click', function (e) { e.stopPropagation(); dd.classList.toggle('open'); });
-        document.addEventListener('click', function (e) { if (!dd.contains(e.target)) dd.classList.remove('open'); });
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const isOpen = dd.classList.toggle('open');
+            btn.setAttribute('aria-expanded', String(isOpen));
+        });
+        document.addEventListener('click', function (e) {
+            if (!dd.contains(e.target) && !btn.contains(e.target)) {
+                dd.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                dd.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        });
     }
 
     /* ----------------------------------------------------- toast ---- */
@@ -504,7 +602,9 @@ const LV = (function () {
         customer: customer, store: store, order: order,
         publicStores: publicStores, ordersOfCustomer: ordersOfCustomer,
         addOrder: addOrder, setOrderStatus: setOrderStatus, setUserStatus: setUserStatus, updateCustomer: updateCustomer,
-        login: login, signupCustomer: signupCustomer, session: session, logout: logout, requireRole: requireRole,
+        updateStore: updateStore,
+        login: login, signupAccount: signupAccount, signupCustomer: signupCustomer,
+        session: session, clearSession: clearSession, logout: logout, requireRole: requireRole,
         renderNav: renderNav, toast: toast, adminStats: adminStats, statusBreakdown: statusBreakdown
     };
 })();

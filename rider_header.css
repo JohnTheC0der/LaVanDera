@@ -1,0 +1,160 @@
+.rider-site-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 90px;
+    padding: 12px max(24px, calc((100% - 1420px) / 2));
+    background: #fff;
+    border-bottom: 1px solid #f3d3e3;
+}
+
+.rider-site-header .logo {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.rider-site-header .logo-img {
+    display: block;
+    width: 190px;
+    height: 54px;
+    object-fit: contain;
+    filter: brightness(0) saturate(100%) invert(11%) sepia(34%) saturate(3108%) hue-rotate(291deg) brightness(90%) contrast(100%);
+}
+
+.rider-site-header .menu-container {
+    position: relative;
+}
+
+.rider-site-header .menu-btn {
+    display: grid;
+    width: 56px;
+    height: 56px;
+    place-items: center;
+    border: 0;
+    border-radius: 18px;
+    background: #6d1240;
+    color: #fff;
+    cursor: pointer;
+    font-size: 21px;
+    box-shadow: 0 8px 20px rgba(109, 18, 64, 0.24);
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.rider-site-header .menu-btn:hover,
+.rider-site-header .menu-btn:focus-visible {
+    background: #800055;
+}
+
+.rider-site-header .menu-btn:focus-visible {
+    outline: 3px solid #e58db5;
+    outline-offset: 3px;
+}
+
+.rider-site-header .dropdown-menu {
+    position: absolute;
+    top: 66px;
+    right: 0;
+    z-index: 1001;
+    display: none;
+    width: 350px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 12px 30px rgba(48, 17, 39, 0.2);
+}
+
+.rider-site-header .dropdown-menu.show {
+    display: block;
+}
+
+.rider-site-header .dropdown-header {
+    padding: 24px 22px;
+    border-bottom: 1px solid #f3d3e3;
+    background: #f8f3f7;
+}
+
+.rider-site-header .user-avatar {
+    display: flex;
+    width: 62px;
+    height: 62px;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e58db5, #5a003c);
+    color: #fff;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.rider-site-header .user-name {
+    margin-bottom: 2px;
+    color: #45002e;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.rider-site-header .user-email {
+    color: #999;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+.rider-site-header .dropdown-menu a {
+    display: flex;
+    min-height: 56px;
+    align-items: center;
+    padding: 14px 22px;
+    border-bottom: 1px solid #f3d3e3;
+    color: #45002e;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.2s ease, padding-left 0.2s ease;
+}
+
+.rider-site-header .dropdown-menu a:last-child {
+    border-bottom: 0;
+}
+
+.rider-site-header .dropdown-menu a:hover,
+.rider-site-header .dropdown-menu a:focus-visible,
+.rider-site-header .dropdown-menu a[aria-current="page"] {
+    padding-left: 28px;
+    background: #fff5fa;
+}
+
+.rider-site-header .dropdown-menu a:focus-visible {
+    outline: 2px solid #6d1240;
+    outline-offset: -2px;
+}
+
+.rider-site-header .dropdown-menu a i {
+    width: 20px;
+    margin-right: 12px;
+    color: #e58db5;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .rider-site-header {
+        min-height: 76px;
+        padding: 10px 18px;
+    }
+
+    .rider-site-header .logo-img {
+        width: 160px;
+        height: 48px;
+    }
+
+    .rider-site-header .menu-btn {
+        width: 50px;
+        height: 50px;
+    }
+}

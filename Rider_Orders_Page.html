@@ -9,7 +9,6 @@
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 
 
     <style>
@@ -1374,6 +1373,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="rider_header.css">
     <script src="lavandera_demo.js"></script>
     <script>LV.requireRole('rider');</script>
 </head>
@@ -1381,23 +1381,24 @@
 <body>
 
     <!-- HEADER -->
-    <header>
+    <header class="rider-site-header">
         <a href="lavandera_rider_dashboard.html" class="logo">
-            <img src="lavandera_logo.png" alt="Lavandera Logo" class="logo-img">
+            <img src="LAVANDERA.svg" alt="Lavandera Logo" class="logo-img">
         </a>
 
         <div class="menu-container">
-            <button class="menu-btn" onclick="toggleMenu()">
+            <button class="menu-btn" type="button" onclick="toggleMenu()" aria-label="Toggle navigation menu"
+                aria-expanded="false" aria-controls="navDropdown">
                 <i class="fa-solid fa-bars"></i>
             </button>
-            <div class="dropdown-menu" id="navDropdown">
+            <div class="dropdown-menu" id="navDropdown" role="navigation" aria-label="Rider navigation">
                 <div class="dropdown-header">
                     <div class="user-avatar">A</div>
                     <div class="user-name">Alex Rodriguez</div>
                     <div class="user-email">alex.rodriguez@email.com</div>
                 </div>
                 <a href="lavandera_rider_dashboard.html"><i class="fa-solid fa-house"></i>Dashboard</a>
-                <a href="Rider_Orders_Page.html"><i class="fa-solid fa-boxes-stacked"></i>Current Orders</a>
+                <a href="Rider_Orders_Page.html" aria-current="page"><i class="fa-solid fa-boxes-stacked"></i>Current Orders</a>
                 <a href="Rider_Profile_Page.html"><i class="fa-solid fa-user"></i>Profile</a>
                 <a href="Log_In_Page.html" onclick="LV.logout(); return false;"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
             </div>
@@ -1765,6 +1766,37 @@
                 { id: '#LV-2024-005', shop: 'Ikaw', status: 'completed', distance: 2.0, time: '12', earnings: 165, progress: 100, customer: 'Sarah Johnson', delivery: '555 Birch Lane, Mandaluyong' }
             ];
 
+            const riderSession = LV.session();
+            const rider = riderSession && riderSession.role === 'rider'
+                ? riderSession
+                : LV.requireRole('rider');
+            LV.orders().forEach(function (order) {
+                const store = LV.store(order.storeId);
+                const customer = LV.customer(order.customerId);
+                if (!store || !customer) return;
+                const sharedJob = {
+                    id: '#LV-' + order.id,
+                    sharedOrderId: order.id,
+                    shop: store.name,
+                    type: order.status === 'waiting_for_return_driver' ? 'return' : 'send',
+                    distance: Number(order.distanceKm) || 0,
+                    time: String(Math.max(5, Math.round((Number(order.distanceKm) || 1) * 5))),
+                    earnings: Number(order.status === 'waiting_for_return_driver' ? order.returnFee : order.sendFee) || 0,
+                    bonus: 0,
+                    pickup: store.address || store.name,
+                    delivery: customer.address || 'Customer address',
+                    customer: customer.name,
+                    status: 'in-transit',
+                    progress: 35
+                };
+                if (order.status === 'waiting_for_driver' || order.status === 'waiting_for_return_driver') {
+                    availableOrders.push(sharedJob);
+                } else if ((order.status === 'enroute_to_store' || order.status === 'enroute_to_customer') &&
+                    order.riderId === rider.id) {
+                    currentOrders.push(sharedJob);
+                }
+            });
+
             // 2. RENDERING TEMPLATES
             function renderAvailableOrders() {
                 const html = availableOrders.map(o => `
@@ -1774,7 +1806,7 @@
                     <div class="job-type-badge"><span class="job-type-dot ${o.type}"></span>${o.type === 'send' ? 'Send Order' : 'Return Order'}</div>
                 </div>
                 <div class="shop-info">
-                    <div class="shop-name"><i class="fa-solid fa-location-dot shop-icon"></i> ${o.shop} Laundry</div>
+                    <div class="shop-name"><i class="fa-solid fa-location-dot shop-icon"></i> ${o.sharedOrderId ? o.shop : o.shop + ' Laundry'}</div>
                     <div class="shop-type">Delivery Service</div>
                 </div>
                 <div class="route-info">
@@ -1790,8 +1822,8 @@
                     </div>
                 </div>
                 <div class="order-footer">
-                    <button class="btn-action btn-accept" data-id="${o.id}"><i class="fa-solid fa-check"></i> Accept Order</button>
-                    <button class="btn-action btn-view-details" data-order='${JSON.stringify(o)}'><i class="fa-solid fa-circle-info"></i> Details</button>
+                    <button class="btn-action btn-accept" data-id="${o.id}" data-shared-order-id="${o.sharedOrderId || ''}"><i class="fa-solid fa-check"></i> Accept Order</button>
+                    <button class="btn-action btn-view-details" data-order='${LV.esc(JSON.stringify(o))}'><i class="fa-solid fa-circle-info"></i> Details</button>
                 </div>
             </div>
         `).join('');
@@ -1806,7 +1838,7 @@
                     <div class="order-status"><span class="status-indicator ${o.status}"></span>${o.status === 'in-transit' ? 'In Transit' : o.status === 'pending' ? 'Pending Pickup' : 'Completed'}</div>
                 </div>
                 <div class="shop-info">
-                    <div class="shop-name"><i class="fa-solid fa-location-dot shop-icon"></i> ${o.shop} Laundry</div>
+                    <div class="shop-name"><i class="fa-solid fa-location-dot shop-icon"></i> ${o.sharedOrderId ? o.shop : o.shop + ' Laundry'}</div>
                     <div class="shop-type">Delivery Service</div>
                 </div>
                 <div class="order-details">
@@ -1823,7 +1855,7 @@
                     </div>
                 </div>
                 <div class="order-footer">
-                    <button class="btn-action btn-primary-action current-details-btn" data-id="${o.id}" data-order='${JSON.stringify(o)}'><i class="fa-solid fa-circle-info"></i> View Details</button>
+                    <button class="btn-action btn-primary-action current-details-btn" data-id="${o.id}" data-order='${LV.esc(JSON.stringify(o))}'><i class="fa-solid fa-circle-info"></i> View Details</button>
                     <button class="btn-action btn-secondary-action call-btn"><i class="fa-solid fa-phone"></i> Call</button>
                 </div>
             </div>
@@ -1930,7 +1962,7 @@
                 $('#modalDuration').text(o.time + ' minutes');
                 $('#modalPickup').text(o.pickup);
                 $('#modalDelivery').text(o.delivery);
-                $('#modalShop').text(o.shop + ' Laundry');
+                $('#modalShop').text(o.sharedOrderId ? o.shop : o.shop + ' Laundry');
                 $('#modalEarnings').text('₱' + o.earnings);
                 $('#modalBonus').text('+₱' + o.bonus);
                 $('#modalTotal').text('₱' + (parseInt(o.earnings) + parseInt(o.bonus)));
@@ -1956,8 +1988,42 @@
             });
 
             $(document).on('click', '.btn-accept, .accept-modal-btn', function () {
-                const id = $(this).data('id') || $('#modalTitle').text();
+                const $button = $(this);
+                const id = $button.data('id') || $('#modalTitle').text();
                 if (confirm(`Accept order ${id}?`)) {
+                    const sharedOrderId = $button.data('shared-order-id');
+                    if (sharedOrderId) {
+                        const order = LV.order(sharedOrderId);
+                        if (!order) {
+                            alert('This order is no longer available. Refresh the page and try again.');
+                            return;
+                        }
+                        const nextStatus = order.status === 'waiting_for_return_driver'
+                            ? 'enroute_to_customer'
+                            : 'enroute_to_store';
+                        const updated = LV.setOrderStatus(
+                            sharedOrderId,
+                            nextStatus,
+                            nextStatus === 'enroute_to_store' ? 'Rider accepted send job' : 'Rider accepted return job',
+                            rider.id
+                        );
+                        if (!updated) {
+                            alert('Unable to accept this order. Refresh the page and try again.');
+                            return;
+                        }
+                        const accepted = availableOrders.find(function (job) { return job.sharedOrderId === Number(sharedOrderId); });
+                        if (accepted) {
+                            availableOrders.splice(availableOrders.indexOf(accepted), 1);
+                            currentOrders.unshift(accepted);
+                        }
+                        closeModal();
+                        renderAvailableOrders();
+                        renderCurrentOrders();
+                        filterAndSearch('available');
+                        filterAndSearch('current');
+                        alert(`Order ${id} accepted and added to your current orders.`);
+                        return;
+                    }
                     alert(`Order ${id} accepted!`);
                     closeModal();
                 }

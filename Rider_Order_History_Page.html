@@ -308,22 +308,24 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="rider_header.css">
     <script src="lavandera_demo.js"></script>
     <script>LV.requireRole('rider');</script>
 </head>
 
 <body>
     <!-- HEADER -->
-    <header>
+    <header class="rider-site-header">
         <a href="lavandera_rider_dashboard.html" class="logo">
-            <img src="lavandera_logo.png" alt="Lavandera Logo" class="logo-img">
+            <img src="LAVANDERA.svg" alt="Lavandera Logo" class="logo-img">
         </a>
 
         <div class="menu-container">
-            <button class="menu-btn" onclick="toggleMenu()" aria-label="Toggle navigation menu">
+            <button class="menu-btn" type="button" onclick="toggleMenu()" aria-label="Toggle navigation menu"
+                aria-expanded="false" aria-controls="navDropdown">
                 <i class="fa-solid fa-bars"></i>
             </button>
-            <div class="dropdown-menu" id="navDropdown">
+            <div class="dropdown-menu" id="navDropdown" role="navigation" aria-label="Rider navigation">
                 <div class="dropdown-header">
                     <div class="user-avatar">A</div>
                     <div class="user-name">Alex Rodriguez</div>
@@ -404,6 +406,28 @@
     </div>
 
 
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('navDropdown');
+            const button = document.querySelector('.menu-btn');
+            const isOpen = menu.classList.toggle('show');
+            button.setAttribute('aria-expanded', String(isOpen));
+        }
+
+        document.addEventListener('click', function (event) {
+            if (!event.target.closest('.menu-container')) {
+                document.getElementById('navDropdown').classList.remove('show');
+                document.querySelector('.menu-btn').setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                document.getElementById('navDropdown').classList.remove('show');
+                document.querySelector('.menu-btn').setAttribute('aria-expanded', 'false');
+            }
+        });
+    </script>
 </body>
 
 </html>

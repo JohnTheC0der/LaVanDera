@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store Application Status - LaVanDera</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="lavandera_theme.css">
+    <style>
+        .approval-card { max-width: 700px; margin: 40px auto; text-align: center; }
+        .approval-icon { width: 72px; height: 72px; margin: 0 auto 18px; display: grid; place-items: center; border-radius: 50%; background: var(--lv-pink-tint); color: var(--lv-plum); font-size: 30px; }
+    </style>
+</head>
+<body>
+    <main class="lv-container">
+        <section class="lv-card lv-card-pad approval-card">
+            <div class="approval-icon"><i id="approvalIcon" class="fa-solid fa-hourglass-half"></i></div>
+            <div class="lv-eyebrow">Store partner application</div>
+            <h1 id="approvalTitle" class="lv-title" style="font-size:32px;">Application pending review</h1>
+            <p id="approvalMessage" class="lv-sub" style="max-width:none;"></p>
+            <div id="approvalActions" class="lv-row" style="justify-content:center; gap:12px; flex-wrap:wrap; margin-top:22px;"></div>
+        </section>
+    </main>
+    <script src="lavandera_demo.js"></script>
+    <script>
+        const params = new URLSearchParams(location.search);
+        const current = LV.session();
+        const id = params.get('id') || (current && current.role === 'store' ? current.id : '');
+        const store = id ? LV.store(id) : null;
+        const title = document.getElementById('approvalTitle');
+        const message = document.getElementById('approvalMessage');
+        const icon = document.getElementById('approvalIcon');
+        const actions = document.getElementById('approvalActions');
+
+        if (!store) {
+            title.textContent = 'Store application not found';
+            message.textContent = 'Sign in with your store account to check its application status.';
+            actions.innerHTML = '<a class="lv-btn lv-btn-primary" href="Log_In_Page.html">Go to sign in</a>';
+        } else if (store.status === 'active') {
+            title.textContent = 'Your store is approved';
+            message.textContent = 'Your store account has been approved. Sign in to manage your store and orders.';
+            icon.className = 'fa-solid fa-circle-check';
+            actions.innerHTML = '<a class="lv-btn lv-btn-primary" href="Log_In_Page.html">Sign in to your store</a>';
+        } else if (store.status === 'rejected') {
+            title.textContent = 'Application not approved';
+            message.textContent = store.statusNote || 'Your application was not approved. Please contact LaVanDera support for more information.';
+            icon.className = 'fa-solid fa-circle-xmark';
+            actions.innerHTML = '<a class="lv-btn lv-btn-outline" href="Log_In_Page.html">Back to sign in</a>';
+        } else if (store.status === 'setup_required') {
+            title.textContent = 'Store setup is not complete';
+            message.textContent = 'Complete your store details and pricing before your application can be reviewed.';
+            actions.innerHTML = '<a class="lv-btn lv-btn-primary" href="Log_In_Page.html">Sign in and finish setup</a>';
+        } else {
+            message.textContent = 'Your store details have been submitted. You can sign in after an admin approves your account.';
+            actions.innerHTML = '<a class="lv-btn lv-btn-outline" href="Log_In_Page.html">Back to sign in</a>';
+        }
+    </script>
+</body>
+</html>

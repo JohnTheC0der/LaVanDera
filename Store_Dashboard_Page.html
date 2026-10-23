@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store Dashboard - LaVanDera</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="lavandera_theme.css">
+    <style>
+        .store-banner { width: 100%; height: 210px; object-fit: cover; border-radius: 18px; background: var(--lv-pink-tint); }
+        .store-avatar { width: 100px; height: 100px; margin-top: -50px; border: 5px solid #fff; border-radius: 22px; object-fit: cover; background: #fff; }
+        .store-edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .store-edit-grid .full { grid-column: 1 / -1; }
+        .store-benefits { display: flex; flex-wrap: wrap; gap: 12px 20px; }
+        .store-benefits label { display: flex; align-items: center; gap: 8px; color: var(--lv-ink); }
+        .store-benefits input, .store-toggle input { accent-color: var(--lv-plum); }
+        .store-toggle { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+        .price-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+        @media (max-width: 640px) {
+            .store-edit-grid, .price-grid { grid-template-columns: 1fr; }
+            .store-edit-grid .full { grid-column: auto; }
+            .store-banner { height: 150px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="lv-nav"></div>
+    <main class="lv-container">
+        <section class="lv-page-head">
+            <div class="lv-eyebrow">Partner portal</div>
+            <h1 class="lv-title">Store Dashboard</h1>
+            <p class="lv-sub">Manage your store details, prices, benefits, and incoming laundry orders.</p>
+        </section>
+
+        <section id="storeAccessNotice" class="lv-card lv-card-pad" hidden>
+            <h2 class="lv-section-title">Store sign-in required</h2>
+            <p class="lv-sub">Sign in with your store account to manage this store.</p>
+            <a class="lv-btn lv-btn-primary lv-mt" href="Log_In_Page.html">Go to sign in</a>
+        </section>
+
+        <div id="storePortal" hidden>
+            <section class="lv-card lv-card-pad" style="margin-bottom:20px;">
+                <img id="storeBanner" class="store-banner" alt="Store banner">
+                <div class="lv-row-between" style="align-items:flex-end; gap:18px; flex-wrap:wrap;">
+                    <div class="lv-row" style="align-items:flex-end; gap:16px;">
+                        <img id="storeImage" class="store-avatar" alt="Store profile">
+                        <div style="padding-bottom:8px;">
+                            <h2 id="storeName" class="lv-section-title"></h2>
+                            <div id="storeStatus" style="margin-top:6px;"></div>
+                        </div>
+                    </div>
+                    <a href="Store_Orders_Page.html" class="lv-btn lv-btn-primary"><i class="fa-solid fa-boxes-stacked"></i> Manage orders</a>
+                </div>
+                <p id="storeDescription" class="lv-sub" style="max-width:none; margin-top:16px;"></p>
+            </section>
+
+            <section id="storeStateMessage" class="lv-card lv-card-pad" style="margin-bottom:20px;" hidden></section>
+
+            <section class="lv-grid lv-grid-2" style="margin-bottom:20px;">
+                <article class="lv-card lv-card-pad">
+                    <div class="lv-eyebrow">Store contact</div>
+                    <p class="lv-kv"><span>Email</span><strong id="storeEmail">-</strong></p>
+                    <p class="lv-kv"><span>Phone</span><strong id="storeContact">-</strong></p>
+                    <p class="lv-kv"><span>Address</span><strong id="storeAddress">-</strong></p>
+                </article>
+                <article class="lv-card lv-card-pad">
+                    <div class="lv-eyebrow">Order overview</div>
+                    <p class="lv-kv"><span>Total orders</span><strong id="totalOrders">0</strong></p>
+                    <p class="lv-kv"><span>Needs attention</span><strong id="incomingOrders">0</strong></p>
+                    <p class="lv-kv"><span>Completed</span><strong id="completedOrders">0</strong></p>
+                    <a href="Store_Orders_Page.html" class="lv-btn lv-btn-outline lv-btn-sm lv-mt">View store orders</a>
+                </article>
+            </section>
+
+            <section class="lv-card lv-card-pad">
+                <div class="lv-row-between" style="flex-wrap:wrap; margin-bottom:18px;">
+                    <div>
+                        <div class="lv-eyebrow">Store settings</div>
+                        <h2 class="lv-section-title">Edit store information</h2>
+                    </div>
+                    <label class="store-toggle"><input id="accepting" type="checkbox"> Accepting new orders</label>
+                </div>
+                <form id="storeForm">
+                    <div class="store-edit-grid">
+                        <div class="lv-field">
+                            <label class="lv-label" for="editName">Store name</label>
+                            <input class="lv-input" id="editName" required maxlength="80">
+                        </div>
+                        <div class="lv-field">
+                            <label class="lv-label" for="editContact">Contact number</label>
+                            <input class="lv-input" id="editContact" required maxlength="40">
+                        </div>
+                        <div class="lv-field full">
+                            <label class="lv-label" for="editAddress">Store address</label>
+                            <input class="lv-input" id="editAddress" required maxlength="180">
+                        </div>
+                        <div class="lv-field full">
+                            <label class="lv-label" for="editDescription">Store description</label>
+                            <textarea class="lv-textarea" id="editDescription" maxlength="500" rows="3"></textarea>
+                        </div>
+                        <div class="lv-field">
+                            <label class="lv-label" for="editImage">Profile picture</label>
+                            <input class="lv-input" id="editImage" type="file" accept="image/*">
+                        </div>
+                        <div class="lv-field">
+                            <label class="lv-label" for="editBanner">Banner image</label>
+                            <input class="lv-input" id="editBanner" type="file" accept="image/*">
+                        </div>
+                    </div>
+                    <h3 class="lv-section-title" style="margin:18px 0 12px;">Bag prices</h3>
+                    <div class="price-grid">
+                        <div class="lv-field"><label class="lv-label" for="priceSmall">Small / 5kg (PHP)</label><input class="lv-input" id="priceSmall" type="number" min="1" step="1" required></div>
+                        <div class="lv-field"><label class="lv-label" for="priceMedium">Medium / 10kg (PHP)</label><input class="lv-input" id="priceMedium" type="number" min="1" step="1" required></div>
+                        <div class="lv-field"><label class="lv-label" for="priceLarge">Large / 15kg (PHP)</label><input class="lv-input" id="priceLarge" type="number" min="1" step="1" required></div>
+                    </div>
+                    <h3 class="lv-section-title" style="margin:14px 0 12px;">Store benefits</h3>
+                    <div class="store-benefits">
+                        <label><input type="checkbox" name="benefits" value="Free delivery"> Free delivery (waives send and return rider fees)</label>
+                        <label><input type="checkbox" name="benefits" value="Eco-friendly packaging"> Eco-friendly packaging</label>
+                        <label><input type="checkbox" name="benefits" value="Express service"> Express service</label>
+                    </div>
+                    <p class="lv-error" id="storeFormError" role="alert" style="margin-top:12px;"></p>
+                    <button class="lv-btn lv-btn-pink lv-mt" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save store changes</button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <script src="lavandera_demo.js"></script>
+    <script>
+        const storeMe = LV.session();
+        let storeRecord = storeMe && storeMe.role === 'store' ? LV.store(storeMe.id) : null;
+        const editableImageFields = [
+            { input: 'editImage', key: 'image' },
+            { input: 'editBanner', key: 'banner' }
+        ];
+
+        if (!storeRecord) {
+            document.getElementById('storeAccessNotice').hidden = false;
+        } else {
+            LV.renderNav('store', 'dashboard');
+            document.getElementById('storePortal').hidden = false;
+            populateStoreForm();
+            renderStoreOverview();
+            if (storeRecord.status === 'setup_required') {
+                document.getElementById('storeStateMessage').hidden = false;
+                document.getElementById('storeStateMessage').innerHTML =
+                    '<h2 class="lv-section-title">Finish setting up your store</h2>' +
+                    '<p class="lv-sub">Complete your store information and prices before submitting your account for admin review.</p>' +
+                    '<a class="lv-btn lv-btn-primary lv-mt" href="Store_Setup_Page.html">Continue setup</a>';
+            } else if (storeRecord.status === 'pending_approval') {
+                showStoreNotice('Your store is waiting for admin approval. Store listings and orders are disabled until approval.', 'Store_Pending_Approval_Page.html');
+            } else if (storeRecord.status === 'rejected') {
+                showStoreNotice('Your store application was rejected: ' + LV.esc(storeRecord.statusNote || 'Please contact support for details.'), null);
+            } else if (storeRecord.status === 'suspended') {
+                showStoreNotice('Your store account is suspended. Contact LaVanDera support for assistance.', null);
+            }
+        }
+
+        function showStoreNotice(message, link) {
+            const notice = document.getElementById('storeStateMessage');
+            notice.hidden = false;
+            notice.innerHTML = '<p class="lv-sub">' + message + '</p>' +
+                (link ? '<a class="lv-btn lv-btn-outline lv-btn-sm lv-mt" href="' + link + '">View approval status</a>' : '');
+        }
+
+        function populateStoreForm() {
+            const prices = storeRecord.prices || {};
+            document.getElementById('storeName').textContent = storeRecord.name;
+            document.getElementById('storeDescription').textContent = storeRecord.description || 'Add a description to help customers learn about your store.';
+            document.getElementById('storeEmail').textContent = storeRecord.email || '-';
+            document.getElementById('storeContact').textContent = storeRecord.contact || '-';
+            document.getElementById('storeAddress').textContent = storeRecord.address || '-';
+            document.getElementById('storeStatus').innerHTML = LV.userStatusBadge(storeRecord.status);
+            document.getElementById('storeBanner').src = storeRecord.banner || 'lavandera_Background.png';
+            document.getElementById('storeImage').src = storeRecord.image || 'Lavandera_logo.png';
+            document.getElementById('accepting').checked = !!storeRecord.accepting;
+            document.getElementById('editName').value = storeRecord.name || '';
+            document.getElementById('editContact').value = storeRecord.contact || '';
+            document.getElementById('editAddress').value = storeRecord.address || '';
+            document.getElementById('editDescription').value = storeRecord.description || '';
+            document.getElementById('priceSmall').value = prices.small || '';
+            document.getElementById('priceMedium').value = prices.medium || '';
+            document.getElementById('priceLarge').value = prices.large || '';
+            document.querySelectorAll('input[name="benefits"]').forEach(function (input) {
+                input.checked = (storeRecord.benefits || []).indexOf(input.value) > -1;
+            });
+        }
+
+        function renderStoreOverview() {
+            const all = LV.orders().filter(function (order) { return order.storeId === storeRecord.id; });
+            document.getElementById('totalOrders').textContent = all.length;
+            document.getElementById('incomingOrders').textContent = all.filter(function (order) {
+                return ['pending_store', 'enroute_to_store', 'at_laundromat',
+                    'waiting_for_driver', 'waiting_for_return_driver', 'enroute_to_customer'].indexOf(order.status) > -1;
+            }).length;
+            document.getElementById('completedOrders').textContent = all.filter(function (order) {
+                return order.status === 'completed';
+            }).length;
+        }
+
+        async function readSelectedImage(inputId) {
+            const input = document.getElementById(inputId);
+            const file = input.files && input.files[0];
+            if (!file) return null;
+            if (!file.type.startsWith('image/')) throw new Error('Choose a valid image file.');
+            if (file.size > 1500000) throw new Error('Each image must be 1.5 MB or smaller for browser storage.');
+            return new Promise(function (resolve, reject) {
+                const reader = new FileReader();
+                reader.onload = function () { resolve(String(reader.result)); };
+                reader.onerror = function () { reject(new Error('Unable to read the selected image.')); };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        document.getElementById('storeForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const error = document.getElementById('storeFormError');
+            error.textContent = '';
+            const prices = {
+                small: Number(document.getElementById('priceSmall').value),
+                medium: Number(document.getElementById('priceMedium').value),
+                large: Number(document.getElementById('priceLarge').value)
+            };
+            if (Object.keys(prices).some(function (size) { return !Number.isFinite(prices[size]) || prices[size] <= 0; })) {
+                error.textContent = 'Enter a valid price above zero for every bag size.';
+                return;
+            }
+
+            try {
+                const changes = {
+                    name: document.getElementById('editName').value.trim(),
+                    contact: document.getElementById('editContact').value.trim(),
+                    address: document.getElementById('editAddress').value.trim(),
+                    description: document.getElementById('editDescription').value.trim(),
+                    prices: prices,
+                    benefits: Array.from(document.querySelectorAll('input[name="benefits"]:checked')).map(function (input) { return input.value; }),
+                    accepting: document.getElementById('accepting').checked
+                };
+                for (const field of editableImageFields) {
+                    const image = await readSelectedImage(field.input);
+                    if (image) changes[field.key] = image;
+                }
+                storeRecord = LV.updateStore(storeRecord.id, changes);
+                if (!storeRecord) throw new Error('Store not found. Reload the page and try again.');
+                populateStoreForm();
+                renderStoreOverview();
+                LV.toast('Store information saved.');
+            } catch (saveError) {
+                error.textContent = saveError.message || 'Unable to save store changes.';
+            }
+        });
+    </script>
+</body>
+</html>
