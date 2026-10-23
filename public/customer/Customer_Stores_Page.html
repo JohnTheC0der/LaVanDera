@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stores - LaVanDera</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/lavandera_theme.css">
+</head>
+
+<body>
+    <div id="lv-nav"></div>
+
+    <main class="lv-container">
+
+        <!-- PAGE HEAD -->
+        <section class="lv-page-head">
+            <div class="lv-eyebrow">Partner laundromats</div>
+            <h1 class="lv-title">All Stores</h1>
+            <p class="lv-sub">Every partner shop on LaVanDera - with pickup + delivery anywhere in Pasig City,
+                your laundry never has to leave your neighborhood.</p>
+        </section>
+
+        <!-- TOOLBAR: search + filters -->
+        <section class="lv-card lv-card-pad" style="display:flex; flex-direction:column; gap:14px;">
+            <div class="lv-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input id="storeSearch" class="lv-input" type="text" placeholder="Search store name or address..." autocomplete="off">
+            </div>
+            <div class="lv-wrap" id="filterChips">
+                <button type="button" class="lv-btn lv-btn-primary lv-btn-sm" data-filter="all">
+                    <i class="fa-solid fa-layer-group"></i> All</button>
+                <button type="button" class="lv-btn lv-btn-outline lv-btn-sm" data-filter="featured">
+                    <i class="fa-solid fa-star"></i> Featured</button>
+                <button type="button" class="lv-btn lv-btn-outline lv-btn-sm" data-filter="free">
+                    <i class="fa-solid fa-truck-fast"></i> Free delivery</button>
+                <button type="button" class="lv-btn lv-btn-outline lv-btn-sm" data-filter="cheapest">
+                    <i class="fa-solid fa-tag"></i> Cheapest small bag</button>
+            </div>
+            <div id="resultCount" class="lv-muted" style="font-size:13.5px; font-weight:600;"></div>
+        </section>
+
+        <!-- STORE GRID -->
+        <div class="lv-grid lv-grid-3 lv-mt" id="storeGrid"></div>
+
+    </main>
+
+    <script src="../js/lavandera_demo.js"></script>
+    <script>
+        let searchTerm = '';
+        let activeFilter = 'all';
+
+        const me = LV.requireRole('customer', '../auth/Log_In_Page.html');
+        if (me) {
+            LV.renderNav('customer', 'stores');
+            wireToolbar();
+            render();
+        }
+
+        function wireToolbar() {
+            document.getElementById('storeSearch').addEventListener('input', function (e) {
+                searchTerm = e.target.value;
+                render();
+            });
+            document.getElementById('filterChips').addEventListener('click', function (e) {
+                const chip = e.target.closest('button[data-filter]');
+                if (!chip) return;
+                activeFilter = chip.getAttribute('data-filter');
+                paintChips();
+                render();
+            });
+            paintChips();
+        }
+
+        function paintChips() {
+            const chips = document.querySelectorAll('#filterChips button[data-filter]');
+            Array.prototype.forEach.call(chips, function (chip) {
+                const on = chip.getAttribute('data-filter') === activeFilter;
+                chip.className = 'lv-btn lv-btn-sm ' + (on ? 'lv-btn-primary' : 'lv-btn-outline');
+            });
+        }
+
+        function render() {
+            const q = searchTerm.trim().toLowerCase();
+
+            let list = LV.publicStores().filter(function (s) {
+                /* search: store name OR address, case-insensitive */
+                if (q) {
+                    const inName = String(s.name || '').toLowerCase().indexOf(q) > -1;
+                    const inAddr = String(s.address || '').toLowerCase().indexOf(q) > -1;
+                    if (!inName && !inAddr) return false;
+                }
+                if (activeFilter === 'featured') return !!s.featured;
+                if (activeFilter === 'free') return (s.benefits || []).indexOf('Free delivery') > -1;
+                return true;
+            });
+
+            /* "Cheapest small bag" sorts the directory by small-bag price */
+            if (activeFilter === 'cheapest') {
+                list = list.slice().sort(function (a, b) {
+                    return Number((a.prices || {}).small || 0) - Number((b.prices || {}).small || 0);
+                });
+            }
+
+            document.getElementById('resultCount').textContent =
+                list.length + (list.length === 1 ? ' store found' : ' stores found');
+
+            document.getElementById('storeGrid').innerHTML = list.map(storeCard).join('') ||
+                '<div class="lv-card lv-empty"><i class="fa-solid fa-store"></i>' +
+                '<h3>No stores found</h3><p>Try a different search or filter.</p></div>';
+        }
+
+        function badgesFor(s) {
+            return (s.featured
+                    ? '<span class="lv-badge lv-tone-pink"><i class="fa-solid fa-star"></i>Featured</span>' : '') +
+                   ((s.benefits || []).indexOf('Free delivery') > -1
+                    ? '<span class="lv-badge lv-tone-green"><i class="fa-solid fa-truck-fast"></i>Free delivery</span>' : '') +
+                   (!s.accepting
+                    ? '<span class="lv-badge lv-tone-amber"><i class="fa-solid fa-pause"></i>Not accepting orders</span>' : '');
+        }
+
+        function storeCard(s) {
+            const cust = LV.customer(me.id);
+            const banner = s.banner
+                ? '<img class="lv-media lv-banner" src="' + s.banner + '" alt="' + LV.esc(s.name) + '" ' +
+                  'onerror="this.onerror=null; this.className=\'lv-media lv-banner lv-fallback\'; this.removeAttribute(\'src\');">'
+                : '<div class="lv-media lv-banner lv-fallback"></div>';
+
+            const badges = badgesFor(s);
+
+            const hasCoords = s.lat != null && s.lng != null && cust && cust.lat != null && cust.lng != null;
+            const distLine = hasCoords
+                ? '<div class="lv-muted" style="font-size:12.5px; margin-bottom:5px;">' +
+                  '<i class="fa-solid fa-location-dot"></i> ' +
+                  LV.distanceKm(cust.lat, cust.lng, s.lat, s.lng).toFixed(1) + ' km away</div>'
+                : '';
+
+            const ratingLine =
+                '<div class="lv-muted" style="font-size:12.5px; margin-bottom:12px;">' +
+                '<i class="fa-solid fa-star" style="color:#f5b301;"></i> ' +
+                (s.rating ? Number(s.rating).toFixed(1) + ' rating' : 'New store') + '</div>';
+
+            const priceRow = s.prices
+                ? '<div style="border-top:1px solid var(--lv-line); padding-top:12px; font-size:13px; ' +
+                  'font-weight:800; color:var(--lv-plum);">' +
+                  'Small ' + LV.peso(s.prices.small) + ' <span class="lv-muted" style="font-weight:600;">(5kg)</span>' +
+                  ' &middot; Medium ' + LV.peso(s.prices.medium) + ' <span class="lv-muted" style="font-weight:600;">(10kg)</span>' +
+                  ' &middot; Large ' + LV.peso(s.prices.large) + ' <span class="lv-muted" style="font-weight:600;">(15kg)</span>' +
+                  '</div>'
+                : '<div class="lv-muted" style="border-top:1px solid var(--lv-line); padding-top:12px; font-size:13px;">' +
+                  'Pricing to be confirmed</div>';
+
+            return '<a class="lv-card lv-card-click" href="Customer_View_Store_Page.html?id=' + s.id + '" ' +
+                'style="overflow:hidden; display:block;">' +
+                banner +
+                '<div class="lv-card-pad">' +
+                    (badges ? '<div class="lv-wrap" style="gap:6px; margin-bottom:10px;">' + badges + '</div>' : '') +
+                    '<h3 style="font-size:17px; color:var(--lv-plum); margin-bottom:4px;">' + LV.esc(s.name) + '</h3>' +
+                    '<p class="lv-muted" style="font-size:13px; margin-bottom:8px;">' +
+                        LV.esc(s.address || 'Address to be confirmed') + '</p>' +
+                    distLine +
+                    ratingLine +
+                    priceRow +
+                '</div></a>';
+        }
+    </script>
+</body>
+
+</html>

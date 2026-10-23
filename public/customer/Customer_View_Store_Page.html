@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store Details - LaVanDera</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/lavandera_theme.css">
+</head>
+
+<body>
+    <div id="lv-nav"></div>
+
+    <main class="lv-container">
+
+        <!-- BACK LINK -->
+        <div style="padding-top:24px;">
+            <a class="lv-link" href="Customer_Stores_Page.html" style="font-size:14px;">
+                <i class="fa-solid fa-arrow-left" style="font-size:12px;"></i> Back to all stores</a>
+        </div>
+
+        <!-- HERO BANNER -->
+        <div id="storeBanner" style="height:220px; border-radius:28px; overflow:hidden; margin-top:14px;"></div>
+
+        <!-- STORE HEADER (overlaps the banner) -->
+        <div class="lv-card lv-card-pad" id="storeHead" style="margin-top:-56px; position:relative; z-index:1;"></div>
+
+        <!-- BAG PRICING -->
+        <section class="lv-mt" id="pricingSection" style="display:none;">
+            <div class="lv-eyebrow">Simple per-bag rates</div>
+            <h2 class="lv-section-title" style="margin-bottom:16px;">Bag Pricing</h2>
+            <div class="lv-grid lv-grid-3" id="priceGrid"></div>
+        </section>
+
+        <!-- BENEFITS -->
+        <section class="lv-mt" id="benefitsSection" style="display:none;">
+            <div class="lv-eyebrow">Extra perks</div>
+            <h2 class="lv-section-title" style="margin-bottom:16px;">Store Benefits</h2>
+            <div class="lv-card lv-card-pad" id="benefitsCard"></div>
+        </section>
+
+        <!-- BOTTOM CTA -->
+        <section class="lv-hero lv-mt" id="ctaSection"></section>
+
+    </main>
+
+    <script src="../js/lavandera_demo.js"></script>
+    <script>
+        let storeRec = null;
+
+        const me = LV.requireRole('customer', '../auth/Log_In_Page.html');
+        if (me) {
+            const id = new URLSearchParams(location.search).get('id');
+            storeRec = id ? LV.store(id) : null;
+            if (!storeRec) {
+                /* missing or unknown store - back to the directory */
+                location.replace('Customer_Stores_Page.html');
+            } else {
+                LV.renderNav('customer', 'stores');
+                render();
+            }
+        }
+
+        function render() {
+            const s = storeRec;
+            const cust = LV.customer(me.id);
+            const hasCoords = s.lat != null && s.lng != null && cust && cust.lat != null && cust.lng != null;
+            const km = hasCoords ? LV.distanceKm(cust.lat, cust.lng, s.lat, s.lng) : null;
+
+            /* ---- hero banner ---- */
+            document.getElementById('storeBanner').innerHTML = s.banner
+                ? '<img class="lv-media" style="height:100%; object-fit:cover;" src="' + s.banner + '" alt="' + LV.esc(s.name) + '" ' +
+                  'onerror="this.onerror=null; this.className=\'lv-media lv-fallback\'; this.removeAttribute(\'src\');">'
+                : '<div class="lv-media lv-fallback" style="height:100%;"></div>';
+
+            /* ---- header card: avatar + name + badges + CTA + info rows ---- */
+            const logo = s.image
+                ? '<img id="storeLogo" src="' + s.image + '" alt="' + LV.esc(s.name) + '" ' +
+                  'style="width:84px; height:84px; border-radius:22px; object-fit:cover; border:3px solid #fff; box-shadow:var(--lv-shadow); flex-shrink:0;" ' +
+                  'onerror="this.onerror=null; this.style.display=\'none\'; var f=document.getElementById(\'storeAvatar\'); if(f) f.style.display=\'grid\';">' +
+                  '<div class="lv-avatar lv-avatar-lg" id="storeAvatar" style="display:none;">' + LV.initials(s.name) + '</div>'
+                : '<div class="lv-avatar lv-avatar-lg">' + LV.initials(s.name) + '</div>';
+
+            const cta = s.accepting
+                ? '<a class="lv-btn lv-btn-primary" href="Customer_Place_Order_Page.html?store=' + s.id + '">' +
+                  '<i class="fa-solid fa-plus"></i> Place Order</a>'
+                : '<span class="lv-btn lv-btn-primary" style="opacity:.5; cursor:not-allowed;">Place Order</span>';
+
+            const statusBadge = s.accepting
+                ? '<span class="lv-badge lv-tone-green"><i class="fa-solid fa-circle-check"></i>Accepting orders</span>'
+                : '<span class="lv-badge lv-tone-amber"><i class="fa-solid fa-pause"></i>Paused</span>';
+
+            const distanceRow = km != null
+                ? '<div class="lv-kv"><span>Distance from you</span><span>' + km.toFixed(1) +
+                  ' km &middot; est. rider fee ' + LV.peso(LV.deliveryFee(km)) + ' each way</span></div>'
+                : '<div class="lv-kv"><span>Distance from you</span><span>Not available</span></div>';
+
+            document.getElementById('storeHead').innerHTML =
+                '<div class="lv-row" style="gap:18px; align-items:center; flex-wrap:wrap;">' +
+                    logo +
+                    '<div style="flex:1; min-width:230px;">' +
+                        '<h1 class="lv-title" style="font-size:clamp(22px,3vw,30px);">' + LV.esc(s.name) + '</h1>' +
+                        '<div class="lv-wrap" style="gap:6px; margin-top:8px;">' + badgesFor(s) + '</div>' +
+                    '</div>' +
+                    cta +
+                '</div>' +
+                (s.description
+                    ? '<p class="lv-muted" style="margin-top:14px; font-size:14.5px; line-height:1.6;">' +
+                      LV.esc(s.description) + '</p>' : '') +
+                '<hr class="lv-divider">' +
+                '<div class="lv-kv"><span>Address</span><span>' + LV.esc(s.address || 'To be confirmed') + '</span></div>' +
+                '<div class="lv-kv"><span>Contact number</span><span>' + LV.esc(s.contact || 'To be confirmed') + '</span></div>' +
+                distanceRow +
+                '<div class="lv-kv"><span>Operating status</span><span>' + statusBadge + '</span></div>';
+
+            /* ---- bag pricing ---- */
+            if (s.prices) {
+                document.getElementById('pricingSection').style.display = '';
+                document.getElementById('priceGrid').innerHTML = LV.bags.map(function (b) {
+                    return '<div class="lv-card lv-card-pad" style="text-align:center;">' +
+                        '<div class="lv-stat-icon"><i class="fa-solid ' + b.icon + '"></i></div>' +
+                        '<div style="font-weight:800; color:var(--lv-plum); font-size:16px;">' + b.name + '</div>' +
+                        '<div class="lv-muted" style="font-size:12.5px; margin-top:3px;">' + b.kg + ' KG capacity</div>' +
+                        '<div style="margin-top:12px; font-weight:800; font-size:30px; line-height:1; color:var(--lv-pink);">' +
+                            LV.peso(s.prices[b.code]) + '</div>' +
+                        '<div class="lv-muted" style="font-size:12.5px; margin-top:8px;">includes wash, dry &amp; fold</div>' +
+                    '</div>';
+                }).join('');
+            }
+
+            /* ---- benefits ---- */
+            if (s.benefits && s.benefits.length) {
+                document.getElementById('benefitsSection').style.display = '';
+                document.getElementById('benefitsCard').innerHTML = s.benefits.map(function (b) {
+                    const free = b === 'Free delivery';
+                    return '<div class="lv-row-between" style="align-items:flex-start; padding:6px 0;">' +
+                        '<div>' +
+                            '<div style="font-weight:800; color:var(--lv-plum); font-size:15px;">' + LV.esc(b) + '</div>' +
+                            '<div class="lv-muted" style="font-size:13.5px; margin-top:2px;">' +
+                                (free ? 'Customer does not pay the send/return rider fees.'
+                                      : 'Included with every order from this store.') +
+                            '</div>' +
+                        '</div>' +
+                        '<span class="lv-badge lv-tone-green"><i class="fa-solid fa-circle-check"></i>Included</span>' +
+                    '</div>';
+                }).join('');
+            }
+
+            /* ---- bottom CTA ---- */
+            document.getElementById('ctaSection').innerHTML =
+                '<h1>Ready to get your laundry done?</h1>' +
+                '<p>Send your bags over to ' + LV.esc(s.name) + ' - we pick them up, then bring them back fresh and folded.</p>' +
+                '<div class="lv-hero-cta">' +
+                    '<a class="lv-btn lv-btn-ghost" href="Customer_Place_Order_Page.html?store=' + s.id + '">' +
+                    '<i class="fa-solid fa-plus"></i> Place Order at ' + LV.esc(s.name) + '</a>' +
+                '</div>';
+        }
+
+        function badgesFor(s) {
+            return (s.featured
+                    ? '<span class="lv-badge lv-tone-pink"><i class="fa-solid fa-star"></i>Featured</span>' : '') +
+                   ((s.benefits || []).indexOf('Free delivery') > -1
+                    ? '<span class="lv-badge lv-tone-green"><i class="fa-solid fa-truck-fast"></i>Free delivery</span>' : '') +
+                   (!s.accepting
+                    ? '<span class="lv-badge lv-tone-amber"><i class="fa-solid fa-pause"></i>Not accepting orders</span>' : '');
+        }
+    </script>
+</body>
+
+</html>
