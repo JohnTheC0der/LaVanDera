@@ -1,0 +1,2029 @@
+<?php
+/**
+ * Rider Orders page (converted to PHP): the job board + the rider's own jobs.
+ * The <?php ... ?> block runs on the SERVER before any HTML is sent:
+ *   1. bootstrap.php  = config + session + helpers (same line every page starts with)
+ *   2. guard_...()    = redirect away unless the visitor is the right, approved kind of user
+ *   3. $lvConfig / $lvSession = values handed to JavaScript further down (CSRF token + who is signed in)
+ */
+require __DIR__ . '/../../src/bootstrap.php';
+require_once LV_ROOT . '/src/auth/guards.php';
+$user = guard_rider_page();
+$lvConfig  = ['loginUrl' => config('login_url'), 'logoutUrl' => '../auth/logout.php', 'csrf' => csrf_token()];
+$lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], 'email' => $user['email']];
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAVANDERA - Rider Orders</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+    <style>
+        :root {
+            --color-primary: #e58db5;
+            --color-dark: #5a003c;
+            --color-darker: #800055;
+            --color-text: #45002e;
+            --color-text-light: #666;
+            --color-text-muted: #999;
+            --color-border: #f3d3e3;
+            --color-bg: #fff7fb;
+            --color-bg-light: #f8f3f7;
+            --color-accent: #3bb2b8;
+            --color-success: #4ade80;
+            --color-warning: #ffb800;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+            --shadow-md: 0 4px 12px rgba(90, 0, 60, 0.12);
+            --shadow-lg: 0 8px 20px rgba(90, 0, 60, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
+            line-height: 1.6;
+        }
+
+        /* ===== HEADER ===== */
+        header {
+            background-color: var(--color-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 5%;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .logo-img {
+            height: 80px;
+            width: auto;
+            display: block;
+            filter: brightness(0.6) contrast(1.2);
+            margin: -10px 0;
+        }
+
+        .menu-container {
+            position: relative;
+        }
+
+        .menu-btn {
+            background-color: #5a003c;
+            color: white;
+            border: none;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-btn:hover {
+            background-color: #800055;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 56px;
+            background-color: white;
+            width: 280px;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            z-index: 1001;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-header {
+            background-color: #f8f3f7;
+            padding: 20px 18px;
+            border-bottom: 1px solid #e8d4e0;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e58db5, #5a003c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #45002e;
+            margin-bottom: 4px;
+        }
+
+        .user-email {
+            font-size: 12px;
+            color: #999;
+            word-break: break-word;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background-color: #e8d4e0;
+            margin: 12px 0;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            color: #45002e;
+            padding: 14px 18px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 1px solid #f3d3e3;
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #fff5fa;
+            color: #5a003c;
+            padding-left: 24px;
+        }
+
+        .dropdown-menu a i {
+            margin-right: 8px;
+            color: #e58db5;
+            width: 16px;
+        }
+
+        /* MAIN DASHBOARD CONTAINER */
+        .dashboard-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 5%;
+            padding-top: 30px;
+            padding-bottom: 40px;
+        }
+
+        .dropdown-header {
+            background-color: var(--color-bg-light);
+            padding: 20px 18px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--color-text);
+            margin-bottom: 4px;
+        }
+
+        .user-email {
+            font-size: 12px;
+            color: var(--color-text-muted);
+            word-break: break-word;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            color: var(--color-text);
+            padding: 14px 18px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--color-border);
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover,
+        .dropdown-menu a:focus {
+            background-color: #fff5fa;
+            color: var(--color-dark);
+            padding-left: 24px;
+        }
+
+        .dropdown-menu a i {
+            margin-right: 8px;
+            color: var(--color-primary);
+            width: 16px;
+        }
+
+        /* ===== TAB NAVIGATION ===== */
+        .tab-navigation {
+            background-color: white;
+            border-bottom: 2px solid var(--color-border);
+            padding: 0;
+            margin: 0;
+            display: flex;
+            position: sticky;
+            top: 65px;
+            z-index: 999;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 16px 20px;
+            border: none;
+            background: none;
+            color: var(--color-text-muted);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: var(--color-text);
+            background-color: var(--color-bg-light);
+        }
+
+        .tab-btn.active {
+            color: var(--color-dark);
+            border-bottom-color: var(--color-primary);
+            background-color: #fffbfe;
+        }
+
+        .tab-btn i {
+            font-size: 18px;
+        }
+
+        /* ===== PAGE WRAPPER ===== */
+        .page-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 5% 40px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* ===== PAGE HEADER ===== */
+        .page-header {
+            margin-bottom: 35px;
+        }
+
+        .page-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .page-title {
+            font-size: 36px;
+            color: var(--color-text);
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-title i {
+            color: var(--color-primary);
+        }
+
+        .online-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background-color: var(--color-bg-light);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--color-success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .page-subtitle {
+            font-size: 15px;
+            color: var(--color-text-light);
+        }
+
+        /* ===== FILTERS & SEARCH ===== */
+        .filter-search-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background-color: white;
+            color: var(--color-dark);
+            border: 2px solid var(--color-primary);
+            border-radius: 30px;
+            padding: 10px 20px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover,
+        .filter-btn:focus {
+            background-color: #ffe3f1;
+            outline: 2px solid var(--color-dark);
+            outline-offset: 2px;
+        }
+
+        .filter-btn.active {
+            background-color: var(--color-dark);
+            color: white;
+            border-color: var(--color-dark);
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            max-width: 350px;
+            min-width: 200px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 45px 12px 20px;
+            border-radius: 30px;
+            border: 2px solid var(--color-primary);
+            background-color: white;
+            outline: none;
+            font-size: 15px;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-box input:focus {
+            border-color: var(--color-dark);
+        }
+
+        .search-box i {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--color-dark);
+            pointer-events: none;
+        }
+
+        /* ===== STATS BAR ===== */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-badge {
+            background: linear-gradient(135deg, #ffe3f1, #f8e5ff);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            border-left: 4px solid var(--color-primary);
+        }
+
+        .stat-badge-value {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--color-text);
+            margin-bottom: 4px;
+        }
+
+        .stat-badge-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== ORDERS GRID ===== */
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        /* ===== ORDER CARD ===== */
+        .order-card {
+            background-color: white;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            border: 2px solid transparent;
+        }
+
+        .order-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+            border-color: var(--color-primary);
+        }
+
+        /* ORDER HEADER */
+        .order-header {
+            background: linear-gradient(135deg, var(--color-dark), var(--color-darker));
+            color: white;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+        }
+
+        .order-number {
+            font-size: 13px;
+            opacity: 0.85;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .order-id {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .order-status,
+        .job-type-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-indicator,
+        .job-type-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-indicator.in-transit,
+        .job-type-dot.send {
+            background-color: var(--color-accent);
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.pending,
+        .job-type-dot.return {
+            background-color: var(--color-warning);
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.completed {
+            background-color: var(--color-success);
+        }
+
+        /* SHOP INFO */
+        .shop-info {
+            padding: 16px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .shop-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--color-text);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .shop-icon {
+            font-size: 18px;
+            color: var(--color-primary);
+        }
+
+        .shop-type {
+            font-size: 12px;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ROUTE INFO */
+        .route-info {
+            padding: 16px;
+            background-color: var(--color-bg-light);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .route-step {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .route-step:last-child {
+            margin-bottom: 0;
+        }
+
+        .route-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .route-icon i {
+            color: var(--color-accent);
+            font-size: 18px;
+        }
+
+        .route-connector {
+            width: 2px;
+            height: 16px;
+            background-color: var(--color-primary);
+            margin: -8px 0;
+        }
+
+        .route-content {
+            flex: 1;
+        }
+
+        .route-label {
+            color: var(--color-text-muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .route-address {
+            color: var(--color-text);
+            font-weight: 600;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        /* ORDER DETAILS */
+        .order-details {
+            padding: 16px;
+            flex-grow: 1;
+        }
+
+        .detail-row {
+            display: flex;
+            align-items: start;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+
+        .detail-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-icon {
+            color: var(--color-accent);
+            font-size: 16px;
+            margin-top: 2px;
+            flex-shrink: 0;
+            min-width: 20px;
+        }
+
+        .detail-content {
+            flex: 1;
+        }
+
+        .detail-label {
+            color: var(--color-text-muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        .detail-value {
+            color: var(--color-text);
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        /* DELIVERY INFO BOX */
+        .delivery-info,
+        .earnings-info {
+            background-color: var(--color-bg-light);
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 12px;
+        }
+
+        .earnings-info {
+            background: linear-gradient(135deg, #ffeaa7, #fdcb6e);
+        }
+
+        .delivery-info-row,
+        .earnings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .delivery-info-row:last-child,
+        .earnings-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .delivery-info-label,
+        .earnings-label {
+            color: #888;
+            font-weight: 600;
+        }
+
+        .earnings-label {
+            color: #6c3c00;
+        }
+
+        .delivery-info-value,
+        .earnings-value {
+            font-weight: bold;
+            color: var(--color-text);
+        }
+
+        .earnings-value {
+            color: #6c3c00;
+            font-size: 16px;
+        }
+
+        /* PROGRESS TRACKER */
+        .progress-tracker {
+            margin-top: 12px;
+            padding: 12px;
+            background-color: #f0f9ff;
+            border-radius: 10px;
+            border-left: 4px solid var(--color-accent);
+        }
+
+        .progress-label {
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--color-accent);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background-color: #e0f2fe;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--color-accent);
+            transition: width 0.3s ease;
+        }
+
+        /* ORDER FOOTER */
+        .order-footer {
+            padding: 16px;
+            border-top: 1px solid var(--color-border);
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-primary-action,
+        .btn-accept {
+            background-color: var(--color-primary);
+            color: var(--color-text);
+        }
+
+        .btn-accept {
+            background-color: var(--color-success);
+            color: white;
+        }
+
+        .btn-primary-action:hover,
+        .btn-primary-action:focus,
+        .btn-accept:hover,
+        .btn-accept:focus {
+            background-color: var(--color-dark);
+            color: white;
+            transform: translateY(-2px);
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        .btn-accept:hover,
+        .btn-accept:focus {
+            background-color: #22c55e;
+        }
+
+        .btn-secondary-action,
+        .btn-view-details {
+            background-color: white;
+            color: var(--color-dark);
+            border: 2px solid var(--color-primary);
+        }
+
+        .btn-secondary-action:hover,
+        .btn-secondary-action:focus,
+        .btn-view-details:hover,
+        .btn-view-details:focus {
+            background-color: #ffe3f1;
+            border-color: var(--color-dark);
+            outline: 2px solid var(--color-dark);
+            outline-offset: 2px;
+        }
+
+        /* ===== MODAL ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 18px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--color-dark), var(--color-darker));
+            color: white;
+            padding: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .modal-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .close-btn:hover,
+        .close-btn:focus {
+            transform: scale(1.1);
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-section {
+            margin-bottom: 25px;
+        }
+
+        .modal-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--color-text);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-section-title i {
+            color: var(--color-primary);
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-item-label {
+            color: #888;
+            font-size: 13px;
+            min-width: 100px;
+            font-weight: 600;
+        }
+
+        .detail-item-value {
+            color: var(--color-text);
+            flex: 1;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            padding-top: 20px;
+            border-top: 2px solid var(--color-border);
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn-primary {
+            background-color: var(--color-dark);
+            color: white;
+        }
+
+        .modal-btn-primary:hover,
+        .modal-btn-primary:focus {
+            background-color: var(--color-darker);
+            transform: translateY(-2px);
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        .modal-btn-secondary {
+            background-color: white;
+            color: var(--color-dark);
+            border: 2px solid var(--color-primary);
+        }
+
+        .modal-btn-secondary:hover,
+        .modal-btn-secondary:focus {
+            background-color: #ffe3f1;
+            outline: 2px solid var(--color-dark);
+            outline-offset: 2px;
+        }
+
+        /* ===== LOGOUT MODAL SPECIFIC STYLES ===== */
+        #logoutModal .modal-content {
+            max-width: 420px;
+        }
+
+        #logoutModal .modal-header {
+            flex-direction: column;
+            text-align: center;
+            gap: 0;
+        }
+
+        #logoutModal .modal-title {
+            justify-content: center;
+            font-size: 22px;
+            width: 100%;
+        }
+
+        #logoutModal .close-btn {
+            position: absolute;
+            right: 25px;
+            top: 25px;
+        }
+
+        #logoutModal .modal-body {
+            text-align: center;
+            padding: 35px 30px 30px;
+        }
+
+        #logoutModal .modal-body p {
+            font-size: 16px;
+            color: var(--color-text);
+            margin-bottom: 28px;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        #logoutModal .modal-actions {
+            flex-direction: column;
+            gap: 10px;
+            border-top: none;
+            padding-top: 0;
+        }
+
+        #logoutModal .modal-btn {
+            padding: 14px;
+            font-size: 15px;
+        }
+
+        /* ===== HISTORY PANEL ===== */
+        .deliveries-panel {
+            background-color: white;
+            border-radius: 18px;
+            margin: 10px auto 30px;
+            padding: 25px;
+            max-width: 1200px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .panel-title {
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--color-text);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title i {
+            color: var(--color-primary);
+            font-size: 24px;
+        }
+
+        .delivery-item {
+            background-color: var(--color-bg-light);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--color-primary);
+            transition: all 0.3s ease;
+        }
+
+        .delivery-item:hover {
+            background-color: #fff5fa;
+            box-shadow: 0 4px 12px rgba(229, 141, 181, 0.2);
+        }
+
+        .delivery-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .delivery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+            gap: 15px;
+        }
+
+        .delivery-shop {
+            font-weight: bold;
+            color: var(--color-text);
+            font-size: 15px;
+        }
+
+        .delivery-distance {
+            background-color: var(--color-primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .delivery-address {
+            font-size: 13px;
+            color: var(--color-text-light);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: start;
+            gap: 6px;
+        }
+
+        .delivery-address i {
+            color: var(--color-accent);
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .delivery-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #888;
+            flex-wrap: wrap;
+        }
+
+        .delivery-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .delivery-meta i {
+            color: var(--color-accent);
+        }
+
+        .see-more-container {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+
+        .see-more-btn {
+            display: inline-block;
+            padding: 10px 32px;
+            background-color: var(--color-primary);
+            color: var(--color-text);
+            border-radius: 24px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .see-more-btn:hover,
+        .see-more-btn:focus {
+            background-color: var(--color-dark);
+            color: white;
+            transform: translateY(-2px);
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            background-color: var(--color-text);
+            color: white;
+            padding: 30px 8%;
+            text-align: center;
+            margin-top: 50px;
+            font-size: 13px;
+        }
+
+        footer p {
+            opacity: 0.85;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .page-wrapper {
+                padding: 20px 4% 40px;
+            }
+
+            .page-title {
+                font-size: 28px;
+            }
+
+            .page-header-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .filter-search-container {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+
+            .search-box {
+                max-width: 100%;
+            }
+
+            .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .orders-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 95%;
+                max-width: 95%;
+            }
+
+            .tab-btn {
+                font-size: 13px;
+                padding: 12px 10px;
+            }
+
+            .tab-btn i {
+                font-size: 16px;
+            }
+
+            .delivery-header {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header {
+                padding: 12px 4%;
+            }
+
+            .logo-img {
+                height: 60px;
+            }
+
+            .page-title {
+                font-size: 22px;
+            }
+
+            .online-status {
+                width: 100%;
+                justify-content: center;
+                font-size: 12px;
+            }
+
+            .order-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .order-footer {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .stats-bar {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .filter-buttons {
+                width: 100%;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .filter-btn {
+                width: 100%;
+                font-size: 13px;
+                padding: 8px 16px;
+            }
+
+            .modal-header {
+                flex-direction: column;
+                align-items: center;
+                gap: 12px;
+                padding: 20px;
+            }
+
+            .modal-header .modal-label {
+                display: none;
+            }
+
+            .modal-title {
+                font-size: 20px;
+            }
+
+            .close-btn {
+                position: absolute;
+                right: 15px;
+                top: 15px;
+                font-size: 24px;
+            }
+
+            .modal-body {
+                padding: 20px;
+            }
+
+            .modal-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .modal-btn {
+                padding: 11px;
+                font-size: 13px;
+            }
+
+            #logoutModal .modal-body {
+                padding: 25px 20px 20px;
+            }
+
+            #logoutModal .modal-body p {
+                font-size: 15px;
+                margin-bottom: 20px;
+            }
+
+            .delivery-header {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .tab-btn {
+                font-size: 12px;
+                padding: 10px 8px;
+                gap: 4px;
+            }
+
+            .tab-btn i {
+                font-size: 16px;
+            }
+
+            .route-step {
+                margin-bottom: 16px;
+            }
+
+            .page-wrapper {
+                padding: 20px 3% 40px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="../css/rider_header.css">
+    <script>
+        window.LV_CONFIG = <?= js_json($lvConfig) ?>;
+        window.LV_SESSION = <?= js_json($lvSession) ?>;
+    </script>
+    <script src="../js/lavandera_demo.js"></script>
+    <script src="../js/lavandera_api.js"></script>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header class="rider-site-header">
+        <a href="lavandera_rider_dashboard.html" class="logo">
+            <img src="../images/LAVANDERA.svg" alt="Lavandera Logo" class="logo-img">
+        </a>
+
+        <div class="menu-container">
+            <button class="menu-btn" type="button" onclick="toggleMenu()" aria-label="Toggle navigation menu"
+                aria-expanded="false" aria-controls="navDropdown">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="dropdown-menu" id="navDropdown" role="navigation" aria-label="Rider navigation">
+                <div class="dropdown-header">
+                    <div class="user-avatar"><?= h(mb_strtoupper(mb_substr($user['name'], 0, 1))) ?></div>
+                    <div class="user-name"><?= h($user['name']) ?></div>
+                    <div class="user-email"><?= h($user['email']) ?></div>
+                </div>
+                <a href="lavandera_rider_dashboard.html"><i class="fa-solid fa-house"></i>Dashboard</a>
+                <a href="Rider_Orders_Page.php" aria-current="page"><i class="fa-solid fa-boxes-stacked"></i>Current Orders</a>
+                <a href="Rider_Profile_Page.html"><i class="fa-solid fa-user"></i>Profile</a>
+                <a href="../auth/logout.php"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- TAB NAVIGATION -->
+    <div class="tab-navigation">
+        <button class="tab-btn active" onclick="switchTab('available')" aria-label="Available Orders tab">
+            <i class="fa-solid fa-clipboard-list"></i>
+            <span>Available Orders</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('current')" aria-label="Current Orders tab">
+            <i class="fa-solid fa-boxes-stacked"></i>
+            <span>Current Orders</span>
+        </button>
+    </div>
+
+    <!-- ===== AVAILABLE ORDERS TAB ===== -->
+    <div id="available" class="tab-content active">
+        <div class="page-wrapper">
+
+            <!-- PAGE HEADER -->
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fa-solid fa-clipboard-list" aria-hidden="true"></i>
+                    Available Orders
+                </h1>
+                <p class="page-subtitle">Browse and accept available delivery jobs</p>
+            </div>
+
+            <!-- FILTER & SEARCH -->
+            <div class="filter-search-container">
+                <div class="filter-buttons" role="group" aria-label="Filter orders">
+                    <button class="filter-btn active" data-filter="all" onclick="filterOrdersAvailable('all')">All
+                        Jobs</button>
+                    <button class="filter-btn" data-filter="send" onclick="filterOrdersAvailable('send')">Send
+                        Orders</button>
+                    <button class="filter-btn" data-filter="return" onclick="filterOrdersAvailable('return')">Return
+                        Orders</button>
+                </div>
+                <div class="search-box">
+                    <label for="searchAvailable" style="display: none;">Search orders</label>
+                    <input type="text" id="searchAvailable" placeholder="Search by shop..."
+                        onkeyup="searchOrdersAvailable()" aria-label="Search orders by shop name">
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                </div>
+            </div>
+
+            <!-- STATS BAR -->
+            <div class="stats-bar">
+                <div class="stat-badge">
+                    <div class="stat-badge-value" id="availableTotalCount">8</div>
+                    <div class="stat-badge-label">Available Jobs</div>
+                </div>
+                <div class="stat-badge">
+                    <div class="stat-badge-value" id="availableSendCount">5</div>
+                    <div class="stat-badge-label">Send Orders</div>
+                </div>
+                <div class="stat-badge">
+                    <div class="stat-badge-value" id="availableReturnCount">3</div>
+                    <div class="stat-badge-label">Return Orders</div>
+                </div>
+                <div class="stat-badge">
+                    <div class="stat-badge-value" id="maxEarnings">₱2,340</div>
+                    <div class="stat-badge-label">Potential Earnings</div>
+                </div>
+            </div>
+
+            <!-- ORDERS GRID -->
+            <div class="orders-grid" id="availableOrdersGrid">
+                <!-- Orders generated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CURRENT ORDERS TAB ===== -->
+    <div id="current" class="tab-content">
+        <div class="page-wrapper">
+
+            <!-- PAGE HEADER -->
+            <div class="page-header">
+                <div class="page-header-top">
+                    <h1 class="page-title">
+                        <i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i>
+                        Current Orders
+                    </h1>
+                    <div class="online-status">
+                        <span class="status-dot"></span>
+                        Online & Available
+                    </div>
+                </div>
+                <p class="page-subtitle">Track and manage your active deliveries</p>
+            </div>
+
+            <!-- FILTER & SEARCH -->
+            <div class="filter-search-container">
+                <div class="filter-buttons" role="group" aria-label="Filter orders">
+                    <button class="filter-btn active" data-filter="all" onclick="filterOrdersCurrent('all')">All
+                        Orders</button>
+                    <button class="filter-btn" data-filter="in-transit" onclick="filterOrdersCurrent('in-transit')">In
+                        Transit</button>
+                    <button class="filter-btn" data-filter="pending" onclick="filterOrdersCurrent('pending')">Pending
+                        Pickup</button>
+                    <button class="filter-btn" data-filter="completed"
+                        onclick="filterOrdersCurrent('completed')">Completed</button>
+                </div>
+                <div class="search-box">
+                    <label for="searchCurrent" style="display: none;">Search orders</label>
+                    <input type="text" id="searchCurrent" placeholder="Search by order ID or shop..."
+                        onkeyup="searchOrdersCurrent()" aria-label="Search orders by ID or shop name">
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                </div>
+            </div>
+
+            <!-- STATS BAR -->
+            <div class="stats-bar">
+                <div class="stat-badge">
+                    <div class="stat-badge-value" id="currentTotalCount">5</div>
+                    <div class="stat-badge-label">Total Orders</div>
+                </div>
+                <div class="stat-badge">
+                    <div class="stat-badge-value" id="currentInTransitCount">2</div>
+                    <div class="stat-badge-label">In Transit</div>
+                </div>
+                <div class="stat-badge">
+                    <div class="stat-badge-value" id="currentPendingCount">2</div>
+                    <div class="stat-badge-label">Pending</div>
+                </div>
+                <div class="stat-badge">
+                    <div class="stat-badge-value" id="currentCompletedCount">1</div>
+                    <div class="stat-badge-label">Completed</div>
+                </div>
+            </div>
+
+            <!-- ORDERS GRID -->
+            <div class="orders-grid" id="currentOrdersGrid">
+                <!-- Orders generated by JavaScript -->
+            </div>
+
+            <!-- HISTORY OF ORDERS -->
+            <div class="deliveries-panel">
+                <div class="panel-title">
+                    <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
+                    History of Orders
+                </div>
+
+                <div class="delivery-item">
+                    <div class="delivery-header">
+                        <div class="delivery-shop">Mama Mo Laundry</div>
+                        <div class="delivery-distance">2.3 km</div>
+                    </div>
+                    <div class="delivery-address">
+                        <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                        <span>123 Maple Street, Marikina</span>
+                    </div>
+                    <div class="delivery-meta">
+                        <span><i class="fa-solid fa-clock" aria-hidden="true"></i> Completed 1 hour ago</span>
+                        <span><i class="fa-solid fa-money-bill" aria-hidden="true"></i> ₱150</span>
+                    </div>
+                </div>
+
+                <div class="delivery-item">
+                    <div class="delivery-header">
+                        <div class="delivery-shop">Kuya Mo Laundry</div>
+                        <div class="delivery-distance">3.1 km</div>
+                    </div>
+                    <div class="delivery-address">
+                        <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                        <span>456 Oak Avenue, Quezon City</span>
+                    </div>
+                    <div class="delivery-meta">
+                        <span><i class="fa-solid fa-clock" aria-hidden="true"></i> Completed 2 hours ago</span>
+                        <span><i class="fa-solid fa-money-bill" aria-hidden="true"></i> ₱200</span>
+                    </div>
+                </div>
+
+                <div class="delivery-item">
+                    <div class="delivery-header">
+                        <div class="delivery-shop">Lola Mo Dry Cleaning</div>
+                        <div class="delivery-distance">1.8 km</div>
+                    </div>
+                    <div class="delivery-address">
+                        <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                        <span>789 Pine Road, Makati</span>
+                    </div>
+                    <div class="delivery-meta">
+                        <span><i class="fa-solid fa-clock" aria-hidden="true"></i> Completed 3 hours ago</span>
+                        <span><i class="fa-solid fa-money-bill" aria-hidden="true"></i> ₱175</span>
+                    </div>
+                </div>
+
+                <div class="see-more-container">
+                    <button class="see-more-btn" onclick="window.location.href = 'Rider_Order_History_Page.html'">Load
+                        More</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ORDER DETAILS MODAL -->
+    <div class="modal" id="orderModal" role="dialog" aria-labelledby="modalTitle" aria-hidden="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <div class="modal-label">Order Details</div>
+                    <div class="modal-title" id="modalTitle">#LV-JOB-001</div>
+                </div>
+                <button class="close-btn" onclick="closeModal()" aria-label="Close order details">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Route Summary -->
+                <div class="modal-section">
+                    <div class="modal-section-title">
+                        <i class="fa-solid fa-route" aria-hidden="true"></i>
+                        Route & Distance
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-item-label">Total Distance</div>
+                        <div class="detail-item-value" id="modalDistance">2.3 km</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-item-label">Est. Duration</div>
+                        <div class="detail-item-value" id="modalDuration">12 minutes</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-item-label">Pickup Address</div>
+                        <div class="detail-item-value" id="modalPickup">Mama Mo Laundry, 123 Commerce St</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-item-label">Delivery Address</div>
+                        <div class="detail-item-value" id="modalDelivery">123 Maple Street, Marikina</div>
+                    </div>
+                </div>
+
+                <!-- Shop Details -->
+                <div class="modal-section">
+                    <div class="modal-section-title">
+                        <i class="fa-solid fa-store" aria-hidden="true"></i>
+                        Shop Information
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-item-label">Shop Name</div>
+                        <div class="detail-item-value" id="modalShop">Mama Mo Laundry</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-item-label">Service Type</div>
+                        <div class="detail-item-value">Wash & Fold Service</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-item-label">Shop Phone</div>
+                        <div class="detail-item-value">+63 2 8123 4567</div>
+                    </div>
+                </div>
+
+                <!-- Customer Details -->
+                <div class="modal-section">
+                    <div class="modal-section-title">
+                        <i class="fa-solid fa-user" aria-hidden="true"></i>
+                        Customer Information
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-item-label">Name</div>
+                        <div class="detail-item-value" id="modalCustomer">Maria Santos</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-item-label">Phone</div>
+                        <div class="detail-item-value">+63 912 345 6789</div>
+                    </div>
+                </div>
+
+                <!-- Earnings Breakdown -->
+                <div class="modal-section">
+                    <div class="modal-section-title">
+                        <i class="fa-solid fa-money-bill" aria-hidden="true"></i>
+                        Earnings Breakdown
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-item-label">Base Rate (per km)</div>
+                        <div class="detail-item-value">₱100/km</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-item-label">Distance Earnings</div>
+                        <div class="detail-item-value" style="font-weight: bold; color: var(--color-primary);"
+                            id="modalEarnings">₱230</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-item-label">Bonuses</div>
+                        <div class="detail-item-value" id="modalBonus">+₱50</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-item-label">Total Earnings</div>
+                        <div class="detail-item-value"
+                            style="font-weight: bold; font-size: 16px; color: var(--color-success);" id="modalTotal">
+                            ₱280</div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="modal-actions" id="modalActions">
+                    <button class="modal-btn modal-btn-primary" onclick="acceptOrderFromModal()">
+                        <i class="fa-solid fa-check" aria-hidden="true"></i>
+                        Accept Order
+                    </button>
+                    <button class="modal-btn modal-btn-secondary" onclick="closeModal()">
+                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGOUT MODAL -->
+    <div class="modal" id="logoutModal" role="dialog" aria-labelledby="logoutTitle" aria-hidden="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="logoutTitle">
+                    <i class="fa-solid fa-sign-out-alt" aria-hidden="true"></i>
+                    Log Out
+                </div>
+                <button class="close-btn" onclick="closeLogoutModal()" aria-label="Close logout dialog">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <p>Are you sure you want to log out?</p>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-primary" onclick="confirmLogout()">Yes, Log Out</button>
+                    <button class="modal-btn modal-btn-secondary" onclick="closeLogoutModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <p>&copy; 2026 LAVANDERA. Rider Orders Manager. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        $(document).ready(function () {
+
+            // 1. DATA SOURCES
+            // Before: two hard-coded arrays + LV.orders() (browser storage).
+            // Now: both lists start empty and loadJobs() fills them from the PHP API.
+            let availableOrders = [];
+            let currentOrders = [];
+
+            // Adapter: converts ONE job from the API into the object shape the card templates below already use,
+            // so the templates did not need rewriting.
+            function toCard(job) {
+                return {
+                    id: '#LV-' + job.orderId + (job.type === 'send' ? '-S' : '-R'),   // label shown on the card
+                    jobId: job.id,                                                     // the REAL id we send back to accept
+                    sharedOrderId: job.orderId,                                        // truthy -> template skips the fake " Laundry" suffix
+                    shop: job.shop, type: job.type,
+                    distance: job.distanceKm, time: String(job.minutes),
+                    earnings: job.pay, bonus: 0,
+                    pickup: job.pickup, delivery: job.dropoff,
+                    customer: job.customer || '',
+                    status: 'in-transit',
+                    progress: job.type === 'send' ? 35 : 70                            // rough progress bar value
+                };
+            }
+
+            // Ask the server for the board and redraw everything.
+            async function loadJobs() {
+                try {
+                    const data = await LVApi.get('../api/rider/jobs.php');
+                    availableOrders = data.available.map(toCard);
+                    currentOrders = data.current.map(toCard);
+                    renderAvailableOrders();
+                    renderCurrentOrders();
+                    filterAndSearch('available');   // also refreshes the counters
+                    filterAndSearch('current');
+                } catch (error) {
+                    alert(error.message);
+                }
+            }
+
+            // 2. RENDERING TEMPLATES
+            function renderAvailableOrders() {
+                const html = availableOrders.map(o => `
+            <div class="order-card" data-status="${o.type}" data-shop="${LV.esc(o.shop.toLowerCase())}">
+                <div class="order-header">
+                    <div><div class="order-number">Job ID</div><div class="order-id">${o.id}</div></div>
+                    <div class="job-type-badge"><span class="job-type-dot ${o.type}"></span>${o.type === 'send' ? 'Send Order' : 'Return Order'}</div>
+                </div>
+                <div class="shop-info">
+                    <div class="shop-name"><i class="fa-solid fa-location-dot shop-icon"></i> ${LV.esc(o.sharedOrderId ? o.shop : o.shop + ' Laundry')}</div>
+                    <div class="shop-type">Delivery Service</div>
+                </div>
+                <div class="route-info">
+                    <div class="route-step"><div class="route-icon"><i class="fa-solid fa-store"></i></div><div class="route-content"><div class="route-label">Pickup From</div><div class="route-address">${LV.esc(o.pickup)}</div></div></div>
+                    <div class="route-step"><div class="route-icon"><div class="route-connector"></div><i class="fa-solid fa-home"></i></div><div class="route-content"><div class="route-label">${o.type === 'send' ? 'Deliver To' : 'Return To'}</div><div class="route-address">${LV.esc(o.delivery)}</div></div></div>
+                </div>
+                <div class="order-details">
+                    <div class="detail-row"><i class="fa-solid fa-map detail-icon"></i><div class="detail-content"><div class="detail-label">Distance</div><div class="detail-value">${o.distance} km</div></div></div>
+                    <div class="detail-row"><i class="fa-solid fa-hourglass-end detail-icon"></i><div class="detail-content"><div class="detail-label">Est. Time</div><div class="detail-value">${o.time} minutes</div></div></div>
+                    <div class="earnings-info">
+                        <div class="earnings-row"><span class="earnings-label">Distance Earnings</span><span class="earnings-value">₱${o.earnings}</span></div>
+                        <div class="earnings-row"><span class="earnings-label">Bonus</span><span class="earnings-value">+₱${o.bonus}</span></div>
+                    </div>
+                </div>
+                <div class="order-footer">
+                    <button class="btn-action btn-accept" data-id="${o.id}" data-job-id="${o.jobId}"><i class="fa-solid fa-check"></i> Accept Order</button>
+                    <button class="btn-action btn-view-details" data-order='${LV.esc(JSON.stringify(o))}'><i class="fa-solid fa-circle-info"></i> Details</button>
+                </div>
+            </div>
+        `).join('');
+                $('#availableOrdersGrid').html(html);
+            }
+
+            function renderCurrentOrders() {
+                const html = currentOrders.map(o => `
+            <div class="order-card" data-status="${o.status}" data-shop="${LV.esc(o.shop.toLowerCase())}">
+                <div class="order-header">
+                    <div><div class="order-number">Order</div><div class="order-id">${o.id}</div></div>
+                    <div class="order-status"><span class="status-indicator ${o.status}"></span>${o.status === 'in-transit' ? 'In Transit' : o.status === 'pending' ? 'Pending Pickup' : 'Completed'}</div>
+                </div>
+                <div class="shop-info">
+                    <div class="shop-name"><i class="fa-solid fa-location-dot shop-icon"></i> ${LV.esc(o.sharedOrderId ? o.shop : o.shop + ' Laundry')}</div>
+                    <div class="shop-type">Delivery Service</div>
+                </div>
+                <div class="order-details">
+                    <div class="detail-row"><i class="fa-solid fa-user detail-icon"></i><div class="detail-content"><div class="detail-label">Customer</div><div class="detail-value">${LV.esc(o.customer)}</div></div></div>
+                    <div class="detail-row"><i class="fa-solid fa-map-pin detail-icon"></i><div class="detail-content"><div class="detail-label">${o.status === 'completed' ? 'Delivered To' : 'Delivery To'}</div><div class="detail-value">${LV.esc(o.delivery)}</div></div></div>
+                    <div class="delivery-info">
+                        <div class="delivery-info-row"><span class="delivery-info-label">Distance</span><span class="delivery-info-value">${o.distance} km</span></div>
+                        <div class="delivery-info-row"><span class="delivery-info-label">Est. Time</span><span class="delivery-info-value">${o.time} mins</span></div>
+                        <div class="delivery-info-row"><span class="delivery-info-label">Earnings</span><span class="delivery-info-value">₱${o.earnings}</span></div>
+                    </div>
+                    <div class="progress-tracker">
+                        <div class="progress-label">Trip Progress</div>
+                        <div class="progress-bar"><div class="progress-fill" style="width: ${o.progress}%;"></div></div>
+                    </div>
+                </div>
+                <div class="order-footer">
+                    <button class="btn-action btn-primary-action current-details-btn" data-id="${o.id}" data-order='${LV.esc(JSON.stringify(o))}'><i class="fa-solid fa-circle-info"></i> View Details</button>
+                    <button class="btn-action btn-secondary-action call-btn"><i class="fa-solid fa-phone"></i> Call</button>
+                </div>
+            </div>
+        `).join('');
+                $('#currentOrdersGrid').html(html);
+            }
+
+            // 3. UNIFIED FILTER & SEARCH LOGIC
+            function filterAndSearch(sectionId) {
+                const $section = $(`#${sectionId}`);
+                const activeFilter = $section.find('.filter-btn.active').data('filter') || 'all';
+                const query = $section.find('input[type="text"]').val().toLowerCase();
+
+                let total = 0, counts = {};
+
+                $section.find('.order-card').each(function () {
+                    const $card = $(this);
+                    const status = $card.data('status');
+                    const matchFilter = (activeFilter === 'all' || status === activeFilter);
+                    const matchSearch = $card.text().toLowerCase().includes(query);
+
+                    if (matchFilter && matchSearch) {
+                        $card.css('display', 'flex');
+                        total++;
+                        counts[status] = (counts[status] || 0) + 1;
+                    } else {
+                        $card.css('display', 'none');
+                    }
+                });
+
+                // Dynamically update stats
+                if (sectionId === 'available') {
+                    $('#availableTotalCount').text(total);
+                    $('#availableSendCount').text(counts['send'] || 0);
+                    $('#availableReturnCount').text(counts['return'] || 0);
+                } else {
+                    $('#currentTotalCount').text(total);
+                    $('#currentInTransitCount').text(counts['in-transit'] || 0);
+                    $('#currentPendingCount').text(counts['pending'] || 0);
+                    $('#currentCompletedCount').text(counts['completed'] || 0);
+                }
+            }
+
+            // 4. EVENT LISTENERS
+            window.switchTab = function (tabName) {
+                $('.tab-content, .tab-btn').removeClass('active');
+                $(`#${tabName}`).addClass('active');
+                $(`.tab-btn[onclick*="${tabName}"]`).addClass('active');
+            };
+
+            window.toggleMenu = function () {
+                const $menu = $('#navDropdown');
+                const show = $menu.toggleClass('show').hasClass('show');
+                $('.menu-btn').attr('aria-expanded', show);
+            };
+
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest('.menu-container').length) {
+                    $('#navDropdown').removeClass('show');
+                    $('.menu-btn').attr('aria-expanded', 'false');
+                }
+            });
+
+            $('.filter-btn').on('click', function () {
+                const $btn = $(this);
+                const $section = $btn.closest('.tab-content');
+                $section.find('.filter-btn').removeClass('active');
+                $btn.addClass('active');
+                filterAndSearch($section.attr('id'));
+            });
+
+            $('#searchAvailable, #searchCurrent').on('keyup', function () {
+                filterAndSearch($(this).closest('.tab-content').attr('id'));
+            });
+
+            // 5. MODAL HANDLERS
+            function closeModal() {
+                $('#orderModal').removeClass('show').attr('aria-hidden', 'true');
+                $('body').css('overflow', 'auto');
+            }
+
+            window.closeModal = closeModal;
+
+            function closeLogoutModal() {
+                $('#logoutModal').removeClass('show').attr('aria-hidden', 'true');
+                $('body').css('overflow', 'auto');
+            }
+
+            window.closeLogoutModal = closeLogoutModal;
+
+            window.openLogoutModal = function () {
+                $('#logoutModal').addClass('show').attr('aria-hidden', 'false');
+                $('body').css('overflow', 'hidden');
+            };
+
+            window.confirmLogout = function () {
+                location.href = '../auth/logout.php';   // ends the PHP session (LV.logout only cleared the demo data)
+            };
+
+            $(document).on('click', '.btn-view-details', function () {
+                const o = JSON.parse($(this).attr('data-order'));
+                $('#modalTitle').text(o.id);
+                $('#modalDistance').text(o.distance + ' km');
+                $('#modalDuration').text(o.time + ' minutes');
+                $('#modalPickup').text(o.pickup);
+                $('#modalDelivery').text(o.delivery);
+                $('#modalShop').text(o.sharedOrderId ? o.shop : o.shop + ' Laundry');
+                $('#modalEarnings').text('₱' + o.earnings);
+                $('#modalBonus').text('+₱' + o.bonus);
+                $('#modalTotal').text('₱' + (parseInt(o.earnings) + parseInt(o.bonus)));
+
+                $('#modalActions').html(`
+            <button class="modal-btn modal-btn-primary accept-modal-btn" data-id="${o.id}" data-job-id="${o.jobId}"><i class="fa-solid fa-check"></i> Accept Order</button>
+            <button class="modal-btn modal-btn-secondary" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Cancel</button>
+        `);
+                $('#orderModal').addClass('show').attr('aria-hidden', 'false');
+                $('body').css('overflow', 'hidden');
+            });
+
+            $(document).on('click', '.current-details-btn', function () {
+                const o = JSON.parse($(this).attr('data-order'));
+                $('#modalTitle').text(o.id);
+
+                $('#modalActions').html(`
+            <button class="modal-btn modal-btn-primary" onclick="closeModal();"><i class="fa-solid fa-xmark"></i> Close</button>
+            <button class="modal-btn modal-btn-secondary" onclick="alert('Calling shop...');"><i class="fa-solid fa-phone"></i> Call Shop</button>
+        `);
+                $('#orderModal').addClass('show').attr('aria-hidden', 'false');
+                $('body').css('overflow', 'hidden');
+            });
+
+            // Accept button (on the card AND inside the details popup).
+            // The server decides who wins if two riders click at once; we just show the result.
+            $(document).on('click', '.btn-accept, .accept-modal-btn', async function () {
+                const jobId = $(this).data('job-id');                       // from data-job-id="..."
+                const label = $(this).data('id') || $('#modalTitle').text();
+                if (!confirm(`Accept order ${label}?`)) return;
+                try {
+                    const data = await LVApi.postJson('../api/rider/jobs.php', { action: 'accept', job_id: jobId });
+                    availableOrders = data.available.map(toCard);          // the reply is the refreshed board
+                    currentOrders = data.current.map(toCard);
+                    closeModal();
+                    renderAvailableOrders();
+                    renderCurrentOrders();
+                    filterAndSearch('available');
+                    filterAndSearch('current');
+                    alert(`Order ${label} accepted and added to your current orders.`);
+                } catch (error) {
+                    alert(error.message);        // e.g. "Another rider already took this job."
+                    loadJobs();                   // refresh so the taken job disappears
+                }
+            });
+
+            $(document).on('click', '.call-btn', () => alert('Calling customer...'));
+
+            $(window).on('click', (e) => { if ($(e.target).is('#orderModal')) closeModal(); });
+            $(document).on('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+            // 6. INITIALIZE
+            loadJobs();
+        });
+    </script>
+
+</body>
+
+</html>
