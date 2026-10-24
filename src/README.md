@@ -24,6 +24,7 @@ Already imported the schema before? Add the two new store benefits without re-im
       auth.php       login_user(), logout_user(), current_user(), page/API guards
       fees.php       calc_delivery_fee($km)  <- use this for send/return fees on the customer side too
       store/         store profile + order logic
+      admin/         admin_repo.php: dashboard numbers, customer/store/rider lists, approve/reject/suspend
     database/        lavandera.sql (+ sample data)
 
 ## For the sign-in / sign-up code (shared contract)
@@ -41,6 +42,14 @@ Already imported the schema before? Add the two new store benefits without re-im
 - `current_user()` also returns `name` (store / customer / rider name); the store pages pass it, with the email, to the
   shared navbar. Customer / rider pages can do the same: put `window.LV_SESSION = {id, role, name, email}` in the page and
   load `public/js/lavandera_api.js` before calling `LV.renderNav()`. It also makes the navbar Logout end the PHP session.
+
+## Admin pages
+- Pages: `public/admin/Admin_{Dashboard,Customers,Stores,Riders}_Page.php` (only a signed-in `admin` with status `active`; anyone else is sent to the login page).
+- API: `public/api/admin/{dashboard,customers,stores,riders}.php`. Stores and riders accept POST `{action: approve|reject|suspend, id, reason}`:
+  `approve` = pending/rejected/suspended -> active (also "Reactivate"), `reject` = pending -> rejected (reason shown to the applicant),
+  `suspend` = active -> suspended. Wrong-state requests get a clear "status has changed" message. `users.reviewed_by/reviewed_at` are filled in.
+- Stores page also has Feature / Unfeature (`action: feature|unfeature`, sets `stores.is_featured`; only active stores can be featured). The Customer Home page should list `is_featured = 1` stores from `v_store_listing`.
+- The sign-in code must already block `rejected` / `suspended` accounts (that is what makes a suspension take effect).
 
 ## Store location and delivery fees (OpenStreetMap)
 - `stores.latitude/longitude` are required when a store submits setup or saves its dashboard (Philippines only).

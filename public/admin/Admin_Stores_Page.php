@@ -330,6 +330,11 @@ $lvSession = ['id' => $user['id'], 'role' => 'admin', 'name' => $user['name'], '
             let html = '<button class="lv-btn lv-btn-outline lv-btn-sm" onclick="openStore(' + s.id + ')">' +
                 '<i class="fa-solid fa-eye"></i>View</button>';
             if (s.status === 'active') {
+                html += s.featured
+                    ? '<button class="lv-btn lv-btn-outline lv-btn-sm" onclick="toggleFeatured(' + s.id + ', false)" title="Remove from the Customer Home page">' +
+                      '<i class="fa-solid fa-star"></i>Unfeature</button>'
+                    : '<button class="lv-btn lv-btn-outline lv-btn-sm" onclick="toggleFeatured(' + s.id + ', true)" title="Show on the Customer Home page">' +
+                      '<i class="fa-regular fa-star"></i>Feature</button>';
                 html += '<button class="lv-btn lv-btn-danger lv-btn-sm" onclick="suspendStore(' + s.id + ')">' +
                     '<i class="fa-solid fa-ban"></i>Suspend</button>';
             } else if (s.status === 'suspended') {
@@ -356,6 +361,17 @@ $lvSession = ['id' => $user['id'], 'role' => 'admin', 'name' => $user['name'], '
             try {
                 await sendAction('approve', s.id);
                 LV.toast(s.name + (wasSuspended ? ' reactivated.' : ' approved - customers can now find them.'));
+            } catch (error) {
+                LV.toast(error.message, 'fa-circle-info');
+                loadStores();
+            }
+        }
+
+        async function toggleFeatured(id, on) {
+            const s = getStore(id); if (!s) return;
+            try {
+                await sendAction(on ? 'feature' : 'unfeature', s.id);
+                LV.toast(on ? s.name + ' is now featured.' : s.name + ' is no longer featured.', 'fa-star');
             } catch (error) {
                 LV.toast(error.message, 'fa-circle-info');
                 loadStores();

@@ -127,3 +127,26 @@ function require_store_api(array $allowed = ['active'])
     }
     return $u;
 }
+
+/** Gate for admin PAGES (call at the very top, before any output). Returns the admin user row. */
+function guard_admin_page()
+{
+    $u = current_user();
+    if (!$u || $u['role'] !== 'admin' || $u['status'] !== 'active') {
+        redirect(config('login_url'));
+    }
+    return $u;
+}
+
+/** Gate for admin API endpoints. */
+function require_admin_api()
+{
+    $u = current_user();
+    if (!$u) {
+        json_fail('Please sign in.', 401);
+    }
+    if ($u['role'] !== 'admin' || $u['status'] !== 'active') {
+        json_fail('This action is only for administrators.', 403);
+    }
+    return $u;
+}
