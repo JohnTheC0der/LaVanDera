@@ -26,10 +26,10 @@ function account_destination($role, $status)
         return '../admin/Admin_Dashboard_Page.html';
     }
     if ($role === 'customer') {
-        return '../customer/Customer_Home_Page.html';
+        return '../customer/Customer_Home_Page.php';
     }
     if ($role === 'rider') {
-        return $status === 'active' ? '../rider/lavandera_rider_dashboard.html' : rider_pending_url();
+        return $status === 'active' ? '../rider/lavandera_rider_dashboard.php' : rider_pending_url();
     }
     // store
     if ($status === 'setup_required') {
@@ -112,7 +112,13 @@ function account_signup($role, array $in)
     } else {
         login_user(['id' => $id, 'role' => $role]);
     }
-    return ['role' => $role, 'status' => $status, 'redirect' => account_destination($role, $status)];
+    $redirect = account_destination($role, $status);
+    if ($role === 'customer') {
+        // A brand-new customer has an address but no MAP PIN yet, and without the pin we cannot work out delivery fees.
+        // So the profile page (with the map) is the best first stop.
+        $redirect = '../customer/Customer_Profile_Page.php';
+    }
+    return ['role' => $role, 'status' => $status, 'redirect' => $redirect];
 }
 
 /** Check email + password and start the session. Returns ['redirect' => '...']. */

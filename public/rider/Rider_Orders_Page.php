@@ -1400,7 +1400,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
 
     <!-- HEADER -->
     <header class="rider-site-header">
-        <a href="lavandera_rider_dashboard.html" class="logo">
+        <a href="lavandera_rider_dashboard.php" class="logo">
             <img src="../images/LAVANDERA.svg" alt="Lavandera Logo" class="logo-img">
         </a>
 
@@ -1415,9 +1415,9 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
                     <div class="user-name"><?= h($user['name']) ?></div>
                     <div class="user-email"><?= h($user['email']) ?></div>
                 </div>
-                <a href="lavandera_rider_dashboard.html"><i class="fa-solid fa-house"></i>Dashboard</a>
+                <a href="lavandera_rider_dashboard.php"><i class="fa-solid fa-house"></i>Dashboard</a>
                 <a href="Rider_Orders_Page.php" aria-current="page"><i class="fa-solid fa-boxes-stacked"></i>Current Orders</a>
-                <a href="Rider_Profile_Page.html"><i class="fa-solid fa-user"></i>Profile</a>
+                <a href="Rider_Profile_Page.php"><i class="fa-solid fa-user"></i>Profile</a>
                 <a href="../auth/logout.php"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
             </div>
         </div>
@@ -1610,7 +1610,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
                 </div>
 
                 <div class="see-more-container">
-                    <button class="see-more-btn" onclick="window.location.href = 'Rider_Order_History_Page.html'">Load
+                    <button class="see-more-btn" onclick="window.location.href = 'Rider_Order_History_Page.php'">Load
                         More</button>
                 </div>
             </div>

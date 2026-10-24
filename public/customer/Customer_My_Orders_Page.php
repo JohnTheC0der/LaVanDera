@@ -74,6 +74,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
     </script>
     <script src="../js/lavandera_demo.js"></script>
     <script src="../js/lavandera_api.js"></script>
+    <script src="../js/lavandera_links.js"></script>
     <script>
         const PROGRESS = ['pending_store', 'waiting_for_driver', 'enroute_to_store', 'at_laundromat',
                           'waiting_for_return_driver', 'enroute_to_customer'];
@@ -90,7 +91,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
         // Before: LV.requireRole() + LV.ordersOfCustomer() read browser storage.
         // Now: the server already checked who we are (guard_customer_page above); we only fetch the orders.
         let orders = [];
-        try { LV.renderNav('customer', 'orders'); LVApi.fixNavLinks(); } catch (navError) { console.warn('Navbar failed to render', navError); }
+        try { LV.renderNav('customer', 'orders'); LVApi.fixNavLinks(); LVLinks.fix(); } catch (navError) { console.warn('Navbar failed to render', navError); }
 
         async function loadOrders() {
             try {
@@ -137,7 +138,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
                 host.innerHTML =
                     '<div class="lv-card lv-empty"><i class="fa-solid fa-basket-shopping"></i>' +
                     '<h3>No orders yet</h3><p>Place your first laundry order and track every step right here.</p>' +
-                    '<a href="Customer_Place_Order_Page.html" class="lv-btn lv-btn-primary" style="margin-top:16px;">' +
+                    '<a href="Customer_Place_Order_Page.php" class="lv-btn lv-btn-primary" style="margin-top:16px;">' +
                     '<i class="fa-solid fa-plus"></i> Place an Order</a></div>';
             } else if (!list.length) {
                 host.innerHTML =

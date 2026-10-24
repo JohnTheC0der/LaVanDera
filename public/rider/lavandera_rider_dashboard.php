@@ -1,0 +1,1221 @@
+<?php
+/**
+ * Rider Dashboard (converted to PHP): real name and real numbers from the database.
+ * Runs on the SERVER before any HTML is sent:
+ *   1. bootstrap.php = config + session + helpers
+ *   2. guard_rider_page() = redirects away unless the visitor is the right, approved kind of user
+ *   3. $lvConfig / $lvSession = handed to JavaScript below (CSRF token + who is really signed in)
+ */
+require __DIR__ . '/../../src/bootstrap.php';
+require_once LV_ROOT . '/src/auth/guards.php';
+$user = guard_rider_page();
+$lvConfig  = ['loginUrl' => config('login_url'), 'logoutUrl' => '../auth/logout.php', 'csrf' => csrf_token()];
+$lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], 'email' => $user['email']];
+?>
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LAVANDERA - Rider Dashboard</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: #fff7fb;
+            color: #333333;
+        }
+
+        /* HEADER */
+        header {
+            background-color: #e58db5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 5%;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .logo-img {
+            height: 80px;
+            width: auto;
+            display: block;
+            filter: brightness(0.6) contrast(1.2);
+            margin-top: -10px;
+            margin-bottom: -10px;
+        }
+
+        .menu-container {
+            position: relative;
+        }
+
+        .menu-btn {
+            background-color: #5a003c;
+            color: white;
+            border: none;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-btn:hover {
+            background-color: #800055;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 56px;
+            background-color: white;
+            width: 280px;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            z-index: 1001;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-header {
+            background-color: #f8f3f7;
+            padding: 20px 18px;
+            border-bottom: 1px solid #e8d4e0;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e58db5, #5a003c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .user-avatarbig {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e58db5, #5a003c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 72px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #45002e;
+            margin-bottom: 4px;
+        }
+
+        .user-email {
+            font-size: 12px;
+            color: #999;
+            word-break: break-word;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background-color: #e8d4e0;
+            margin: 12px 0;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            color: #45002e;
+            padding: 14px 18px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 1px solid #f3d3e3;
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #fff5fa;
+            color: #5a003c;
+            padding-left: 24px;
+        }
+
+        .dropdown-menu a i {
+            margin-right: 8px;
+            color: #e58db5;
+            width: 16px;
+        }
+
+        /* MAIN DASHBOARD CONTAINER */
+        .dashboard-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 5%;
+            padding-top: 30px;
+            padding-bottom: 40px;
+        }
+
+        /* WELCOME SECTION */
+        .card-wrapper {
+            display: block;
+            /* Ensures the anchor behaves like a block container */
+            text-decoration: none;
+            color: inherit;
+            /* Prevents all text inside from turning blue */
+        }
+
+
+        .welcome-section {
+            background: linear-gradient(135deg, #ffe3f1, #f8e5ff);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 12px rgba(90, 0, 60, 0.12);
+        }
+
+        .welcome-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .welcome-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .welcome-profile img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e58db5;
+        }
+
+        .welcome-text h1 {
+            font-size: 35px;
+            color: #45002e;
+            font-weight: 900;
+            margin-bottom: 8px;
+            margin-right: 180px;
+        }
+
+        .welcome-text p {
+            font-size: 16px;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #5a003c;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: bold;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            background-color: #4ade80;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* QUICK STATS */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background-color: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(90, 0, 60, 0.12);
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: #e58db5;
+            box-shadow: 0 8px 20px rgba(90, 0, 60, 0.18);
+        }
+
+        .stat-icon {
+            font-size: 32px;
+            color: #e58db5;
+            margin-bottom: 12px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 900;
+            color: #45002e;
+            margin-bottom: 6px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* MAIN CONTENT AREA */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ACTIVE DELIVERIES SECTION */
+        .deliveries-panel {
+            background-color: white;
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(90, 0, 60, 0.12);
+        }
+
+        .panel-title {
+            font-size: 20px;
+            font-weight: 900;
+            color: #45002e;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title i {
+            color: #e58db5;
+            font-size: 24px;
+        }
+
+        .delivery-item {
+            background-color: #f8f3f7;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 15px;
+            border-left: 4px solid #e58db5;
+            transition: all 0.3s ease;
+        }
+
+        .delivery-item:hover {
+            background-color: #fff5fa;
+            box-shadow: 0 4px 12px rgba(229, 141, 181, 0.2);
+        }
+
+        .delivery-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .delivery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .delivery-shop {
+            font-weight: bold;
+            color: #45002e;
+            font-size: 15px;
+        }
+
+        .delivery-distance {
+            background-color: #e58db5;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .delivery-address {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: start;
+            gap: 6px;
+        }
+
+        .delivery-address i {
+            color: #3bb2b8;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .delivery-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .delivery-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .delivery-meta i {
+            color: #3bb2b8;
+        }
+
+        .delivery-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-accept {
+            flex: 1;
+            background-color: #e58db5;
+            color: #45002e;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-accept:hover {
+            background-color: #5a003c;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-decline {
+            flex: 1;
+            background-color: white;
+            color: #5a003c;
+            border: 2px solid #e58db5;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-decline:hover {
+            border-color: #5a003c;
+            background-color: #f8f3f7;
+        }
+
+        /* EARNINGS SECTION */
+        .earnings-panel {
+            background: linear-gradient(135deg, #5a003c, #800055);
+            border-radius: 18px;
+            padding: 25px;
+            color: white;
+            box-shadow: 0 8px 20px rgba(90, 0, 60, 0.25);
+        }
+
+        .earnings-main {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .earnings-label {
+            font-size: 13px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .earnings-amount {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 12px;
+        }
+
+        .earnings-period {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        .earnings-breakdown {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .breakdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .breakdown-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .breakdown-value {
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        /* PERFORMANCE SECTION */
+        .performance-section {
+            background-color: white;
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(90, 0, 60, 0.12);
+            margin-bottom: 40px;
+        }
+
+        .performance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .performance-metric {
+            background: linear-gradient(135deg, #ffe3f1, #f8e5ff);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .metric-icon {
+            font-size: 28px;
+            color: #e58db5;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 20px;
+            font-weight: 900;
+            color: #45002e;
+            margin-bottom: 4px;
+        }
+
+        .metric-name {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* REVIEWS SECTION */
+        .reviews-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .review-item {
+            background-color: #f8f3f7;
+            border-radius: 12px;
+            padding: 16px;
+            border-left: 4px solid #3bb2b8;
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .review-author {
+            font-weight: bold;
+            color: #45002e;
+            font-size: 14px;
+        }
+
+        .review-stars {
+            color: #ffb800;
+            font-size: 13px;
+        }
+
+        .review-text {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        /* BOTTOM BUTTON SECTION */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn-primary {
+            background-color: #5a003c;
+            color: white;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-primary:hover {
+            background-color: #800055;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(90, 0, 60, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: #5a003c;
+            padding: 16px 24px;
+            border: 2px solid #e58db5;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-secondary:hover {
+            background-color: #fff5fa;
+            border-color: #5a003c;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .welcome-header {
+                flex-direction: column;
+            }
+
+            .welcome-text h1 {
+                font-size: 26px;
+            }
+
+            .quick-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .stat-value {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-wrapper {
+                padding: 0 4%;
+                padding-top: 20px;
+            }
+
+            .welcome-section {
+                padding: 20px;
+            }
+
+            .quick-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .welcome-text h1 {
+                font-size: 22px;
+            }
+
+            .performance-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* ===== MODAL ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 18px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--color-dark), var(--color-darker));
+            color: white;
+            padding: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .modal-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .close-btn:hover,
+        .close-btn:focus {
+            transform: scale(1.1);
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-section {
+            margin-bottom: 25px;
+        }
+
+        .modal-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--color-text);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-section-title i {
+            color: var(--color-primary);
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-item-label {
+            color: #888;
+            font-size: 13px;
+            min-width: 100px;
+            font-weight: 600;
+        }
+
+        .detail-item-value {
+            color: var(--color-text);
+            flex: 1;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            padding-top: 20px;
+            border-top: 2px solid var(--color-border);
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn-primary {
+            background-color: var(--color-dark);
+            color: white;
+        }
+
+        .modal-btn-primary:hover,
+        .modal-btn-primary:focus {
+            background-color: var(--color-darker);
+            transform: translateY(-2px);
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        .modal-btn-secondary {
+            background-color: white;
+            color: var(--color-dark);
+            border: 2px solid var(--color-primary);
+        }
+
+        .modal-btn-secondary:hover,
+        .modal-btn-secondary:focus {
+            background-color: #ffe3f1;
+            outline: 2px solid var(--color-dark);
+            outline-offset: 2px;
+        }
+
+        /* ===== LOGOUT MODAL SPECIFIC STYLES ===== */
+        #logoutModal .modal-content {
+            max-width: 420px;
+        }
+
+        #logoutModal .modal-header {
+            flex-direction: column;
+            text-align: center;
+            gap: 0;
+        }
+
+        #logoutModal .modal-title {
+            justify-content: center;
+            font-size: 22px;
+            width: 100%;
+        }
+
+        #logoutModal .close-btn {
+            position: absolute;
+            right: 25px;
+            top: 25px;
+        }
+
+        #logoutModal .modal-body {
+            text-align: center;
+            padding: 35px 30px 30px;
+        }
+
+        #logoutModal .modal-body p {
+            font-size: 16px;
+            color: var(--color-text);
+            margin-bottom: 28px;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        #logoutModal .modal-actions {
+            flex-direction: column;
+            gap: 10px;
+            border-top: none;
+            padding-top: 0;
+        }
+
+        #logoutModal .modal-btn {
+            padding: 14px;
+            font-size: 15px;
+        }
+
+        /* FOOTER */
+        footer {
+            background-color: #45002e;
+            color: white;
+            padding: 30px 8%;
+            text-align: center;
+            margin-top: 50px;
+            font-size: 13px;
+        }
+
+        footer p {
+            opacity: 0.85;
+        }
+    </style>
+<link href="../css/rider_header.css" rel="stylesheet"/>
+
+
+    <script>
+        window.LV_CONFIG = <?= js_json($lvConfig) ?>;
+        window.LV_SESSION = <?= js_json($lvSession) ?>;
+    </script>
+    <script src="../js/lavandera_demo.js"></script>
+    <script src="../js/lavandera_api.js"></script>
+    <script src="../js/lavandera_links.js"></script></head>
+<body>
+<!-- HEADER -->
+<header class="rider-site-header">
+<a class="logo" href="lavandera_rider_dashboard.php">
+<img alt="Lavandera Logo" class="logo-img" src="../images/LAVANDERA.svg"/>
+</a>
+<div class="menu-container">
+<button aria-controls="navDropdown" aria-expanded="false" aria-label="Toggle navigation menu" class="menu-btn" onclick="toggleMenu()" type="button">
+<i class="fa-solid fa-bars"></i>
+</button>
+<div aria-label="Rider navigation" class="dropdown-menu" id="navDropdown" role="navigation">
+<div class="dropdown-header">
+<div class="user-avatar"><?= h(mb_strtoupper(mb_substr($user['name'], 0, 1))) ?></div>
+<div class="user-name"><?= h($user['name']) ?></div>
+<div class="user-email"><?= h($user['email']) ?></div>
+</div>
+<a aria-current="page" href="lavandera_rider_dashboard.php"><i class="fa-solid fa-house"></i>Dashboard</a>
+<a href="Rider_Orders_Page.php"><i class="fa-solid fa-boxes-stacked"></i>Current Orders</a>
+<a href="Rider_Profile_Page.php"><i class="fa-solid fa-user"></i>Profile</a>
+<a href="../auth/logout.php"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
+</div>
+</div>
+</header>
+<!-- MAIN DASHBOARD CONTENT -->
+<div class="dashboard-wrapper">
+<!-- WELCOME SECTION -->
+<a class="card-wrapper" href="Rider_Orders_Page.php">
+<div class="welcome-section">
+<div class="welcome-header">
+<div class="welcome-profile">
+<div class="user-avatarbig"><?= h(mb_strtoupper(mb_substr($user['name'], 0, 1))) ?></div>
+</div>
+<div class="welcome-text">
+<h1>Welcome back, <?= h(explode(' ', trim($user['name']))[0]) ?>! 👋</h1>
+<p>You're on fire today! Keep up the momentum.</p>
+</div>
+<div class="status-badge">
+<div class="status-indicator"></div>
+                        Online
+                    </div>
+</div>
+</div>
+</a>
+<!-- QUICK STATS -->
+<div class="quick-stats">
+<div class="stat-card">
+<div class="stat-icon">
+<i class="fa-solid fa-box"></i>
+</div>
+<div class="stat-value" id="statToday">…</div>
+<div class="stat-label">Deliveries Today</div>
+</div>
+<div class="stat-card">
+<div class="stat-icon">
+<i class="fa-solid fa-star"></i>
+</div>
+<div class="stat-value" id="statEarned">…</div>
+<div class="stat-label">Total Earnings</div>
+</div>
+<div class="stat-card">
+<div class="stat-icon">
+<i class="fa-solid fa-clock"></i>
+</div>
+<div class="stat-value" id="statDone">…</div>
+<div class="stat-label">Completed Deliveries</div>
+</div>
+</div>
+<!-- MAIN DASHBOARD GRID -->
+<div class="dashboard-grid">
+<!-- ACTIVE DELIVERIES -->
+<div class="deliveries-panel">
+<div class="panel-title">
+<i class="fa-solid fa-truck-fast"></i>
+                    Active Deliveries
+                </div>
+
+
+
+<div id="activeList"></div><p class="lv-error" id="dashError" style="color:#b3261e;"></p></div>
+<!-- EARNINGS PANEL -->
+<div class="earnings-panel">
+<div class="earnings-main">
+<div class="earnings-label">Total Earnings</div>
+<div class="earnings-amount" id="earnAmount">…</div>
+<div class="earnings-period">From all your completed deliveries</div>
+</div>
+<div class="earnings-breakdown">
+<div class="breakdown-item">
+<span class="breakdown-label">Completed Deliveries</span>
+<span class="breakdown-value" id="earnDone">…</span>
+</div>
+<div class="breakdown-item">
+<span class="breakdown-label">Delivered Today</span>
+<span class="breakdown-value" id="earnToday">…</span>
+</div>
+
+
+</div>
+</div>
+</div>
+<!-- PERFORMANCE SECTION -->
+<div class="performance-section">
+<div class="panel-title">
+<i class="fa-solid fa-chart-line"></i>
+                Your Performance
+            </div>
+<div class="performance-grid">
+<div class="performance-metric">
+<div class="metric-icon">
+<i class="fa-solid fa-bullseye"></i>
+</div>
+<div class="metric-value">98%</div>
+<div class="metric-name">On-Time Rate</div>
+</div>
+<div class="performance-metric">
+<div class="metric-icon">
+<i class="fa-solid fa-face-smile"></i>
+</div>
+<div class="metric-value">89</div>
+<div class="metric-name">5-Star Reviews</div>
+</div>
+<div class="performance-metric">
+<div class="metric-icon">
+<i class="fa-solid fa-check-circle"></i>
+</div>
+<div class="metric-value">428</div>
+<div class="metric-name">Total Completed</div>
+</div>
+<div class="performance-metric">
+<div class="metric-icon">
+<i class="fa-solid fa-shield"></i>
+</div>
+<div class="metric-value">0</div>
+<div class="metric-name">Incidents</div>
+</div>
+</div>
+<h3 style="font-size: 18px; color: #45002e; margin-bottom: 15px; font-weight: bold;">
+                Recent Reviews
+            </h3>
+<div class="reviews-container">
+<div class="review-item">
+<div class="review-header">
+<div class="review-author">Maria Santos</div>
+<div class="review-stars">
+<i class="fa-solid fa-star"></i>
+<i class="fa-solid fa-star"></i>
+<i class="fa-solid fa-star"></i>
+<i class="fa-solid fa-star"></i>
+<i class="fa-solid fa-star"></i>
+</div>
+</div>
+<div class="review-text">
+                        "Fast delivery and the clothes were perfectly handled. Will definitely request Alex again!"
+                    </div>
+</div>
+<div class="review-item">
+<div class="review-header">
+<div class="review-author">Juan Dela Cruz</div>
+<div class="review-stars">
+<i class="fa-solid fa-star"></i>
+<i class="fa-solid fa-star"></i>
+<i class="fa-solid fa-star"></i>
+<i class="fa-solid fa-star"></i>
+<i class="fa-regular fa-star"></i>
+</div>
+</div>
+<div class="review-text">
+                        "Great service! Arrived on time and was very professional throughout the delivery."
+                    </div>
+</div>
+</div>
+</div>
+<!-- ACTION BUTTONS -->
+<div class="action-buttons">
+<button class="btn-primary">
+<i class="fa-solid fa-pause"></i>
+                Go Offline
+            </button>
+<button class="btn-secondary">
+<i class="fa-solid fa-history"></i>
+                View History
+            </button>
+</div>
+</div>
+<!-- LOGOUT MODAL -->
+<div aria-hidden="true" aria-labelledby="logoutTitle" class="modal" id="logoutModal" role="dialog">
+<div class="modal-content">
+<div class="modal-header">
+<div class="modal-title" id="logoutTitle">
+<i aria-hidden="true" class="fa-solid fa-sign-out-alt"></i>
+                    Log Out
+                </div>
+<button aria-label="Close logout dialog" class="close-btn" onclick="closeLogoutModal()">
+<i aria-hidden="true" class="fa-solid fa-xmark"></i>
+</button>
+</div>
+<div class="modal-body">
+<p>Are you sure you want to log out?</p>
+<div class="modal-actions">
+<button class="modal-btn modal-btn-primary" onclick="confirmLogout()">Yes, Log Out</button>
+<button class="modal-btn modal-btn-secondary" onclick="closeLogoutModal()">Cancel</button>
+</div>
+</div>
+</div>
+</div>
+<!-- FOOTER -->
+<footer>
+<p>© 2026 LAVANDERA. Rider Dashboard. All Rights Reserved.</p>
+</footer>
+<script>
+        // Toggle menu
+        function toggleMenu() {
+            const menu = document.getElementById("navDropdown");
+            const isOpen = menu.classList.toggle("show");
+            document.querySelector('.menu-btn').setAttribute('aria-expanded', String(isOpen));
+        }
+        function confirmLogout() { location.href = '../auth/logout.php'; }   // ends the PHP session
+
+        // Close menu when clicking elsewhere
+        window.onclick = function (event) {
+            if (!event.target.matches('.menu-btn') && !event.target.matches('.menu-btn *')) {
+                document.getElementById("navDropdown").classList.remove('show');
+                document.querySelector('.menu-btn').setAttribute('aria-expanded', 'false');
+            }
+        };
+
+        // One delivery card. Every value that a USER typed (shop, addresses, customer) goes through LV.esc() first.
+        function jobCard(job, withLink) {
+            const route = job.type === 'send' ? 'Pick up from the customer, deliver to the store' : 'Pick up at the store, deliver to the customer';
+            return '<div class="delivery-item">' +
+                '<div class="delivery-header"><div class="delivery-shop">' + LV.esc(job.shop) + '</div>' +
+                    '<div class="delivery-distance">' + job.distanceKm.toFixed(1) + ' km</div></div>' +
+                '<div class="delivery-address"><i class="fa-solid fa-location-dot"></i><span>' + LV.esc(job.pickup) + ' &rarr; ' + LV.esc(job.dropoff) + '</span></div>' +
+                '<div class="delivery-meta"><span><i class="fa-solid fa-route"></i> ' + route + '</span>' +
+                    '<span><i class="fa-solid fa-money-bill"></i> ' + LV.peso(job.pay) + '</span></div>' +
+                (withLink ? '<div class="delivery-actions"><a class="btn-accept" href="Rider_Orders_Page.php" style="text-decoration:none; text-align:center;">Open order</a></div>' : '') +
+            '</div>';
+        }
+
+        // Ask the server for this rider's board, then fill in the numbers and the active deliveries.
+        async function loadDashboard() {
+            try {
+                const data = await LVApi.get('../api/rider/jobs.php');
+                document.getElementById('statToday').textContent = data.stats.today;
+                document.getElementById('statEarned').textContent = LV.peso(data.stats.earned);
+                document.getElementById('statDone').textContent = data.stats.completed;
+                document.getElementById('earnAmount').textContent = LV.peso(data.stats.earned);
+                document.getElementById('earnDone').textContent = data.stats.completed;
+                document.getElementById('earnToday').textContent = data.stats.today;
+                document.getElementById('activeList').innerHTML = data.current.length
+                    ? data.current.map(function (job) { return jobCard(job, true); }).join('')
+                    : '<div class="delivery-item"><div class="delivery-shop">No active deliveries</div>' +
+                      '<div class="delivery-address"><span>Open <a href="Rider_Orders_Page.php">Current Orders</a> to accept a job.</span></div></div>';
+            } catch (error) {
+                document.getElementById('dashError').textContent = error.message;
+            }
+        }
+        loadDashboard();
+</script>
+</body>
+</html>
