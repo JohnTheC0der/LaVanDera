@@ -62,7 +62,7 @@
     // 3) Until the shared navbar links to .php, point its store links at the PHP pages.
     window.LVApi.fixNavLinks = function () {
         document.querySelectorAll('#lv-nav a[href]').forEach(function (a) {
-            a.setAttribute('href', a.getAttribute('href').replace(/(Store_(?:Dashboard|Orders|Setup)_Page)\.html/, '$1.php'));
+            a.setAttribute('href', a.getAttribute('href').replace(/(Store_(?:Dashboard|Orders|Setup)_Page|Admin_(?:Dashboard|Customers|Riders|Stores)_Page)\.html/, '$1.php'));
         });
     };
 })();

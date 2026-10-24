@@ -1,3 +1,9 @@
+<?php
+require __DIR__ . '/../../src/bootstrap.php';
+$user = guard_admin_page();
+$lvConfig  = ['loginUrl' => config('login_url'), 'logoutUrl' => '../auth/logout.php', 'csrf' => csrf_token()];
+$lvSession = ['id' => $user['id'], 'role' => 'admin', 'name' => $user['name'], 'email' => $user['email']];
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -78,9 +84,14 @@
     <div class="lv-modal-overlay" id="suspendStoreModal" aria-hidden="true">
         <div class="lv-modal suspend-modal" role="dialog" aria-modal="true" aria-labelledby="suspendModalTitle"
             aria-describedby="suspendModalMessage" tabindex="-1">
-            <div class="suspend-modal-icon"><i class="fa-solid fa-ban" aria-hidden="true"></i></div>
+            <div class="suspend-modal-icon"><i id="suspendModalIcon" class="fa-solid fa-ban" aria-hidden="true"></i></div>
             <h2 class="lv-section-title" id="suspendModalTitle">Suspend store?</h2>
             <p class="lv-sub" id="suspendModalMessage" style="max-width:none; margin-top:8px;"></p>
+            <div class="lv-field" id="rejectReasonField" style="display:none; margin-top:16px;">
+                <label class="lv-label" for="rejectReason">Reason (optional)</label>
+                <textarea class="lv-textarea" id="rejectReason" rows="3" maxlength="255"
+                    placeholder="Add a reason for the rejection"></textarea>
+            </div>
             <div class="suspend-modal-actions">
                 <button class="lv-btn lv-btn-outline" type="button" id="cancelSuspendBtn">Cancel</button>
                 <button class="lv-btn lv-btn-danger" type="button" id="confirmSuspendBtn">
@@ -143,12 +154,18 @@
         <div class="lv-modal" id="storeModalPanel" role="dialog" aria-modal="true" aria-label="Store details"></div>
     </div>
 
+    <script>
+        window.LV_CONFIG = <?= js_json($lvConfig) ?>;
+        window.LV_SESSION = <?= js_json($lvSession) ?>;
+    </script>
     <script src="../js/lavandera_demo.js"></script>
+    <script src="../js/lavandera_api.js"></script>
     <script>
         let activeFilter = 'all';
         let searchQuery = '';
-        let pendingSuspendStoreId = null;
-        let suspendTrigger = null;
+        let stores = [];
+        let pendingAction = null;        // { storeId, action: 'reject' | 'suspend' }
+        let actionTrigger = null;
 
         const FILTERS = [
             { key: 'all', label: 'All' },
@@ -159,39 +176,47 @@
             { key: 'suspended', label: 'Suspended' }
         ];
 
-        const me = LV.requireRole('admin', '../auth/Log_In_Page.html');
-        if (me) {
-            LV.renderNav('admin', 'stores');
+        try { LV.renderNav('admin', 'stores'); LVApi.fixNavLinks(); } catch (navError) { console.warn('Navbar failed to render', navError); }
 
-            document.getElementById('storeSearch').addEventListener('input', function () {
-                searchQuery = this.value.trim().toLowerCase();
-                renderTable();
-            });
-            document.getElementById('storeModal').addEventListener('click', function (e) {
-                if (e.target === this) closeModal();
-            });
-            document.getElementById('suspendStoreModal').addEventListener('click', function (e) {
-                if (e.target === this) closeSuspendModal();
-            });
-            document.getElementById('cancelSuspendBtn').addEventListener('click', closeSuspendModal);
-            document.getElementById('confirmSuspendBtn').addEventListener('click', confirmSuspendStore);
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') {
-                    closeModal();
-                    closeSuspendModal();
-                }
-            });
+        document.getElementById('storeSearch').addEventListener('input', function () {
+            searchQuery = this.value.trim().toLowerCase();
+            renderTable();
+        });
+        document.getElementById('storeModal').addEventListener('click', function (e) {
+            if (e.target === this) closeModal();
+        });
+        document.getElementById('suspendStoreModal').addEventListener('click', function (e) {
+            if (e.target === this) closeActionModal();
+        });
+        document.getElementById('cancelSuspendBtn').addEventListener('click', closeActionModal);
+        document.getElementById('confirmSuspendBtn').addEventListener('click', confirmAction);
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeModal();
+                closeActionModal();
+            }
+        });
 
-            render();
+        loadStores();
+
+        async function loadStores() {
+            try {
+                stores = (await LVApi.get('../api/admin/stores.php')).stores;
+                render();
+            } catch (error) {
+                document.getElementById('storeEmpty').innerHTML = '<div class="lv-empty"><i class="fa-solid fa-store-slash"></i>' +
+                    '<h3>Could not load stores</h3><p>' + LV.esc(error.message) + '</p>' +
+                    '<button class="lv-btn lv-btn-primary lv-btn-sm" onclick="location.reload()">Try again</button></div>';
+            }
         }
 
         /* ------------------------------------------------ helpers ---- */
         function getStore(id) {
-            return LV.stores().find(function (s) { return s.id === Number(id); });
+            return stores.find(function (s) { return s.id === Number(id); });
         }
 
         function hasFreeDelivery(s) {
-            return Array.isArray(s.benefits) && s.benefits.indexOf('Free delivery') > -1;
+            return !!s.freeDelivery;
         }
 
         function priceLine(s) {
@@ -214,7 +239,7 @@
         }
 
         function renderStats() {
-            const ss = LV.stores();
+            const ss = stores;
             const active = ss.filter(function (s) { return s.status === 'active'; }).length;
             const pending = ss.filter(function (s) { return s.status === 'pending_approval'; }).length;
             const incomplete = ss.filter(function (s) { return s.status === 'setup_required'; }).length;
@@ -249,7 +274,7 @@
         }
 
         function filteredStores() {
-            return LV.stores().filter(function (s) {
+            return stores.filter(function (s) {
                 const okStatus = activeFilter === 'all' || s.status === activeFilter;
                 const hay = (s.name + ' ' + s.email + ' ' + (s.contact || '') + ' ' + (s.address || '')).toLowerCase();
                 return okStatus && (!searchQuery || hay.indexOf(searchQuery) > -1);
@@ -290,7 +315,9 @@
 
         function storeActions(s) {
             if (s.status === 'pending_approval') {
-                return '<button class="lv-btn lv-btn-primary lv-btn-sm" onclick="approveStore(' + s.id + ')">' +
+                return '<button class="lv-btn lv-btn-outline lv-btn-sm" onclick="openStore(' + s.id + ')">' +
+                    '<i class="fa-solid fa-eye"></i>View</button>' +
+                    '<button class="lv-btn lv-btn-primary lv-btn-sm" onclick="approveStore(' + s.id + ')">' +
                     '<i class="fa-solid fa-check"></i>Approve</button>' +
                     '<button class="lv-btn lv-btn-danger lv-btn-sm" onclick="rejectStore(' + s.id + ')">' +
                     '<i class="fa-solid fa-xmark"></i>Reject</button>';
@@ -316,66 +343,98 @@
         }
 
         /* ---------------------------------------------- mutations ---- */
-        function approveStore(id) {
-            const s = getStore(id); if (!s) return;
-            LV.setUserStatus(s.id, 'active');
-            LV.toast(s.name + ' approved - customers can now find them.');
+        /* One call to the PHP API; the server re-checks the store's current status. */
+        async function sendAction(action, id, reason) {
+            const result = await LVApi.postJson('../api/admin/stores.php', { action: action, id: id, reason: reason || '' });
+            stores = result.stores;
             render();
+        }
+
+        async function approveStore(id) {
+            const s = getStore(id); if (!s) return;
+            const wasSuspended = s.status === 'suspended';
+            try {
+                await sendAction('approve', s.id);
+                LV.toast(s.name + (wasSuspended ? ' reactivated.' : ' approved - customers can now find them.'));
+            } catch (error) {
+                LV.toast(error.message, 'fa-circle-info');
+                loadStores();
+            }
         }
 
         function rejectStore(id) {
             const s = getStore(id); if (!s) return;
-            const reason = prompt('Optional reason for rejecting ' + s.name + ' (leave blank to use the default):');
-            if (reason === null) return;
-            LV.setUserStatus(s.id, 'rejected', reason.trim() || 'Rejected by admin');
-            LV.toast(s.name + ' was rejected.', 'fa-circle-xmark');
-            render();
+            openActionModal(s, 'reject');
         }
 
         function suspendStore(id) {
             const s = getStore(id); if (!s) return;
-            pendingSuspendStoreId = s.id;
-            suspendTrigger = document.activeElement;
-            document.getElementById('suspendModalTitle').textContent = 'Suspend ' + s.name + '?';
-            document.getElementById('suspendModalMessage').textContent =
-                'Customers will no longer see this store or place new orders while it is suspended.';
+            openActionModal(s, 'suspend');
+        }
+
+        function openActionModal(store, action) {
+            pendingAction = { storeId: store.id, action: action };
+            actionTrigger = document.activeElement;
+            const isReject = action === 'reject';
+            document.getElementById('suspendModalTitle').textContent = (isReject ? 'Reject ' : 'Suspend ') + store.name + '?';
+            document.getElementById('suspendModalMessage').textContent = isReject
+                ? 'This store application will be rejected. The store can see the reason you give, and cannot take orders.'
+                : 'Customers will no longer see this store or place new orders while it is suspended.';
+            document.getElementById('suspendModalIcon').className = 'fa-solid ' + (isReject ? 'fa-store-slash' : 'fa-ban');
+            document.getElementById('rejectReasonField').style.display = isReject ? '' : 'none';
+            document.getElementById('rejectReason').value = '';
+            document.getElementById('confirmSuspendBtn').innerHTML =
+                '<i class="fa-solid ' + (isReject ? 'fa-xmark' : 'fa-ban') + '" aria-hidden="true"></i> ' + (isReject ? 'Reject store' : 'Suspend store');
             const overlay = document.getElementById('suspendStoreModal');
             overlay.classList.add('open');
             overlay.setAttribute('aria-hidden', 'false');
             overlay.querySelector('[role="dialog"]').focus();
-            document.getElementById('confirmSuspendBtn').focus();
+            (isReject ? document.getElementById('rejectReason') : document.getElementById('confirmSuspendBtn')).focus();
         }
 
-        function confirmSuspendStore() {
-            const s = getStore(pendingSuspendStoreId);
-            if (!s || s.status !== 'active') {
-                closeSuspendModal();
-                render();
-                LV.toast('This store is no longer active. Refresh the list and try again.', 'fa-circle-info');
-                return;
+        async function confirmAction() {
+            if (!pendingAction) return;
+            const store = getStore(pendingAction.storeId);
+            const action = pendingAction.action;
+            const reason = document.getElementById('rejectReason').value.trim();
+            const button = document.getElementById('confirmSuspendBtn');
+            button.disabled = true;
+            try {
+                await sendAction(action, pendingAction.storeId, action === 'reject' ? reason : '');
+                closeActionModal();
+                LV.toast(action === 'reject' ? store.name + ' was rejected.' : store.name + ' has been suspended.',
+                    action === 'reject' ? 'fa-circle-xmark' : 'fa-ban');
+            } catch (error) {
+                closeActionModal();
+                LV.toast(error.message, 'fa-circle-info');
+                loadStores();
             }
-            LV.setUserStatus(s.id, 'suspended');
-            closeSuspendModal();
-            LV.toast(s.name + ' has been suspended.', 'fa-ban');
-            render();
+            button.disabled = false;
         }
 
-        function closeSuspendModal() {
+        function closeActionModal() {
             const overlay = document.getElementById('suspendStoreModal');
             overlay.classList.remove('open');
             overlay.setAttribute('aria-hidden', 'true');
-            pendingSuspendStoreId = null;
-            if (suspendTrigger && suspendTrigger.isConnected) suspendTrigger.focus();
-            suspendTrigger = null;
+            pendingAction = null;
+            if (actionTrigger && actionTrigger.isConnected) actionTrigger.focus();
+            actionTrigger = null;
         }
 
         /* -------------------------------------------------- modal ---- */
-        function openStore(id) {
-            const s = getStore(id); if (!s) return;
+        async function openStore(id) {
+            let s;
+            try {
+                s = (await LVApi.get('../api/admin/stores.php?id=' + encodeURIComponent(id))).store;
+            } catch (error) {
+                LV.toast(error.message, 'fa-circle-info');
+                return;
+            }
 
-            const banner = s.banner
+            const bannerSrc = s.banner ? '../' + s.banner : '';
+            const banner = bannerSrc
                 ? '<img class="lv-media" style="height:140px; border-radius:var(--lv-radius) var(--lv-radius) 0 0;" ' +
-                'src="' + LV.esc(s.banner) + '" alt="' + LV.esc(s.name) + '" ' +
+                'src="' + LV.esc(bannerSrc) + '" alt="' + LV.esc(s.name) + '" ' +
                 'onerror="this.onerror=null; this.className=\'lv-media lv-fallback\'; this.style.height=\'120px\'; this.removeAttribute(\'src\');">'
                 : '<div class="lv-media lv-fallback" style="height:120px; border-radius:var(--lv-radius) var(--lv-radius) 0 0;"></div>';
 
@@ -396,20 +455,14 @@
                     }).join('') + '</div>'
                 : '<p class="lv-muted" style="font-size:14px;">Prices not set yet.</p>';
 
-            const storeOrders = LV.orders().filter(function (o) { return o.storeId === s.id; });
-            const completed = storeOrders.filter(function (o) { return o.status === 'completed'; });
-            const lifetime = completed.reduce(function (t, o) { return t + Number(o.total); }, 0);
-
             let ordersHtml;
-            if (storeOrders.length) {
-                ordersHtml = storeOrders.slice(0, 8).map(function (o) {
-                    const cust = LV.customer(o.customerId);
-                    const bag = LV.bagOf(o.bag);
+            if (s.orderList.length) {
+                ordersHtml = s.orderList.map(function (o) {
                     return '<div class="lv-row-between" style="padding:11px 0; border-bottom:1px dashed var(--lv-line); font-size:13.5px; gap:10px;">' +
                         '<div>' +
                         '<span style="font-weight:800; color:var(--lv-plum);">#' + o.id + '</span>' +
-                        ' &middot; ' + LV.esc(cust ? cust.name : 'Customer') +
-                        ' &middot; ' + LV.esc(bag.name) +
+                        ' &middot; ' + LV.esc(o.customerName || 'Customer') +
+                        ' &middot; ' + LV.esc(o.bag) +
                         ' &middot; ' + LV.peso(o.total) +
                         '<div class="lv-muted" style="font-size:12px;">' + LV.when(o.createdAt) + '</div>' +
                         '</div>' + LV.statusBadge(o.status) + '</div>';
@@ -439,6 +492,10 @@
                 '<div class="lv-kv"><span>Email</span><span>' + LV.esc(s.email) + '</span></div>' +
                 '<div class="lv-kv"><span>Contact</span><span>' + LV.esc(s.contact || '—') + '</span></div>' +
                 '<div class="lv-kv"><span>Address</span><span>' + LV.esc(s.address || 'To be confirmed') + '</span></div>' +
+                '<div class="lv-kv"><span>Map pin</span><span>' + (s.latitude !== null && s.longitude !== null
+                    ? '<a href="https://www.openstreetmap.org/?mlat=' + s.latitude + '&mlon=' + s.longitude + '#map=17/' + s.latitude + '/' + s.longitude +
+                      '" target="_blank" rel="noopener">View on OpenStreetMap</a>'
+                    : 'Not set') + '</span></div>' +
                 '<div class="lv-kv"><span>Joined</span><span>' + LV.when(s.joined) + '</span></div>' +
                 '<div class="lv-kv"><span>Status</span><span>' + LV.userStatusBadge(s.status) + '</span></div>' +
                 (s.statusNote
@@ -457,8 +514,8 @@
                 '<div style="margin-top:16px; background:var(--lv-pink-tint); border-radius:16px; padding:14px 16px; text-align:center;">' +
                 '<div class="lv-muted" style="font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase;">Lifetime value</div>' +
                 '<div style="font-weight:800; color:var(--lv-plum); font-size:19px; margin-top:4px;">' +
-                LV.peso(lifetime) + ' <span class="lv-muted" style="font-size:13px; font-weight:600;">from ' +
-                completed.length + ' completed order' + (completed.length === 1 ? '' : 's') + '</span></div>' +
+                LV.peso(s.lifetime) + ' <span class="lv-muted" style="font-size:13px; font-weight:600;">from ' +
+                s.completedCount + ' completed order' + (s.completedCount === 1 ? '' : 's') + '</span></div>' +
                 '</div>' +
                 '</div>';
             document.getElementById('storeModal').classList.add('open');

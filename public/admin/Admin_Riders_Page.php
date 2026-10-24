@@ -1,3 +1,9 @@
+<?php
+require __DIR__ . '/../../src/bootstrap.php';
+$user = guard_admin_page();
+$lvConfig  = ['loginUrl' => config('login_url'), 'logoutUrl' => '../auth/logout.php', 'csrf' => csrf_token()];
+$lvSession = ['id' => $user['id'], 'role' => 'admin', 'name' => $user['name'], 'email' => $user['email']];
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -97,7 +103,7 @@
             <p class="lv-sub" id="riderActionMessage" style="max-width:none; margin-top:8px;"></p>
             <div class="lv-field" id="rejectReasonField" style="display:none; margin-top:16px;">
                 <label class="lv-label" for="rejectReason">Reason (optional)</label>
-                <textarea class="lv-textarea" id="rejectReason" rows="3" maxlength="300"
+                <textarea class="lv-textarea" id="rejectReason" rows="3" maxlength="255"
                     placeholder="Add a reason for the rejection"></textarea>
             </div>
             <div class="rider-action-actions">
@@ -107,10 +113,16 @@
         </section>
     </div>
 
+    <script>
+        window.LV_CONFIG = <?= js_json($lvConfig) ?>;
+        window.LV_SESSION = <?= js_json($lvSession) ?>;
+    </script>
     <script src="../js/lavandera_demo.js"></script>
+    <script src="../js/lavandera_api.js"></script>
     <script>
         let activeFilter = 'all';
         let searchQuery = '';
+        let riders = [];
         let pendingRiderAction = null;
         let riderActionTrigger = null;
 
@@ -118,45 +130,47 @@
             { key: 'all',               label: 'All' },
             { key: 'active',            label: 'Active' },
             { key: 'pending_approval',  label: 'Pending approval' },
-            { key: 'rejected',          label: 'Rejected' }
+            { key: 'rejected',          label: 'Rejected' },
+            { key: 'suspended',         label: 'Suspended' }
         ];
 
-        const me = LV.requireRole('admin', '../auth/Log_In_Page.html');
-        if (me) {
-            LV.renderNav('admin', 'riders');
+        try { LV.renderNav('admin', 'riders'); LVApi.fixNavLinks(); } catch (navError) { console.warn('Navbar failed to render', navError); }
 
-            document.getElementById('riderSearch').addEventListener('input', function () {
-                searchQuery = this.value.trim().toLowerCase();
-                renderTable();
-            });
-            document.getElementById('riderModal').addEventListener('click', function (e) {
-                if (e.target === this) closeModal();
-            });
-            document.getElementById('riderActionModal').addEventListener('click', function (e) {
-                if (e.target === this) closeRiderActionModal();
-            });
-            document.getElementById('cancelRiderAction').addEventListener('click', closeRiderActionModal);
-            document.getElementById('confirmRiderAction').addEventListener('click', confirmRiderAction);
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') {
-                    closeModal();
-                    closeRiderActionModal();
-                }
-            });
+        document.getElementById('riderSearch').addEventListener('input', function () {
+            searchQuery = this.value.trim().toLowerCase();
+            renderTable();
+        });
+        document.getElementById('riderModal').addEventListener('click', function (e) {
+            if (e.target === this) closeModal();
+        });
+        document.getElementById('riderActionModal').addEventListener('click', function (e) {
+            if (e.target === this) closeRiderActionModal();
+        });
+        document.getElementById('cancelRiderAction').addEventListener('click', closeRiderActionModal);
+        document.getElementById('confirmRiderAction').addEventListener('click', confirmRiderAction);
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeModal();
+                closeRiderActionModal();
+            }
+        });
 
-            render();
+        loadRiders();
+
+        async function loadRiders() {
+            try {
+                riders = (await LVApi.get('../api/admin/riders.php')).riders;
+                render();
+            } catch (error) {
+                document.getElementById('riderEmpty').innerHTML = '<div class="lv-empty"><i class="fa-solid fa-motorcycle"></i>' +
+                    '<h3>Could not load riders</h3><p>' + LV.esc(error.message) + '</p>' +
+                    '<button class="lv-btn lv-btn-primary lv-btn-sm" onclick="location.reload()">Try again</button></div>';
+            }
         }
 
         /* ------------------------------------------------ helpers ---- */
         function getRider(id) {
-            return LV.riders().find(function (r) { return r.id === Number(id); });
-        }
-
-        /* orders where this rider appears anywhere in the history */
-        function jobsOf(rider) {
-            return LV.orders().filter(function (o) {
-                return (o.history || []).some(function (h) { return h.by === rider.id; });
-            });
+            return riders.find(function (r) { return r.id === Number(id); });
         }
 
         /* ------------------------------------------------- render ---- */
@@ -167,7 +181,7 @@
         }
 
         function renderStats() {
-            const rs = LV.riders();
+            const rs = riders;
             const active = rs.filter(function (r) { return r.status === 'active'; }).length;
             const pending = rs.filter(function (r) { return r.status === 'pending_approval'; }).length;
             const rejected = rs.filter(function (r) { return r.status === 'rejected'; }).length;
@@ -200,7 +214,7 @@
         }
 
         function filteredRiders() {
-            return LV.riders().filter(function (r) {
+            return riders.filter(function (r) {
                 const okStatus = activeFilter === 'all' || r.status === activeFilter;
                 const hay = (r.name + ' ' + r.email + ' ' + (r.contact || '')).toLowerCase();
                 return okStatus && (!searchQuery || hay.indexOf(searchQuery) > -1);
@@ -229,7 +243,7 @@
                     '</div></td>' +
                     '<td>' + LV.esc(r.contact || '—') + '</td>' +
                     '<td>' + LV.when(r.joined) + '</td>' +
-                    '<td>' + jobsOf(r).length + '</td>' +
+                    '<td>' + r.jobs + '</td>' +
                     '<td>' + LV.userStatusBadge(r.status) + '</td>' +
                     '<td><div class="lv-wrap">' + riderActions(r) + '</div></td>' +
                 '</tr>';
@@ -259,11 +273,22 @@
         }
 
         /* ---------------------------------------------- mutations ---- */
-        function approveRider(id) {
-            const r = getRider(id); if (!r) return;
-            LV.setUserStatus(r.id, 'active');
-            LV.toast(r.name + ' approved - they can now sign in.');
+        /* One call to the PHP API; the server re-checks the rider's current status. */
+        async function sendAction(action, id, reason) {
+            const result = await LVApi.postJson('../api/admin/riders.php', { action: action, id: id, reason: reason || '' });
+            riders = result.riders;
             render();
+        }
+
+        async function approveRider(id) {
+            const r = getRider(id); if (!r) return;
+            try {
+                await sendAction('approve', r.id);
+                LV.toast(r.name + ' approved - they can now sign in.');
+            } catch (error) {
+                LV.toast(error.message, 'fa-circle-info');
+                loadRiders();
+            }
         }
 
         function rejectRider(id) {
@@ -299,28 +324,24 @@
             confirmButton.focus();
         }
 
-        function confirmRiderAction() {
+        async function confirmRiderAction() {
             if (!pendingRiderAction) return;
             const rider = getRider(pendingRiderAction.riderId);
             const action = pendingRiderAction.action;
-            const expectedStatus = action === 'reject' ? 'pending_approval' : 'active';
-            if (!rider || rider.status !== expectedStatus) {
+            const reason = document.getElementById('rejectReason').value.trim();
+            const button = document.getElementById('confirmRiderAction');
+            button.disabled = true;
+            try {
+                await sendAction(action, pendingRiderAction.riderId, action === 'reject' ? reason : '');
                 closeRiderActionModal();
-                render();
-                LV.toast('This rider status has changed. Refresh the list and try again.', 'fa-circle-info');
-                return;
+                LV.toast(action === 'reject' ? rider.name + ' was rejected.' : rider.name + ' has been suspended.',
+                    action === 'reject' ? 'fa-circle-xmark' : 'fa-ban');
+            } catch (error) {
+                closeRiderActionModal();
+                LV.toast(error.message, 'fa-circle-info');
+                loadRiders();
             }
-            if (action === 'reject') {
-                const reason = document.getElementById('rejectReason').value.trim();
-                LV.setUserStatus(rider.id, 'rejected', reason || 'Rejected by admin');
-                closeRiderActionModal();
-                LV.toast(rider.name + ' was rejected.', 'fa-circle-xmark');
-            } else {
-                LV.setUserStatus(rider.id, 'suspended');
-                closeRiderActionModal();
-                LV.toast(rider.name + ' has been suspended.', 'fa-ban');
-            }
-            render();
+            button.disabled = false;
         }
 
         function closeRiderActionModal() {
@@ -333,24 +354,27 @@
         }
 
         /* -------------------------------------------------- modal ---- */
-        function openRider(id) {
-            const r = getRider(id); if (!r) return;
-            const jobs = jobsOf(r);
+        async function openRider(id) {
+            let r;
+            try {
+                r = (await LVApi.get('../api/admin/riders.php?id=' + encodeURIComponent(id))).rider;
+            } catch (error) {
+                LV.toast(error.message, 'fa-circle-info');
+                return;
+            }
+            const jobs = r.activity;
 
             let activity;
             if (jobs.length) {
                 activity = jobs.map(function (o) {
-                    const mine = (o.history || []).filter(function (h) { return h.by === r.id; });
-                    const last = mine[mine.length - 1];
-                    const store = LV.store(o.storeId);
                     return '<div class="lv-row" style="align-items:flex-start; padding:11px 0; border-bottom:1px dashed var(--lv-line);">' +
                         '<div class="lv-avatar lv-avatar-sm" style="background:var(--lv-pink-tint); color:var(--lv-plum);">' +
                             '<i class="fa-solid fa-motorcycle" style="font-size:14px;"></i></div>' +
                         '<div style="font-size:14px;">' +
                             '<span style="font-weight:800; color:var(--lv-plum);">#' + o.id + '</span>' +
-                            ' &middot; ' + LV.esc(store ? store.name : 'Store') +
-                            '<div class="lv-muted" style="font-size:12.5px;">' + LV.esc(last ? last.note : '') +
-                                ' &middot; ' + LV.when(last ? last.at : o.createdAt) + '</div>' +
+                            ' &middot; ' + LV.esc(o.storeName || 'Store') +
+                            '<div class="lv-muted" style="font-size:12.5px;">' + LV.esc(o.lastNote || LV.STATUS[o.status].label) +
+                                ' &middot; ' + LV.when(o.lastAt) + '</div>' +
                         '</div></div>';
                 }).join('');
             } else {

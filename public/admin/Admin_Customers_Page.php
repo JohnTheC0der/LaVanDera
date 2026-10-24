@@ -1,3 +1,9 @@
+<?php
+require __DIR__ . '/../../src/bootstrap.php';
+$user = guard_admin_page();
+$lvConfig  = ['loginUrl' => config('login_url'), 'logoutUrl' => '../auth/logout.php', 'csrf' => csrf_token()];
+$lvSession = ['id' => $user['id'], 'role' => 'admin', 'name' => $user['name'], 'email' => $user['email']];
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -103,67 +109,87 @@
             tabindex="-1"></div>
     </div>
 
-    <script src="../js/lavandera_demo.js"></script>
     <script>
-        const me = LV.requireRole('admin', '../auth/Log_In_Page.html');
-        if (me) {
-            LV.renderNav('admin', 'customers');
-            render();
-            document.getElementById('custSearch').addEventListener('input', renderTable);
-            document.getElementById('tableCard').addEventListener('click', function (event) {
-                const button = event.target.closest('[data-customer-id]');
-                if (button) openCustomer(button.dataset.customerId);
-            });
-            document.getElementById('custOverlay').addEventListener('click', function (event) {
-                if (event.target === this) closeModal();
-            });
-            document.getElementById('custModal').addEventListener('click', function (event) {
-                if (event.target.closest('[data-modal-close]')) closeModal();
-            });
-            document.addEventListener('keydown', function (e) {
-                const overlay = document.getElementById('custOverlay');
-                if (!overlay.classList.contains('open')) return;
-                if (e.key === 'Escape') {
-                    closeModal();
-                    return;
-                }
-                if (e.key !== 'Tab') return;
+        window.LV_CONFIG = <?= js_json($lvConfig) ?>;
+        window.LV_SESSION = <?= js_json($lvSession) ?>;
+    </script>
+    <script src="../js/lavandera_demo.js"></script>
+    <script src="../js/lavandera_api.js"></script>
+    <script>
+        let customers = [];
+        let totals = { totalOrders: 0, lifetime: 0 };
+        let lastFocusedElement = null;
 
-                const focusable = Array.from(document.getElementById('custModal').querySelectorAll(
-                    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), ' +
-                    'textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-                ));
-                if (!focusable.length) {
-                    e.preventDefault();
-                    document.getElementById('custModal').focus();
-                    return;
-                }
+        function showLoadError(message) {
+            document.getElementById('tableCard').innerHTML =
+                '<div class="lv-card lv-card-pad"><h2 class="lv-section-title">Could not load customers</h2>' +
+                '<p class="lv-sub">' + LV.esc(message) + '</p>' +
+                '<button class="lv-btn lv-btn-primary lv-mt" onclick="location.reload()">Try again</button></div>';
+        }
 
-                const first = focusable[0], last = focusable[focusable.length - 1];
-                if (e.shiftKey && (document.activeElement === first ||
-                    !document.getElementById('custModal').contains(document.activeElement))) {
-                    e.preventDefault();
-                    last.focus();
-                } else if (!e.shiftKey && (document.activeElement === last ||
-                    !document.getElementById('custModal').contains(document.activeElement))) {
-                    e.preventDefault();
-                    first.focus();
-                }
-            });
+        try { LV.renderNav('admin', 'customers'); LVApi.fixNavLinks(); } catch (navError) { console.warn('Navbar failed to render', navError); }
+        document.getElementById('custSearch').addEventListener('input', renderTable);
+        document.getElementById('tableCard').addEventListener('click', function (event) {
+            const button = event.target.closest('[data-customer-id]');
+            if (button) openCustomer(button.dataset.customerId);
+        });
+        document.getElementById('custOverlay').addEventListener('click', function (event) {
+            if (event.target === this) closeModal();
+        });
+        document.getElementById('custModal').addEventListener('click', function (event) {
+            if (event.target.closest('[data-modal-close]')) closeModal();
+        });
+        document.addEventListener('keydown', function (e) {
+            const overlay = document.getElementById('custOverlay');
+            if (!overlay.classList.contains('open')) return;
+            if (e.key === 'Escape') {
+                closeModal();
+                return;
+            }
+            if (e.key !== 'Tab') return;
+
+            const focusable = Array.from(document.getElementById('custModal').querySelectorAll(
+                'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), ' +
+                'textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            ));
+            if (!focusable.length) {
+                e.preventDefault();
+                document.getElementById('custModal').focus();
+                return;
+            }
+
+            const first = focusable[0], last = focusable[focusable.length - 1];
+            if (e.shiftKey && (document.activeElement === first ||
+                !document.getElementById('custModal').contains(document.activeElement))) {
+                e.preventDefault();
+                last.focus();
+            } else if (!e.shiftKey && (document.activeElement === last ||
+                !document.getElementById('custModal').contains(document.activeElement))) {
+                e.preventDefault();
+                first.focus();
+            }
+        });
+
+        load();
+
+        async function load() {
+            try {
+                const data = await LVApi.get('../api/admin/customers.php');
+                customers = data.customers;
+                totals = data.stats;
+                render();
+            } catch (error) {
+                showLoadError(error.message);
+            }
         }
 
         function render() {
-            const customers = LV.customers();
-            const allOrders = LV.orders();
-            const completed = allOrders.filter(function (o) { return o.status === 'completed'; });
-            const lifetime = completed.reduce(function (t, o) { return t + Number(o.total); }, 0);
-
             document.getElementById('custCount').textContent = customers.length;
 
             const stats = [
                 { icon: 'fa-users', value: customers.length, label: 'Total customers' },
-                { icon: 'fa-basket-shopping', value: allOrders.length, label: 'Orders placed by customers' },
-                { icon: 'fa-sack-dollar', value: LV.peso(lifetime), label: 'Customer lifetime value' }
+                { icon: 'fa-basket-shopping', value: totals.totalOrders, label: 'Orders placed by customers' },
+                { icon: 'fa-sack-dollar', value: LV.peso(totals.lifetime), label: 'Customer lifetime value' }
             ];
             document.getElementById('statStrip').innerHTML = stats.map(function (t) {
                 return '<div class="lv-card lv-stat">' +
@@ -177,7 +203,7 @@
 
         /* ------------------------------------------ table render ----- */
         function renderTable() {
-            const all = LV.customers();
+            const all = customers;
             const q = (document.getElementById('custSearch').value || '').trim().toLowerCase();
             const list = all.filter(function (c) {
                 const haystack = String(c.name || '') + ' ' + String(c.email || '') + ' ' + String(c.contact || '');
@@ -204,9 +230,6 @@
                 '<th scope="col">Orders</th><th scope="col">Spent</th><th scope="col">Actions</th></tr></thead>';
 
             const body = list.map(function (c) {
-                const orders = LV.ordersOfCustomer(c.id);
-                const spent = orders.filter(function (o) { return o.status === 'completed'; })
-                    .reduce(function (t, o) { return t + Number(o.total); }, 0);
                 const addr = LV.esc(c.address || 'Address to be confirmed');
                 return '<tr>' +
                     '<td><div class="lv-row" style="gap:12px;">' +
@@ -219,8 +242,8 @@
                     '<td><span style="display:inline-block; max-width:220px; white-space:nowrap; ' +
                     'overflow:hidden; text-overflow:ellipsis; vertical-align:middle;" title="' + addr + '">' +
                     addr + '</span></td>' +
-                    '<td style="font-weight:800;">' + orders.length + '</td>' +
-                    '<td style="font-weight:800;">' + LV.peso(spent) + '</td>' +
+                    '<td style="font-weight:800;">' + c.orders + '</td>' +
+                    '<td style="font-weight:800;">' + LV.peso(c.spent) + '</td>' +
                     '<td><button class="lv-btn lv-btn-outline lv-btn-sm" data-customer-id="' + LV.esc(c.id) + '">' +
                     '<i class="fa-solid fa-eye" style="font-size:12px;"></i> View details</button></td>' +
                     '</tr>';
@@ -232,24 +255,25 @@
         }
 
         /* ------------------------------------------ detail modal ----- */
-        let lastFocusedElement = null;
+        async function openCustomer(id) {
+            const trigger = document.activeElement;
+            let c;
+            try {
+                c = (await LVApi.get('../api/admin/customers.php?id=' + encodeURIComponent(id))).customer;
+            } catch (error) {
+                LV.toast(error.message, 'fa-circle-info');
+                return;
+            }
 
-        function openCustomer(id) {
-            const c = LV.customer(id);
-            if (!c) return;
-
-            const orders = LV.ordersOfCustomer(c.id);
-            const done = orders.filter(function (o) { return o.status === 'completed'; });
-            const spend = done.reduce(function (t, o) { return t + Number(o.total); }, 0);
-            const firstOrder = orders.length ? orders[orders.length - 1].createdAt : null;
+            const orders = c.orderList;
+            const spend = c.spent;
 
             const orderRows = orders.length ? orders.map(function (o) {
-                const st = LV.store(o.storeId), bag = LV.bagOf(o.bag);
                 return '<div style="padding:11px 0; border-bottom:1px dashed var(--lv-line);">' +
                     '<div class="lv-row" style="flex-wrap:wrap; gap:8px;">' +
                     '<span style="font-weight:800; color:var(--lv-plum);">#' + o.id + '</span>' +
-                    '<span class="lv-muted">&middot; ' + (st ? LV.esc(st.name) : 'Store') + '</span>' +
-                    '<span class="lv-muted">&middot; ' + LV.esc(bag.name) + '</span>' +
+                    '<span class="lv-muted">&middot; ' + LV.esc(o.storeName || 'Store') + '</span>' +
+                    '<span class="lv-muted">&middot; ' + LV.esc(o.bag) + '</span>' +
                     '<span style="font-weight:800;">' + LV.peso(o.total) + '</span>' +
                     LV.statusBadge(o.status) +
                     '<span class="lv-muted" style="font-size:12.5px;">' + LV.when(o.createdAt) + '</span>' +
@@ -274,17 +298,17 @@
                 '<div class="lv-kv"><span>Contact number</span><span>' + LV.esc(c.contact || '-') + '</span></div>' +
                 '<div class="lv-kv"><span>Address</span><span>' + LV.esc(c.address || '-') + '</span></div>' +
                 '<div class="lv-kv"><span>First order</span><span>' +
-                (firstOrder ? LV.when(firstOrder) : 'No orders yet') + '</span></div>' +
+                (c.firstOrder ? LV.when(c.firstOrder) : 'No orders yet') + '</span></div>' +
                 '</div>' +
                 '<hr class="lv-divider">' +
                 '<div class="lv-eyebrow" style="margin-bottom:8px;">Orders (' + orders.length + ')</div>' +
                 orderRows +
                 '<div style="margin-top:16px; padding:14px 16px; background:var(--lv-pink-tint); border-radius:16px; ' +
                 'font-size:14px; font-weight:700; color:var(--lv-plum);">' +
-                'Lifetime spend: ' + LV.peso(spend) + ' across ' + done.length +
-                ' completed order' + (done.length === 1 ? '' : 's') + '</div>';
+                'Lifetime spend: ' + LV.peso(spend) + ' across ' + c.completedCount +
+                ' completed order' + (c.completedCount === 1 ? '' : 's') + '</div>';
 
-            lastFocusedElement = document.activeElement;
+            lastFocusedElement = trigger;
             const overlay = document.getElementById('custOverlay');
             overlay.setAttribute('aria-hidden', 'false');
             overlay.classList.add('open');
