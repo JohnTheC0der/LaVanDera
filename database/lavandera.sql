@@ -313,8 +313,9 @@ INSERT INTO bag_types (id, code, name, weight_kg) VALUES
   (3, 'large',  'Large Bag',  15);
 
 INSERT INTO benefits (code, name, description) VALUES
-  ('FREE_DELIVERY', 'Free delivery',
-   'Customer does not pay the send/return rider fees for orders from this store.');
+  ('FREE_DELIVERY',   'Free delivery',          'waives the send and return rider fees for customers'),
+  ('ECO_PACKAGING',   'Eco-friendly packaging', 'returns laundry in eco-friendly packaging'),
+  ('EXPRESS_SERVICE', 'Express service',        'offers faster turnaround on orders');
 
 -- Delivery fee defaults (from the proposal: PHP 40 covers the first 2 km, +PHP 10 per extra km).
 INSERT INTO settings (setting_key, setting_value, description) VALUES

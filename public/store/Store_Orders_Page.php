@@ -1,48 +1,33 @@
+<?php
+require __DIR__ . '/../../src/bootstrap.php';
+$user = guard_store_page('portal');
+
+$blocked = null;                       // rejected / suspended stores see a notice instead of the portal
+if ($user['status'] === 'rejected') {
+    $blocked = 'Your store application was rejected. Contact support for assistance.';
+} elseif ($user['status'] === 'suspended') {
+    $blocked = 'Your store account is suspended. Contact support for assistance.';
+}
+$lvConfig  = ['loginUrl' => config('login_url'), 'logoutUrl' => '../auth/logout.php', 'csrf' => csrf_token()];
+$lvSession = ['id' => $user['id'], 'role' => 'store', 'name' => $user['name'], 'email' => $user['email']];
+?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Store Orders - LaVanDera</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/lavandera_theme.css">
     <style>
-        .store-order-list {
-            display: grid;
-            gap: 16px;
-            margin-bottom: 30px;
-        }
-
-        .store-order-head {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 14px;
-            flex-wrap: wrap;
-        }
-
-        .store-order-actions {
-            display: flex;
-            gap: 9px;
-            flex-wrap: wrap;
-            margin-top: 15px;
-        }
-
-        .store-order-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
-            gap: 0 18px;
-        }
-
-        .store-order-section {
-            margin-top: 26px;
-        }
-
+        .store-order-list { display: grid; gap: 16px; margin-bottom: 30px; }
+        .store-order-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+        .store-order-actions { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 15px; }
+        .store-order-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 0 18px; }
+        .store-order-section { margin-top: 26px; }
         .store-action-overlay {
             position: fixed;
             inset: 0;
@@ -107,43 +92,36 @@
         }
     </style>
 </head>
-
 <body>
     <div id="lv-nav"></div>
     <main class="lv-container">
         <section class="lv-page-head">
             <div class="lv-eyebrow">Partner portal</div>
             <h1 class="lv-title">Store Orders</h1>
-            <p class="lv-sub">Confirm incoming orders, receive laundry from riders, and send finished orders back to
-                customers.</p>
+            <p class="lv-sub">Confirm incoming orders, receive laundry from riders, and send finished orders back to customers.</p>
         </section>
-        <section id="ordersAccess" class="lv-card lv-card-pad" hidden>
-            <h2 class="lv-section-title">Store sign-in required</h2>
-            <p class="lv-sub">Sign in with an approved store account to manage orders.</p>
-            <a class="lv-btn lv-btn-primary lv-mt" href="../auth/Log_In_Page.html">Go to sign in</a>
-        </section>
-        <section id="ordersDisabled" class="lv-card lv-card-pad" hidden>
+<?php if ($blocked): ?>
+        <section class="lv-card lv-card-pad">
             <h2 class="lv-section-title">Store orders are unavailable</h2>
-            <p id="ordersDisabledMessage" class="lv-sub"></p>
-            <a class="lv-btn lv-btn-outline lv-mt" href="Store_Dashboard_Page.html">Back to store dashboard</a>
+            <p class="lv-sub"><?= h($blocked) ?></p>
+            <a class="lv-btn lv-btn-outline lv-mt" href="Store_Dashboard_Page.php">Back to store dashboard</a>
         </section>
-        <div id="orderPortal" hidden>
+<?php else: ?>
+        <p id="ordersError" class="lv-error" role="alert"></p>
+        <div id="orderPortal">
             <section class="store-order-section">
                 <h2 class="lv-section-title">Incoming orders</h2>
-                <p class="lv-sub" style="margin:4px 0 14px;">Review each request. Confirming sends the pickup job to the
-                    rider available orders.</p>
+                <p class="lv-sub" style="margin:4px 0 14px;">Review each request. Confirming sends the pickup job to the rider available orders.</p>
                 <div class="store-order-list" id="incomingList"></div>
             </section>
             <section class="store-order-section">
                 <h2 class="lv-section-title">Rider pickup and processing</h2>
-                <p class="lv-sub" style="margin:4px 0 14px;">When the rider arrives with the laundry and cash payment
-                    (if selected), confirm receipt to begin processing.</p>
+                <p class="lv-sub" style="margin:4px 0 14px;">When the rider arrives with the laundry and cash payment (if selected), confirm receipt to begin processing.</p>
                 <div class="store-order-list" id="processingList"></div>
             </section>
             <section class="store-order-section">
                 <h2 class="lv-section-title">Processing and return delivery</h2>
-                <p class="lv-sub" style="margin:4px 0 14px;">When laundry is finished, mark it for return. Track it
-                    while a rider is assigned and on the way to the customer.</p>
+                <p class="lv-sub" style="margin:4px 0 14px;">When laundry is finished, mark it for return. Track it while a rider is assigned and on the way to the customer.</p>
                 <div class="store-order-list" id="returnList"></div>
             </section>
             <section class="store-order-section">
@@ -151,14 +129,16 @@
                 <div class="store-order-list" id="historyList"></div>
             </section>
         </div>
+<?php endif; ?>
     </main>
+<?php if (!$blocked): ?>
     <div class="store-action-overlay" id="storeActionModal" aria-hidden="true">
         <section class="store-action-dialog" role="dialog" aria-modal="true" aria-labelledby="storeActionTitle"
             aria-describedby="storeActionMessage" tabindex="-1">
             <h2 id="storeActionTitle">Confirm order action</h2>
             <p id="storeActionMessage"></p>
             <label id="rejectReasonLabel" class="lv-label" for="rejectReason" hidden>Reason (optional)</label>
-            <textarea id="rejectReason" maxlength="500" placeholder="Add a reason for rejecting this order"
+            <textarea id="rejectReason" maxlength="255" placeholder="Add a reason for rejecting this order"
                 hidden></textarea>
             <div class="store-action-buttons">
                 <button class="lv-btn lv-btn-outline" type="button" id="cancelStoreAction">Cancel</button>
@@ -166,86 +146,82 @@
             </div>
         </section>
     </div>
-    <script src="../js/lavandera_demo.js"></script>
+<?php endif; ?>
     <script>
-        const storeSession = LV.session();
-        const store = storeSession && storeSession.role === 'store' ? LV.store(storeSession.id) : null;
-        const statusMessages = {
-            setup_required: 'Complete your store setup before managing orders.',
-            pending_approval: 'Your store is waiting for admin approval.',
-            rejected: 'Your store application was rejected. Contact support for assistance.',
-            suspended: 'Your store account is suspended. Contact support for assistance.'
-        };
-        if (!store) {
-            document.getElementById('ordersAccess').hidden = false;
-        } else if (store.status !== 'active') {
-            document.getElementById('ordersDisabled').hidden = false;
-            document.getElementById('ordersDisabledMessage').textContent = statusMessages[store.status] || 'This store account cannot manage orders.';
-        } else {
-            LV.renderNav('store', 'orders');
-            document.getElementById('orderPortal').hidden = false;
-            renderOrders();
-        }
+        window.LV_CONFIG = <?= js_json($lvConfig) ?>;
+        window.LV_SESSION = <?= js_json($lvSession) ?>;
+    </script>
+    <script src="../js/lavandera_demo.js"></script>
+    <script src="../js/lavandera_api.js"></script>
+<?php if (!$blocked): ?>
+    <script>
+        let orders = [];
+        try { LV.renderNav('store', 'orders'); LVApi.fixNavLinks(); } catch (navError) { console.warn('Navbar failed to render', navError); }
 
         function esc(value) { return LV.esc(value == null ? '' : value); }
 
         function orderCard(order, actionHtml) {
-            const customer = LV.customer(order.customerId) || {};
-            const bagNames = { small: 'Small / 5kg', medium: 'Medium / 10kg', large: 'Large / 15kg' };
-            const payment = (order.payment || 'cash').toUpperCase() + ' (' + (order.paymentStatus || (order.payment === 'cash' ? 'unpaid' : 'paid')) + ')';
+            const payment = (order.payment || 'cash').toUpperCase() + ' (' + (order.paymentStatus || 'unpaid') + ')';
             return '<article class="lv-card lv-card-pad">' +
                 '<div class="store-order-head"><div><div class="lv-eyebrow">Order #' + esc(order.id) + '</div>' +
-                '<h3 class="lv-section-title">' + esc(customer.name || 'Customer') + '</h3></div>' +
+                '<h3 class="lv-section-title">' + esc(order.customerName || 'Customer') + '</h3></div>' +
                 LV.statusBadge(order.status) + '</div>' +
                 '<div class="store-order-grid">' +
-                '<p class="lv-kv"><span>Bag</span><strong>' + esc(bagNames[order.bag] || order.bag || 'Laundry') + '</strong></p>' +
+                '<p class="lv-kv"><span>Bag</span><strong>' + esc(order.bagLabel || 'Laundry') + '</strong></p>' +
                 '<p class="lv-kv"><span>Store fee</span><strong>' + LV.peso(order.storeFee) + '</strong></p>' +
                 '<p class="lv-kv"><span>Payment</span><strong>' + esc(payment) + '</strong></p>' +
-                '<p class="lv-kv"><span>Customer contact</span><strong>' + esc(customer.contact || '-') + '</strong></p>' +
-                '<p class="lv-kv"><span>Customer address</span><strong>' + esc(customer.address || '-') + '</strong></p>' +
+                '<p class="lv-kv"><span>Customer contact</span><strong>' + esc(order.customerContact || '-') + '</strong></p>' +
+                '<p class="lv-kv"><span>Customer address</span><strong>' + esc(order.customerAddress || '-') + '</strong></p>' +
                 '<p class="lv-kv"><span>Placed</span><strong>' + esc(LV.when(order.createdAt)) + '</strong></p>' +
                 '</div>' +
                 (order.notes ? '<p class="lv-sub" style="max-width:none;"><strong>Customer note:</strong> ' + esc(order.notes) + '</p>' : '') +
+                (order.status === 'rejected' && order.rejectionReason ? '<p class="lv-sub" style="max-width:none;"><strong>Rejection reason:</strong> ' + esc(order.rejectionReason) + '</p>' : '') +
                 actionHtml +
                 '</article>';
         }
 
+        function emptyCard(message) { return '<div class="lv-card lv-card-pad"><p class="lv-muted">' + message + '</p></div>'; }
+
         function renderOrders() {
-            const orders = LV.orders().filter(function (order) { return order.storeId === store.id; });
-            const pending = orders.filter(function (order) { return order.status === 'pending_store'; });
-            const pickup = orders.filter(function (order) {
-                return ['waiting_for_driver', 'enroute_to_store'].indexOf(order.status) > -1;
-            });
-            const laundromat = orders.filter(function (order) {
-                return ['at_laundromat', 'waiting_for_return_driver', 'enroute_to_customer'].indexOf(order.status) > -1;
-            });
-            const history = orders.filter(function (order) {
-                return ['completed', 'cancelled', 'rejected'].indexOf(order.status) > -1;
-            });
+            const pending = orders.filter(function (o) { return o.status === 'pending_store'; });
+            const pickup = orders.filter(function (o) { return ['waiting_for_driver', 'enroute_to_store'].indexOf(o.status) > -1; });
+            const laundromat = orders.filter(function (o) { return ['at_laundromat', 'waiting_for_return_driver', 'enroute_to_customer'].indexOf(o.status) > -1; });
+            const history = orders.filter(function (o) { return ['completed', 'cancelled', 'rejected'].indexOf(o.status) > -1; });
+
             document.getElementById('incomingList').innerHTML = pending.length ? pending.map(function (order) {
                 return orderCard(order, '<div class="store-order-actions">' +
                     '<button class="lv-btn lv-btn-primary lv-btn-sm" onclick="confirmOrder(' + order.id + ')"><i class="fa-solid fa-check"></i> Confirm and send to riders</button>' +
                     '<button class="lv-btn lv-btn-danger lv-btn-sm" onclick="rejectOrder(' + order.id + ')"><i class="fa-solid fa-xmark"></i> Reject</button></div>');
-            }).join('') : '<div class="lv-card lv-card-pad"><p class="lv-muted">No new orders are waiting for confirmation.</p></div>';
+            }).join('') : emptyCard('No new orders are waiting for confirmation.');
 
             document.getElementById('processingList').innerHTML = pickup.length ? pickup.map(function (order) {
                 const action = order.status === 'enroute_to_store'
                     ? '<div class="store-order-actions"><button class="lv-btn lv-btn-primary lv-btn-sm" onclick="confirmDelivery(' + order.id + ')"><i class="fa-solid fa-box"></i> Confirm delivery' +
-                    (order.payment === 'cash' && order.paymentStatus !== 'paid' ? ' and cash received' : '') + '</button></div>'
+                        (order.payment === 'cash' && order.paymentStatus !== 'paid' ? ' and cash received' : '') + '</button></div>'
                     : '<p class="lv-muted">Waiting for a rider to accept the pickup job.</p>';
                 return orderCard(order, action);
-            }).join('') : '<div class="lv-card lv-card-pad"><p class="lv-muted">No orders are currently on the way to your store.</p></div>';
+            }).join('') : emptyCard('No orders are currently on the way to your store.');
 
             document.getElementById('returnList').innerHTML = laundromat.length ? laundromat.map(function (order) {
                 const action = order.status === 'at_laundromat'
                     ? '<div class="store-order-actions"><button class="lv-btn lv-btn-pink lv-btn-sm" onclick="markReady(' + order.id + ')"><i class="fa-solid fa-truck-fast"></i> Return to customer</button></div>'
                     : '';
                 return orderCard(order, action);
-            }).join('') : '<div class="lv-card lv-card-pad"><p class="lv-muted">No orders are being processed or returned.</p></div>';
+            }).join('') : emptyCard('No orders are being processed or returned.');
 
             document.getElementById('historyList').innerHTML = history.length ? history.map(function (order) {
                 return orderCard(order, '');
-            }).join('') : '<div class="lv-card lv-card-pad"><p class="lv-muted">Completed and rejected orders will appear here.</p></div>';
+            }).join('') : emptyCard('Completed and rejected orders will appear here.');
+        }
+
+        async function loadOrders() {
+            try {
+                orders = (await LVApi.get('../api/store/orders.php')).orders;
+                document.getElementById('ordersError').textContent = '';
+                renderOrders();
+            } catch (error) {
+                document.getElementById('ordersError').textContent = error.message;
+            }
         }
 
         const storeActionModal = document.getElementById('storeActionModal');
@@ -323,13 +299,25 @@
         window.confirmDelivery = function (id) { openStoreActionModal('receive', id); };
         window.markReady = function (id) { openStoreActionModal('ready', id); };
 
+        // changeOrderStatus: one call to the PHP API (the server re-checks the order's current state)
+        async function changeOrderStatus(id, action, reason) {
+            const result = await LVApi.postJson('../api/store/orders.php', { action: action, order_id: id, reason: reason || '' });
+            orders = result.orders;
+            renderOrders();
+        }
+
+        window.confirmOrder = function (id) { openStoreActionModal('confirm', id); };
+        window.rejectOrder = function (id) { openStoreActionModal('reject', id); };
+        window.confirmDelivery = function (id) { openStoreActionModal('receive', id); };
+        window.markReady = function (id) { openStoreActionModal('ready', id); };
+
         document.getElementById('cancelStoreAction').addEventListener('click', function () {
-            document.getElementById('cancelStoreAction').hidden = false;
             closeStoreActionModal(true);
         });
-        document.getElementById('confirmStoreAction').addEventListener('click', function () {
-            if (!pendingStoreAction) {
-                document.getElementById('cancelStoreAction').hidden = false;
+        document.getElementById('confirmStoreAction').addEventListener('click', async function () {
+            const cancelButton = document.getElementById('cancelStoreAction');
+            if (!pendingStoreAction) {                 // showing a result: this button just closes it
+                cancelButton.hidden = false;
                 closeStoreActionModal(true);
                 return;
             }
@@ -337,20 +325,24 @@
             const id = pendingStoreAction.id;
             const reason = document.getElementById('rejectReason').value.trim();
             const transitions = {
-                confirm: ['waiting_for_driver', 'Store confirmed order', 'Order confirmed and sent to available riders.'],
-                reject: ['rejected', reason || 'Rejected by store', 'Order rejected.'],
-                receive: ['at_laundromat', 'Store confirmed laundry delivery and payment', 'Laundry received. The order is now at the laundromat.'],
-                ready: ['waiting_for_return_driver', 'Store marked order ready for return', 'Order marked ready and sent to available riders.']
+                confirm: ['confirm', 'Order confirmed and sent to available riders.'],
+                reject: ['reject', 'Order rejected.'],
+                receive: ['confirm_delivery', 'Laundry received. The order is now at the laundromat.'],
+                ready: ['ready_for_return', 'Order marked ready and sent to available riders.']
             };
             const transition = transitions[action];
             if (!transition) return;
-            if (changeOrderStatus(id, transition[0], transition[1])) {
-                document.getElementById('cancelStoreAction').hidden = false;
-                showStoreActionResult('Order updated', transition[2], false);
-            } else {
-                document.getElementById('cancelStoreAction').hidden = false;
-                showStoreActionResult('Unable to update order', 'This order could not be updated. Refresh the page and try again.', true);
+            this.disabled = true;
+            try {
+                await changeOrderStatus(id, transition[0], action === 'reject' ? reason : '');
+                cancelButton.hidden = true;
+                showStoreActionResult('Order updated', transition[1], false);
+            } catch (error) {
+                cancelButton.hidden = true;
+                showStoreActionResult('Unable to update order', error.message || 'This order could not be updated. Refresh the page and try again.', true);
+                loadOrders();                          // re-sync with the server
             }
+            this.disabled = false;
         });
         storeActionModal.addEventListener('click', function (event) {
             if (event.target === storeActionModal) {
@@ -377,7 +369,11 @@
                 }
             }
         });
-    </script>
-</body>
 
+        loadOrders();
+        // pick up new customer orders and rider progress without a manual reload
+        setInterval(function () { if (!document.hidden) loadOrders(); }, 30000);
+    </script>
+<?php endif; ?>
+</body>
 </html>
