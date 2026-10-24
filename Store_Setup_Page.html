@@ -13,6 +13,13 @@
         .setup-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
         .setup-grid .full { grid-column: 1 / -1; }
         .setup-note { padding: 14px 16px; border-radius: 12px; background: var(--lv-pink-tint); color: var(--lv-ink); }
+        .setup-dialog-overlay { position: fixed; inset: 0; z-index: 2000; display: none; align-items: center; justify-content: center; padding: 18px; background: rgba(38, 0, 26, .58); }
+        .setup-dialog-overlay.open { display: flex; }
+        .setup-dialog { width: min(100%, 460px); padding: 24px; border-radius: 18px; background: #fff; box-shadow: 0 20px 60px rgba(35, 0, 24, .3); }
+        .setup-dialog h2 { margin: 0 0 10px; color: var(--lv-plum); }
+        .setup-dialog p { margin: 0; color: var(--lv-ink); }
+        .setup-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+        @media (max-width: 480px) { .setup-dialog-actions { flex-direction: column-reverse; } .setup-dialog-actions .lv-btn { width: 100%; } }
         @media (max-width: 640px) { .setup-grid { grid-template-columns: 1fr; } .setup-grid .full { grid-column: auto; } }
     </style>
 </head>
@@ -73,11 +80,21 @@
             </div>
             <p id="setupError" class="lv-error" role="alert" style="margin-top:14px;"></p>
             <div class="lv-row-between" style="gap:12px; flex-wrap:wrap; margin-top:16px;">
-                <button class="lv-btn lv-btn-outline" type="button" onclick="LV.logout()">Sign out</button>
+                <button class="lv-btn lv-btn-outline" type="button" id="signOutButton">Sign out</button>
                 <button class="lv-btn lv-btn-pink" type="submit">Submit for admin review</button>
             </div>
         </form>
     </main>
+    <div class="setup-dialog-overlay" id="setupDialog" aria-hidden="true">
+        <section class="setup-dialog" role="dialog" aria-modal="true" aria-labelledby="setupDialogTitle" aria-describedby="setupDialogMessage" tabindex="-1">
+            <h2 id="setupDialogTitle"></h2>
+            <p id="setupDialogMessage"></p>
+            <div class="setup-dialog-actions">
+                <button class="lv-btn lv-btn-outline" type="button" id="cancelSetupDialog">Cancel</button>
+                <button class="lv-btn lv-btn-primary" type="button" id="confirmSetupDialog">Confirm</button>
+            </div>
+        </section>
+    </div>
     <script src="lavandera_demo.js"></script>
     <script>
         const session = LV.session();
@@ -115,8 +132,74 @@
             });
         }
 
-        form.addEventListener('submit', async function (event) {
-            event.preventDefault();
+        const setupDialog = document.getElementById('setupDialog');
+        let setupDialogAction = null;
+        let setupDialogTrigger = null;
+
+        function closeSetupDialog(restoreFocus) {
+            setupDialog.classList.remove('open');
+            setupDialog.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            setupDialogAction = null;
+            if (restoreFocus && setupDialogTrigger && setupDialogTrigger.isConnected) setupDialogTrigger.focus();
+        }
+
+        function openSetupDialog(title, message, options) {
+            options = options || {};
+            setupDialogTrigger = document.activeElement;
+            document.getElementById('setupDialogTitle').textContent = title;
+            document.getElementById('setupDialogMessage').textContent = message;
+            document.getElementById('cancelSetupDialog').hidden = options.cancelText === false;
+            document.getElementById('cancelSetupDialog').textContent = options.cancelText || 'Cancel';
+            const confirmButton = document.getElementById('confirmSetupDialog');
+            confirmButton.textContent = options.confirmText || 'Confirm';
+            setupDialogAction = options.onConfirm || null;
+            setupDialog.classList.add('open');
+            setupDialog.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            (options.focusConfirm || options.cancelText === false
+                ? confirmButton
+                : document.getElementById('cancelSetupDialog')).focus();
+        }
+
+        document.getElementById('cancelSetupDialog').addEventListener('click', function () { closeSetupDialog(true); });
+        document.getElementById('confirmSetupDialog').addEventListener('click', function () {
+            const action = setupDialogAction;
+            closeSetupDialog(false);
+            if (action) action();
+        });
+        setupDialog.addEventListener('click', function (event) {
+            if (event.target === setupDialog) closeSetupDialog(true);
+        });
+        document.addEventListener('keydown', function (event) {
+            if (!setupDialog.classList.contains('open')) return;
+            if (event.key === 'Escape') closeSetupDialog(true);
+            else if (event.key === 'Tab') {
+                const focusable = Array.from(setupDialog.querySelectorAll('button:not([hidden])'));
+                if (focusable.length < 2) {
+                    event.preventDefault();
+                    return;
+                }
+                if (event.shiftKey && document.activeElement === focusable[0]) {
+                    event.preventDefault();
+                    focusable[focusable.length - 1].focus();
+                } else if (!event.shiftKey && document.activeElement === focusable[focusable.length - 1]) {
+                    event.preventDefault();
+                    focusable[0].focus();
+                }
+            }
+        });
+
+        document.getElementById('signOutButton').addEventListener('click', function () {
+            openSetupDialog('Sign out?', 'Are you sure you want to sign out before submitting your store application?', {
+                cancelText: 'Stay signed in',
+                confirmText: 'Sign out',
+                focusConfirm: true,
+                onConfirm: LV.logout
+            });
+        });
+
+        async function submitSetupApplication() {
             const error = document.getElementById('setupError');
             error.textContent = '';
             const prices = {
@@ -125,7 +208,7 @@
                 large: Number(document.getElementById('largePrice').value)
             };
             if (Object.keys(prices).some(function (size) { return !Number.isFinite(prices[size]) || prices[size] <= 0; })) {
-                error.textContent = 'Enter a valid price above zero for each bag size.';
+                openSetupDialog('Check your prices', 'Enter a valid price above zero for each bag size.', { cancelText: false, confirmText: 'OK' });
                 return;
             }
             try {
@@ -146,10 +229,29 @@
                 const saved = LV.updateStore(store.id, changes);
                 if (!saved) throw new Error('Store account not found. Sign in again and retry.');
                 LV.clearSession();
-                location.href = 'Store_Pending_Approval_Page.html?id=' + encodeURIComponent(store.id);
+                openSetupDialog('Application submitted', 'Your store details are waiting for admin review.', {
+                    cancelText: false,
+                    confirmText: 'View application status',
+                    onConfirm: function () {
+                        location.href = 'Store_Pending_Approval_Page.html?id=' + encodeURIComponent(store.id);
+                    }
+                });
             } catch (saveError) {
-                error.textContent = saveError.message || 'Unable to submit your store application.';
+                openSetupDialog('Unable to submit application', saveError.message || 'Unable to submit your store application.', {
+                    cancelText: false,
+                    confirmText: 'OK'
+                });
             }
+        }
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            openSetupDialog('Submit for admin review?', 'After submission, your store account will remain pending until an administrator reviews it.', {
+                cancelText: 'Continue editing',
+                confirmText: 'Submit application',
+                focusConfirm: true,
+                onConfirm: submitSetupApplication
+            });
         });
     </script>
 </body>

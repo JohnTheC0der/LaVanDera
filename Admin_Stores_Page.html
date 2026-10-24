@@ -7,26 +7,88 @@
     <title>Stores - LaVanDera</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="lavandera_theme.css">
     <style>
-        /* page-level additions: detail modal overlay only */
+        /* Page-level modal styles for store details and suspension confirmation. */
         .lv-modal-overlay {
-            position: fixed; inset: 0; z-index: 80; display: none; place-items: center;
+            position: fixed;
+            inset: 0;
+            z-index: 1100;
+            display: none;
+            place-items: center;
             background: rgba(43, 13, 30, 0.45);
-            backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            padding: 20px;
         }
-        .lv-modal-overlay.open { display: grid; }
+
+        .lv-modal-overlay.open {
+            display: grid;
+        }
+
         .lv-modal {
-            background: #fff; border-radius: var(--lv-radius); box-shadow: var(--lv-shadow-lg);
-            width: calc(100% - 40px); max-width: 620px; max-height: 85vh; overflow: auto;
+            background: #fff;
+            border-radius: var(--lv-radius);
+            box-shadow: var(--lv-shadow-lg);
+            width: 100%;
+            max-width: 620px;
+            max-height: 85vh;
+            overflow: auto;
+        }
+
+        .suspend-modal {
+            max-width: 460px;
+            padding: 26px;
+        }
+
+        .suspend-modal-icon {
+            width: 48px;
+            height: 48px;
+            display: grid;
+            place-items: center;
+            border-radius: 15px;
+            background: var(--lv-pink-tint);
+            color: var(--lv-danger, #b42318);
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .suspend-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 22px;
+        }
+
+        @media (max-width: 480px) {
+            .suspend-modal-actions { flex-direction: column-reverse; }
+            .suspend-modal-actions .lv-btn { width: 100%; }
         }
     </style>
 </head>
 
 <body>
     <div id="lv-nav"></div>
+
+    <!-- MODALS -->
+    <div class="lv-modal-overlay" id="suspendStoreModal" aria-hidden="true">
+        <div class="lv-modal suspend-modal" role="dialog" aria-modal="true" aria-labelledby="suspendModalTitle"
+            aria-describedby="suspendModalMessage" tabindex="-1">
+            <div class="suspend-modal-icon"><i class="fa-solid fa-ban" aria-hidden="true"></i></div>
+            <h2 class="lv-section-title" id="suspendModalTitle">Suspend store?</h2>
+            <p class="lv-sub" id="suspendModalMessage" style="max-width:none; margin-top:8px;"></p>
+            <div class="suspend-modal-actions">
+                <button class="lv-btn lv-btn-outline" type="button" id="cancelSuspendBtn">Cancel</button>
+                <button class="lv-btn lv-btn-danger" type="button" id="confirmSuspendBtn">
+                    <i class="fa-solid fa-ban" aria-hidden="true"></i> Suspend store
+                </button>
+            </div>
+        </div>
+    </div>
 
     <main class="lv-container">
 
@@ -46,7 +108,8 @@
             <div class="lv-row-between lv-wrap">
                 <div class="lv-search" style="flex:1; min-width:240px;">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="storeSearch" class="lv-input" placeholder="Search name, email or contact number...">
+                    <input type="text" id="storeSearch" class="lv-input"
+                        placeholder="Search name, email or contact number...">
                 </div>
                 <div class="lv-wrap" id="filterPills"></div>
             </div>
@@ -84,13 +147,16 @@
     <script>
         let activeFilter = 'all';
         let searchQuery = '';
+        let pendingSuspendStoreId = null;
+        let suspendTrigger = null;
 
         const FILTERS = [
-            { key: 'all',              label: 'All' },
-            { key: 'active',           label: 'Active' },
+            { key: 'all', label: 'All' },
+            { key: 'active', label: 'Active' },
             { key: 'pending_approval', label: 'Pending approval' },
-            { key: 'setup_required',   label: 'Setup incomplete' },
-            { key: 'rejected',         label: 'Rejected' }
+            { key: 'setup_required', label: 'Setup incomplete' },
+            { key: 'rejected', label: 'Rejected' },
+            { key: 'suspended', label: 'Suspended' }
         ];
 
         const me = LV.requireRole('admin', 'Log_In_Page.html');
@@ -104,8 +170,16 @@
             document.getElementById('storeModal').addEventListener('click', function (e) {
                 if (e.target === this) closeModal();
             });
+            document.getElementById('suspendStoreModal').addEventListener('click', function (e) {
+                if (e.target === this) closeSuspendModal();
+            });
+            document.getElementById('cancelSuspendBtn').addEventListener('click', closeSuspendModal);
+            document.getElementById('confirmSuspendBtn').addEventListener('click', confirmSuspendStore);
             document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') closeModal();
+                if (e.key === 'Escape') {
+                    closeModal();
+                    closeSuspendModal();
+                }
             });
 
             render();
@@ -123,13 +197,13 @@
         function priceLine(s) {
             if (!s.prices) return '<span class="lv-muted">&mdash;</span>';
             return 'S ' + LV.peso(s.prices.small) + ' &middot; M ' + LV.peso(s.prices.medium) +
-                   ' &middot; L ' + LV.peso(s.prices.large);
+                ' &middot; L ' + LV.peso(s.prices.large);
         }
 
         function addressCell(s) {
             if (!s.address) return '<span class="lv-muted">&mdash;</span>';
             return '<span title="' + LV.esc(s.address) + '" style="display:block; max-width:200px; overflow:hidden;' +
-                   ' text-overflow:ellipsis; white-space:nowrap;">' + LV.esc(s.address) + '</span>';
+                ' text-overflow:ellipsis; white-space:nowrap;">' + LV.esc(s.address) + '</span>';
         }
 
         /* ------------------------------------------------- render ---- */
@@ -147,10 +221,10 @@
             const featured = ss.filter(function (s) { return s.featured; }).length;
 
             const tiles = [
-                { icon: 'fa-store',           value: active,     label: 'Active Stores' },
-                { icon: 'fa-hourglass-half',  value: pending,    label: 'Pending Approval', amber: pending > 0 },
+                { icon: 'fa-store', value: active, label: 'Active Stores' },
+                { icon: 'fa-hourglass-half', value: pending, label: 'Pending Approval', amber: pending > 0 },
                 { icon: 'fa-screwdriver-wrench', value: incomplete, label: 'Setup Incomplete', amber: incomplete > 0 },
-                { icon: 'fa-star',            value: featured,   label: 'Featured' }
+                { icon: 'fa-star', value: featured, label: 'Featured' }
             ];
             document.getElementById('statGrid').innerHTML = tiles.map(function (t) {
                 const chip = t.amber ? ' style="background:var(--lv-amber-bg); color:var(--lv-amber);"' : '';
@@ -198,9 +272,9 @@
             tbody.innerHTML = list.map(function (s) {
                 return '<tr>' +
                     '<td><div class="lv-row">' +
-                        '<div class="lv-avatar lv-avatar-sm">' + LV.esc(LV.initials(s.name)) + '</div>' +
-                        '<div><div style="font-weight:800; color:var(--lv-plum);">' + LV.esc(s.name) + '</div>' +
-                        '<div class="lv-muted" style="font-size:12.5px;">' + LV.esc(s.email) + '</div></div>' +
+                    '<div class="lv-avatar lv-avatar-sm">' + LV.esc(LV.initials(s.name)) + '</div>' +
+                    '<div><div style="font-weight:800; color:var(--lv-plum);">' + LV.esc(s.name) + '</div>' +
+                    '<div class="lv-muted" style="font-size:12.5px;">' + LV.esc(s.email) + '</div></div>' +
                     '</div></td>' +
                     '<td>' + LV.esc(s.contact || '—') + '</td>' +
                     '<td>' + addressCell(s) + '</td>' +
@@ -210,33 +284,33 @@
                         : '<span class="lv-muted">&mdash;</span>') + '</td>' +
                     '<td>' + LV.userStatusBadge(s.status) + '</td>' +
                     '<td><div class="lv-wrap">' + storeActions(s) + '</div></td>' +
-                '</tr>';
+                    '</tr>';
             }).join('');
         }
 
         function storeActions(s) {
             if (s.status === 'pending_approval') {
                 return '<button class="lv-btn lv-btn-primary lv-btn-sm" onclick="approveStore(' + s.id + ')">' +
-                        '<i class="fa-solid fa-check"></i>Approve</button>' +
-                       '<button class="lv-btn lv-btn-danger lv-btn-sm" onclick="rejectStore(' + s.id + ')">' +
-                        '<i class="fa-solid fa-xmark"></i>Reject</button>';
+                    '<i class="fa-solid fa-check"></i>Approve</button>' +
+                    '<button class="lv-btn lv-btn-danger lv-btn-sm" onclick="rejectStore(' + s.id + ')">' +
+                    '<i class="fa-solid fa-xmark"></i>Reject</button>';
             }
             if (s.status === 'setup_required') {
                 return '<span class="lv-badge lv-tone-gray"><i class="fa-solid fa-triangle-exclamation"></i>Setup incomplete</span>' +
-                       '<button class="lv-btn lv-btn-outline lv-btn-sm" onclick="openStore(' + s.id + ')" ' +
-                        'title="Store has not finished setup"><i class="fa-solid fa-eye"></i>View</button>';
+                    '<button class="lv-btn lv-btn-outline lv-btn-sm" onclick="openStore(' + s.id + ')" ' +
+                    'title="Store has not finished setup"><i class="fa-solid fa-eye"></i>View</button>';
             }
             let html = '<button class="lv-btn lv-btn-outline lv-btn-sm" onclick="openStore(' + s.id + ')">' +
-                       '<i class="fa-solid fa-eye"></i>View</button>';
+                '<i class="fa-solid fa-eye"></i>View</button>';
             if (s.status === 'active') {
                 html += '<button class="lv-btn lv-btn-danger lv-btn-sm" onclick="suspendStore(' + s.id + ')">' +
-                        '<i class="fa-solid fa-ban"></i>Suspend</button>';
+                    '<i class="fa-solid fa-ban"></i>Suspend</button>';
             } else if (s.status === 'suspended') {
                 html += '<button class="lv-btn lv-btn-outline lv-btn-sm" onclick="approveStore(' + s.id + ')">' +
-                        '<i class="fa-solid fa-rotate-right"></i>Reactivate</button>';
+                    '<i class="fa-solid fa-rotate-right"></i>Reactivate</button>';
             } else if (s.status === 'rejected') {
                 html += '<button class="lv-btn lv-btn-primary lv-btn-sm" onclick="approveStore(' + s.id + ')">' +
-                        '<i class="fa-solid fa-check"></i>Approve</button>';
+                    '<i class="fa-solid fa-check"></i>Approve</button>';
             }
             return html;
         }
@@ -260,10 +334,39 @@
 
         function suspendStore(id) {
             const s = getStore(id); if (!s) return;
-            if (!confirm('Suspend ' + s.name + '? Customers will no longer see it in the store list.')) return;
+            pendingSuspendStoreId = s.id;
+            suspendTrigger = document.activeElement;
+            document.getElementById('suspendModalTitle').textContent = 'Suspend ' + s.name + '?';
+            document.getElementById('suspendModalMessage').textContent =
+                'Customers will no longer see this store or place new orders while it is suspended.';
+            const overlay = document.getElementById('suspendStoreModal');
+            overlay.classList.add('open');
+            overlay.setAttribute('aria-hidden', 'false');
+            overlay.querySelector('[role="dialog"]').focus();
+            document.getElementById('confirmSuspendBtn').focus();
+        }
+
+        function confirmSuspendStore() {
+            const s = getStore(pendingSuspendStoreId);
+            if (!s || s.status !== 'active') {
+                closeSuspendModal();
+                render();
+                LV.toast('This store is no longer active. Refresh the list and try again.', 'fa-circle-info');
+                return;
+            }
             LV.setUserStatus(s.id, 'suspended');
+            closeSuspendModal();
             LV.toast(s.name + ' has been suspended.', 'fa-ban');
             render();
+        }
+
+        function closeSuspendModal() {
+            const overlay = document.getElementById('suspendStoreModal');
+            overlay.classList.remove('open');
+            overlay.setAttribute('aria-hidden', 'true');
+            pendingSuspendStoreId = null;
+            if (suspendTrigger && suspendTrigger.isConnected) suspendTrigger.focus();
+            suspendTrigger = null;
         }
 
         /* -------------------------------------------------- modal ---- */
@@ -272,8 +375,8 @@
 
             const banner = s.banner
                 ? '<img class="lv-media" style="height:140px; border-radius:var(--lv-radius) var(--lv-radius) 0 0;" ' +
-                  'src="' + LV.esc(s.banner) + '" alt="' + LV.esc(s.name) + '" ' +
-                  'onerror="this.onerror=null; this.className=\'lv-media lv-fallback\'; this.style.height=\'120px\'; this.removeAttribute(\'src\');">'
+                'src="' + LV.esc(s.banner) + '" alt="' + LV.esc(s.name) + '" ' +
+                'onerror="this.onerror=null; this.className=\'lv-media lv-fallback\'; this.style.height=\'120px\'; this.removeAttribute(\'src\');">'
                 : '<div class="lv-media lv-fallback" style="height:120px; border-radius:var(--lv-radius) var(--lv-radius) 0 0;"></div>';
 
             let badges = '';
@@ -285,12 +388,12 @@
 
             const prices = s.prices
                 ? '<div class="lv-grid lv-grid-3" style="gap:10px;">' +
-                    [['Small', '5kg', s.prices.small], ['Medium', '10kg', s.prices.medium], ['Large', '15kg', s.prices.large]]
-                        .map(function (p) {
-                            return '<div style="background:#fff8fb; border:1.5px solid var(--lv-line); border-radius:16px; padding:13px; text-align:center;">' +
-                                '<div class="lv-muted" style="font-size:11px; font-weight:800; letter-spacing:0.12em; text-transform:uppercase;">' + p[0] + ' (' + p[1] + ')</div>' +
-                                '<div style="font-weight:800; color:var(--lv-pink); font-size:17px; margin-top:4px;">' + LV.peso(p[2]) + '</div></div>';
-                        }).join('') + '</div>'
+                [['Small', '5kg', s.prices.small], ['Medium', '10kg', s.prices.medium], ['Large', '15kg', s.prices.large]]
+                    .map(function (p) {
+                        return '<div style="background:#fff8fb; border:1.5px solid var(--lv-line); border-radius:16px; padding:13px; text-align:center;">' +
+                            '<div class="lv-muted" style="font-size:11px; font-weight:800; letter-spacing:0.12em; text-transform:uppercase;">' + p[0] + ' (' + p[1] + ')</div>' +
+                            '<div style="font-weight:800; color:var(--lv-pink); font-size:17px; margin-top:4px;">' + LV.peso(p[2]) + '</div></div>';
+                    }).join('') + '</div>'
                 : '<p class="lv-muted" style="font-size:14px;">Prices not set yet.</p>';
 
             const storeOrders = LV.orders().filter(function (o) { return o.storeId === s.id; });
@@ -304,11 +407,11 @@
                     const bag = LV.bagOf(o.bag);
                     return '<div class="lv-row-between" style="padding:11px 0; border-bottom:1px dashed var(--lv-line); font-size:13.5px; gap:10px;">' +
                         '<div>' +
-                            '<span style="font-weight:800; color:var(--lv-plum);">#' + o.id + '</span>' +
-                            ' &middot; ' + LV.esc(cust ? cust.name : 'Customer') +
-                            ' &middot; ' + LV.esc(bag.name) +
-                            ' &middot; ' + LV.peso(o.total) +
-                            '<div class="lv-muted" style="font-size:12px;">' + LV.when(o.createdAt) + '</div>' +
+                        '<span style="font-weight:800; color:var(--lv-plum);">#' + o.id + '</span>' +
+                        ' &middot; ' + LV.esc(cust ? cust.name : 'Customer') +
+                        ' &middot; ' + LV.esc(bag.name) +
+                        ' &middot; ' + LV.peso(o.total) +
+                        '<div class="lv-muted" style="font-size:12px;">' + LV.when(o.createdAt) + '</div>' +
                         '</div>' + LV.statusBadge(o.status) + '</div>';
                 }).join('');
             } else {
@@ -318,45 +421,45 @@
             document.getElementById('storeModalPanel').innerHTML =
                 banner +
                 '<div class="lv-card-pad">' +
-                    '<div class="lv-row-between" style="margin-bottom:14px;">' +
-                        '<span class="lv-eyebrow" style="margin-bottom:0;">Store profile</span>' +
-                        '<button class="lv-menu-btn" style="width:36px; height:36px; border-radius:12px; font-size:14px; background:var(--lv-pink-tint); color:var(--lv-plum); box-shadow:none;" onclick="closeModal()" aria-label="Close">' +
-                            '<i class="fa-solid fa-xmark"></i></button>' +
-                    '</div>' +
-                    '<div class="lv-row" style="margin-bottom:12px;">' +
-                        '<div class="lv-avatar lv-avatar-lg">' + LV.esc(LV.initials(s.name)) + '</div>' +
-                        '<div>' +
-                            '<h3 style="font-size:20px; color:var(--lv-plum);">' + LV.esc(s.name) + '</h3>' +
-                            '<div class="lv-muted" style="font-size:13.5px;">' + LV.esc(s.email) + '</div>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="lv-wrap" style="margin-bottom:14px;">' + badges +
-                        '<span class="lv-badge lv-tone-blue"><i class="fa-solid fa-star" style="color:inherit;"></i>' +
-                        (s.rating ? Number(s.rating).toFixed(1) + ' rating' : 'No ratings yet') + '</span></div>' +
-                    '<div class="lv-kv"><span>Email</span><span>' + LV.esc(s.email) + '</span></div>' +
-                    '<div class="lv-kv"><span>Contact</span><span>' + LV.esc(s.contact || '—') + '</span></div>' +
-                    '<div class="lv-kv"><span>Address</span><span>' + LV.esc(s.address || 'To be confirmed') + '</span></div>' +
-                    '<div class="lv-kv"><span>Joined</span><span>' + LV.when(s.joined) + '</span></div>' +
-                    '<div class="lv-kv"><span>Status</span><span>' + LV.userStatusBadge(s.status) + '</span></div>' +
-                    (s.statusNote
-                        ? '<div class="lv-kv"><span>' + (s.status === 'rejected' ? 'Rejection reason' : 'Status note') +
-                          '</span><span>' + LV.esc(s.statusNote) + '</span></div>'
-                        : '') +
-                    (s.description
-                        ? '<p style="margin-top:14px; font-size:14.5px; line-height:1.6;">' + LV.esc(s.description) + '</p>'
-                        : '<p class="lv-muted" style="margin-top:14px; font-size:14px;">No description yet.</p>') +
-                    '<hr class="lv-divider">' +
-                    '<h4 style="font-size:15px; color:var(--lv-plum); margin-bottom:10px;">Prices</h4>' +
-                    prices +
-                    '<hr class="lv-divider">' +
-                    '<h4 style="font-size:15px; color:var(--lv-plum); margin-bottom:6px;">Store orders</h4>' +
-                    ordersHtml +
-                    '<div style="margin-top:16px; background:var(--lv-pink-tint); border-radius:16px; padding:14px 16px; text-align:center;">' +
-                        '<div class="lv-muted" style="font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase;">Lifetime value</div>' +
-                        '<div style="font-weight:800; color:var(--lv-plum); font-size:19px; margin-top:4px;">' +
-                            LV.peso(lifetime) + ' <span class="lv-muted" style="font-size:13px; font-weight:600;">from ' +
-                            completed.length + ' completed order' + (completed.length === 1 ? '' : 's') + '</span></div>' +
-                    '</div>' +
+                '<div class="lv-row-between" style="margin-bottom:14px;">' +
+                '<span class="lv-eyebrow" style="margin-bottom:0;">Store profile</span>' +
+                '<button class="lv-menu-btn" style="width:36px; height:36px; border-radius:12px; font-size:14px; background:var(--lv-pink-tint); color:var(--lv-plum); box-shadow:none;" onclick="closeModal()" aria-label="Close">' +
+                '<i class="fa-solid fa-xmark"></i></button>' +
+                '</div>' +
+                '<div class="lv-row" style="margin-bottom:12px;">' +
+                '<div class="lv-avatar lv-avatar-lg">' + LV.esc(LV.initials(s.name)) + '</div>' +
+                '<div>' +
+                '<h3 style="font-size:20px; color:var(--lv-plum);">' + LV.esc(s.name) + '</h3>' +
+                '<div class="lv-muted" style="font-size:13.5px;">' + LV.esc(s.email) + '</div>' +
+                '</div>' +
+                '</div>' +
+                '<div class="lv-wrap" style="margin-bottom:14px;">' + badges +
+                '<span class="lv-badge lv-tone-blue"><i class="fa-solid fa-star" style="color:inherit;"></i>' +
+                (s.rating ? Number(s.rating).toFixed(1) + ' rating' : 'No ratings yet') + '</span></div>' +
+                '<div class="lv-kv"><span>Email</span><span>' + LV.esc(s.email) + '</span></div>' +
+                '<div class="lv-kv"><span>Contact</span><span>' + LV.esc(s.contact || '—') + '</span></div>' +
+                '<div class="lv-kv"><span>Address</span><span>' + LV.esc(s.address || 'To be confirmed') + '</span></div>' +
+                '<div class="lv-kv"><span>Joined</span><span>' + LV.when(s.joined) + '</span></div>' +
+                '<div class="lv-kv"><span>Status</span><span>' + LV.userStatusBadge(s.status) + '</span></div>' +
+                (s.statusNote
+                    ? '<div class="lv-kv"><span>' + (s.status === 'rejected' ? 'Rejection reason' : 'Status note') +
+                    '</span><span>' + LV.esc(s.statusNote) + '</span></div>'
+                    : '') +
+                (s.description
+                    ? '<p style="margin-top:14px; font-size:14.5px; line-height:1.6;">' + LV.esc(s.description) + '</p>'
+                    : '<p class="lv-muted" style="margin-top:14px; font-size:14px;">No description yet.</p>') +
+                '<hr class="lv-divider">' +
+                '<h4 style="font-size:15px; color:var(--lv-plum); margin-bottom:10px;">Prices</h4>' +
+                prices +
+                '<hr class="lv-divider">' +
+                '<h4 style="font-size:15px; color:var(--lv-plum); margin-bottom:6px;">Store orders</h4>' +
+                ordersHtml +
+                '<div style="margin-top:16px; background:var(--lv-pink-tint); border-radius:16px; padding:14px 16px; text-align:center;">' +
+                '<div class="lv-muted" style="font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase;">Lifetime value</div>' +
+                '<div style="font-weight:800; color:var(--lv-plum); font-size:19px; margin-top:4px;">' +
+                LV.peso(lifetime) + ' <span class="lv-muted" style="font-size:13px; font-weight:600;">from ' +
+                completed.length + ' completed order' + (completed.length === 1 ? '' : 's') + '</span></div>' +
+                '</div>' +
                 '</div>';
             document.getElementById('storeModal').classList.add('open');
         }

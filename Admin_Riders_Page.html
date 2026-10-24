@@ -11,16 +11,26 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="lavandera_theme.css">
     <style>
-        /* page-level additions: detail modal overlay only */
+        /* Page-level additions: detail and rider-action modals. */
         .lv-modal-overlay {
-            position: fixed; inset: 0; z-index: 80; display: none; place-items: center;
+            position: fixed; inset: 0; z-index: 1100; display: none; place-items: center; padding: 20px;
             background: rgba(43, 13, 30, 0.45);
             backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
         }
         .lv-modal-overlay.open { display: grid; }
         .lv-modal {
             background: #fff; border-radius: var(--lv-radius); box-shadow: var(--lv-shadow-lg);
-            width: calc(100% - 40px); max-width: 520px; max-height: 85vh; overflow: auto;
+            width: 100%; max-width: 520px; max-height: 85vh; overflow: auto;
+        }
+        .rider-action-modal { max-width: 460px; padding: 26px; }
+        .rider-action-icon {
+            width: 48px; height: 48px; display: grid; place-items: center; border-radius: 15px;
+            background: var(--lv-pink-tint); color: var(--lv-plum); font-size: 20px; margin-bottom: 15px;
+        }
+        .rider-action-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+        @media (max-width: 480px) {
+            .rider-action-actions { flex-direction: column-reverse; }
+            .rider-action-actions .lv-btn { width: 100%; }
         }
     </style>
 </head>
@@ -79,10 +89,30 @@
         <div class="lv-modal" id="riderModalPanel" role="dialog" aria-modal="true" aria-label="Rider details"></div>
     </div>
 
+    <div class="lv-modal-overlay" id="riderActionModal" aria-hidden="true">
+        <section class="lv-modal rider-action-modal" role="dialog" aria-modal="true"
+            aria-labelledby="riderActionTitle" aria-describedby="riderActionMessage" tabindex="-1">
+            <div class="rider-action-icon"><i id="riderActionIcon" class="fa-solid fa-circle-info" aria-hidden="true"></i></div>
+            <h2 class="lv-section-title" id="riderActionTitle"></h2>
+            <p class="lv-sub" id="riderActionMessage" style="max-width:none; margin-top:8px;"></p>
+            <div class="lv-field" id="rejectReasonField" style="display:none; margin-top:16px;">
+                <label class="lv-label" for="rejectReason">Reason (optional)</label>
+                <textarea class="lv-textarea" id="rejectReason" rows="3" maxlength="300"
+                    placeholder="Add a reason for the rejection"></textarea>
+            </div>
+            <div class="rider-action-actions">
+                <button class="lv-btn lv-btn-outline" type="button" id="cancelRiderAction">Cancel</button>
+                <button class="lv-btn lv-btn-danger" type="button" id="confirmRiderAction"></button>
+            </div>
+        </section>
+    </div>
+
     <script src="lavandera_demo.js"></script>
     <script>
         let activeFilter = 'all';
         let searchQuery = '';
+        let pendingRiderAction = null;
+        let riderActionTrigger = null;
 
         const FILTERS = [
             { key: 'all',               label: 'All' },
@@ -102,8 +132,16 @@
             document.getElementById('riderModal').addEventListener('click', function (e) {
                 if (e.target === this) closeModal();
             });
+            document.getElementById('riderActionModal').addEventListener('click', function (e) {
+                if (e.target === this) closeRiderActionModal();
+            });
+            document.getElementById('cancelRiderAction').addEventListener('click', closeRiderActionModal);
+            document.getElementById('confirmRiderAction').addEventListener('click', confirmRiderAction);
             document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') closeModal();
+                if (e.key === 'Escape') {
+                    closeModal();
+                    closeRiderActionModal();
+                }
             });
 
             render();
@@ -230,19 +268,68 @@
 
         function rejectRider(id) {
             const r = getRider(id); if (!r) return;
-            const reason = prompt('Optional reason for rejecting ' + r.name + ' (leave blank to use the default):');
-            if (reason === null) return;
-            LV.setUserStatus(r.id, 'rejected', reason.trim() || 'Rejected by admin');
-            LV.toast(r.name + ' was rejected.', 'fa-circle-xmark');
-            render();
+            openRiderActionModal(r, 'reject');
         }
 
         function suspendRider(id) {
             const r = getRider(id); if (!r) return;
-            if (!confirm('Suspend ' + r.name + '? They will no longer be able to sign in as a rider.')) return;
-            LV.setUserStatus(r.id, 'suspended');
-            LV.toast(r.name + ' has been suspended.', 'fa-ban');
+            openRiderActionModal(r, 'suspend');
+        }
+
+        function openRiderActionModal(rider, action) {
+            pendingRiderAction = { riderId: rider.id, action: action };
+            riderActionTrigger = document.activeElement;
+            const isReject = action === 'reject';
+            document.getElementById('riderActionTitle').textContent =
+                isReject ? 'Reject ' + rider.name + '?' : 'Suspend ' + rider.name + '?';
+            document.getElementById('riderActionMessage').textContent = isReject
+                ? 'This rider application will be rejected. They will not be able to sign in as a rider.'
+                : 'This rider will no longer be able to sign in or accept delivery jobs.';
+            document.getElementById('riderActionIcon').className =
+                'fa-solid ' + (isReject ? 'fa-user-xmark' : 'fa-ban');
+            document.getElementById('rejectReasonField').style.display = isReject ? '' : 'none';
+            document.getElementById('rejectReason').value = '';
+            const confirmButton = document.getElementById('confirmRiderAction');
+            confirmButton.innerHTML = '<i class="fa-solid ' + (isReject ? 'fa-xmark' : 'fa-ban') +
+                '" aria-hidden="true"></i> ' + (isReject ? 'Reject rider' : 'Suspend rider');
+            const overlay = document.getElementById('riderActionModal');
+            overlay.classList.add('open');
+            overlay.setAttribute('aria-hidden', 'false');
+            overlay.querySelector('[role="dialog"]').focus();
+            confirmButton.focus();
+        }
+
+        function confirmRiderAction() {
+            if (!pendingRiderAction) return;
+            const rider = getRider(pendingRiderAction.riderId);
+            const action = pendingRiderAction.action;
+            const expectedStatus = action === 'reject' ? 'pending_approval' : 'active';
+            if (!rider || rider.status !== expectedStatus) {
+                closeRiderActionModal();
+                render();
+                LV.toast('This rider status has changed. Refresh the list and try again.', 'fa-circle-info');
+                return;
+            }
+            if (action === 'reject') {
+                const reason = document.getElementById('rejectReason').value.trim();
+                LV.setUserStatus(rider.id, 'rejected', reason || 'Rejected by admin');
+                closeRiderActionModal();
+                LV.toast(rider.name + ' was rejected.', 'fa-circle-xmark');
+            } else {
+                LV.setUserStatus(rider.id, 'suspended');
+                closeRiderActionModal();
+                LV.toast(rider.name + ' has been suspended.', 'fa-ban');
+            }
             render();
+        }
+
+        function closeRiderActionModal() {
+            const overlay = document.getElementById('riderActionModal');
+            overlay.classList.remove('open');
+            overlay.setAttribute('aria-hidden', 'true');
+            pendingRiderAction = null;
+            if (riderActionTrigger && riderActionTrigger.isConnected) riderActionTrigger.focus();
+            riderActionTrigger = null;
         }
 
         /* -------------------------------------------------- modal ---- */

@@ -28,6 +28,24 @@
         .lv-hist-row { display: flex; justify-content: space-between; gap: 14px; padding: 7px 0; border-bottom: 1px dashed var(--lv-line); font-size: 13.5px; }
         .lv-hist-row:last-child { border-bottom: none; }
         .lv-hist-row b { color: var(--lv-plum); font-weight: 700; }
+        .order-action-overlay {
+            position: fixed; inset: 0; z-index: 1100; display: none; place-items: center; padding: 20px;
+            background: rgba(43, 13, 30, 0.45); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+        }
+        .order-action-overlay.open { display: grid; }
+        .order-action-modal {
+            width: 100%; max-width: 460px; max-height: 85vh; overflow: auto;
+            padding: 26px; background: #fff; border-radius: var(--lv-radius); box-shadow: var(--lv-shadow-lg);
+        }
+        .order-action-icon {
+            width: 48px; height: 48px; display: grid; place-items: center; border-radius: 15px;
+            background: var(--lv-pink-tint); color: var(--lv-plum); font-size: 20px; margin-bottom: 15px;
+        }
+        .order-action-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+        @media (max-width: 480px) {
+            .order-action-buttons { flex-direction: column-reverse; }
+            .order-action-buttons .lv-btn { width: 100%; }
+        }
     </style>
 </head>
 
@@ -52,6 +70,19 @@
 
     </main>
 
+    <div class="order-action-overlay" id="orderActionModal" aria-hidden="true">
+        <section class="order-action-modal" role="dialog" aria-modal="true"
+            aria-labelledby="orderActionTitle" aria-describedby="orderActionMessage" tabindex="-1">
+            <div class="order-action-icon"><i id="orderActionIcon" class="fa-solid fa-circle-info" aria-hidden="true"></i></div>
+            <h2 class="lv-section-title" id="orderActionTitle"></h2>
+            <p class="lv-sub" id="orderActionMessage" style="max-width:none; margin-top:8px;"></p>
+            <div class="order-action-buttons">
+                <button class="lv-btn lv-btn-outline" type="button" id="cancelOrderAction">Go back</button>
+                <button class="lv-btn" type="button" id="confirmOrderAction"></button>
+            </div>
+        </section>
+    </div>
+
     <script src="lavandera_demo.js"></script>
     <script>
         const PROGRESS = ['pending_store', 'waiting_for_driver', 'enroute_to_store', 'at_laundromat',
@@ -64,6 +95,8 @@
         ];
         let filter = 'all';
         let scrolledOnce = false;
+        let pendingOrderAction = null;
+        let orderActionTrigger = null;
         const deepLink = new URLSearchParams(location.search).get('order');
 
         const me = LV.requireRole('customer', 'Log_In_Page.html');
@@ -71,6 +104,15 @@
             LV.renderNav('customer', 'orders');
             render();
         }
+
+        document.getElementById('orderActionModal').addEventListener('click', function (event) {
+            if (event.target === this) closeOrderActionModal();
+        });
+        document.getElementById('cancelOrderAction').addEventListener('click', closeOrderActionModal);
+        document.getElementById('confirmOrderAction').addEventListener('click', confirmOrderAction);
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') closeOrderActionModal();
+        });
 
         function isProgress(o) { return PROGRESS.indexOf(o.status) > -1; }
 
@@ -207,27 +249,78 @@
         function actions(o) {
             let html = '';
             if (o.status === 'enroute_to_customer') {
-                html += '<button type="button" class="lv-btn lv-btn-pink lv-btn-sm" onclick="confirmReturn(' + o.id + ')">' +
+                html += '<button type="button" class="lv-btn lv-btn-pink lv-btn-sm" onclick="openOrderAction(' + o.id + ', \'confirm_return\')">' +
                     '<i class="fa-solid fa-circle-check"></i> Confirm Return</button>';
             }
             if (o.status === 'pending_store') {
-                html += '<button type="button" class="lv-btn lv-btn-danger lv-btn-sm" onclick="cancelOrder(' + o.id + ')">' +
+                html += '<button type="button" class="lv-btn lv-btn-danger lv-btn-sm" onclick="openOrderAction(' + o.id + ', \'cancel\')">' +
                     '<i class="fa-solid fa-ban"></i> Cancel Order</button>';
             }
             return html ? '<div class="lv-wrap" style="margin-top:16px;">' + html + '</div>' : '';
         }
 
-        function confirmReturn(id) {
-            LV.setOrderStatus(id, 'completed', 'Customer confirmed return', me.id);
-            LV.toast('Order #' + id + ' completed. Enjoy your clean laundry!');
+        function openOrderAction(id, action) {
+            const order = LV.order(id);
+            const requiredStatus = action === 'cancel' ? 'pending_store' : 'enroute_to_customer';
+            if (!order || order.customerId !== me.id || order.status !== requiredStatus) {
+                LV.toast('This order can no longer be updated. Refresh the page and try again.', 'fa-circle-info');
+                render();
+                return;
+            }
+            pendingOrderAction = { orderId: order.id, action: action };
+            orderActionTrigger = document.activeElement;
+            const cancelling = action === 'cancel';
+            document.getElementById('orderActionTitle').textContent =
+                cancelling ? 'Cancel order #' + order.id + '?' : 'Confirm return for order #' + order.id + '?';
+            document.getElementById('orderActionMessage').textContent = cancelling
+                ? 'This order will be cancelled and the store will no longer process it. This cannot be undone.'
+                : 'Confirm that the rider has returned your clean laundry. This will mark the order as completed.';
+            document.getElementById('orderActionIcon').className =
+                'fa-solid ' + (cancelling ? 'fa-ban' : 'fa-circle-check');
+            const confirmButton = document.getElementById('confirmOrderAction');
+            confirmButton.className = 'lv-btn ' + (cancelling ? 'lv-btn-danger' : 'lv-btn-pink');
+            confirmButton.innerHTML = '<i class="fa-solid ' + (cancelling ? 'fa-ban' : 'fa-check') +
+                '" aria-hidden="true"></i> ' + (cancelling ? 'Cancel order' : 'Confirm return');
+            const overlay = document.getElementById('orderActionModal');
+            overlay.classList.add('open');
+            overlay.setAttribute('aria-hidden', 'false');
+            overlay.querySelector('[role="dialog"]').focus();
+            confirmButton.focus();
+        }
+
+        function confirmOrderAction() {
+            if (!pendingOrderAction) return;
+            const order = LV.order(pendingOrderAction.orderId);
+            const action = pendingOrderAction.action;
+            const expectedStatus = action === 'cancel' ? 'pending_store' : 'enroute_to_customer';
+            if (!order || order.customerId !== me.id || order.status !== expectedStatus) {
+                closeOrderActionModal();
+                render();
+                LV.toast('This order can no longer be updated. Refresh the page and try again.', 'fa-circle-info');
+                return;
+            }
+            const status = action === 'cancel' ? 'cancelled' : 'completed';
+            const note = action === 'cancel' ? 'Customer cancelled order' : 'Customer confirmed return';
+            if (!LV.setOrderStatus(order.id, status, note, me.id)) {
+                LV.toast('Unable to update this order. Refresh the page and try again.', 'fa-circle-exclamation');
+                return;
+            }
+            closeOrderActionModal();
+            if (action === 'cancel') {
+                LV.toast('Order #' + order.id + ' cancelled.');
+            } else {
+                LV.toast('Order #' + order.id + ' completed. Enjoy your clean laundry!');
+            }
             render();
         }
 
-        function cancelOrder(id) {
-            if (!confirm('Cancel order #' + id + '? This cannot be undone.')) return;
-            LV.setOrderStatus(id, 'cancelled', 'Customer cancelled order', me.id);
-            LV.toast('Order #' + id + ' cancelled.');
-            render();
+        function closeOrderActionModal() {
+            const overlay = document.getElementById('orderActionModal');
+            overlay.classList.remove('open');
+            overlay.setAttribute('aria-hidden', 'true');
+            pendingOrderAction = null;
+            if (orderActionTrigger && orderActionTrigger.isConnected) orderActionTrigger.focus();
+            orderActionTrigger = null;
         }
     </script>
 </body>

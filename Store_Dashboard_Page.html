@@ -19,6 +19,13 @@
         .store-benefits input, .store-toggle input { accent-color: var(--lv-plum); }
         .store-toggle { display: flex; align-items: center; gap: 10px; font-weight: 700; }
         .price-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+        .store-dialog-overlay { position: fixed; inset: 0; z-index: 2000; display: none; align-items: center; justify-content: center; padding: 18px; background: rgba(38, 0, 26, .58); }
+        .store-dialog-overlay.open { display: flex; }
+        .store-dialog { width: min(100%, 460px); padding: 24px; border-radius: 18px; background: #fff; box-shadow: 0 20px 60px rgba(35, 0, 24, .3); }
+        .store-dialog h2 { margin: 0 0 10px; color: var(--lv-plum); }
+        .store-dialog p { margin: 0; color: var(--lv-ink); }
+        .store-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+        @media (max-width: 480px) { .store-dialog-actions { flex-direction: column-reverse; } .store-dialog-actions .lv-btn { width: 100%; } }
         @media (max-width: 640px) {
             .store-edit-grid, .price-grid { grid-template-columns: 1fr; }
             .store-edit-grid .full { grid-column: auto; }
@@ -128,6 +135,16 @@
             </section>
         </div>
     </main>
+    <div class="store-dialog-overlay" id="storeDialog" aria-hidden="true">
+        <section class="store-dialog" role="dialog" aria-modal="true" aria-labelledby="storeDialogTitle" aria-describedby="storeDialogMessage" tabindex="-1">
+            <h2 id="storeDialogTitle">Store update</h2>
+            <p id="storeDialogMessage"></p>
+            <div class="store-dialog-actions">
+                <button class="lv-btn lv-btn-outline" type="button" id="cancelStoreDialog">Close</button>
+                <button class="lv-btn lv-btn-primary" type="button" id="confirmStoreDialog">OK</button>
+            </div>
+        </section>
+    </div>
 
     <script src="lavandera_demo.js"></script>
     <script>
@@ -137,11 +154,79 @@
             { input: 'editImage', key: 'image' },
             { input: 'editBanner', key: 'banner' }
         ];
+        const storeDialog = document.getElementById('storeDialog');
+        let storeDialogCallback = null;
+        let storeDialogTrigger = null;
+
+        function openStoreDialog(title, message, options) {
+            options = options || {};
+            storeDialogTrigger = document.activeElement;
+            document.getElementById('storeDialogTitle').textContent = title;
+            document.getElementById('storeDialogMessage').textContent = message;
+            document.getElementById('cancelStoreDialog').hidden = options.cancelText === false;
+            document.getElementById('cancelStoreDialog').textContent = options.cancelText || 'Close';
+            const confirmButton = document.getElementById('confirmStoreDialog');
+            confirmButton.textContent = options.confirmText || 'OK';
+            confirmButton.hidden = options.confirmText === false;
+            storeDialogCallback = options.onConfirm || null;
+            storeDialog.classList.add('open');
+            storeDialog.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            (options.focusConfirm || options.cancelText === false
+                ? confirmButton
+                : document.getElementById('cancelStoreDialog')).focus();
+        }
+
+        function closeStoreDialog(restoreFocus) {
+            storeDialog.classList.remove('open');
+            storeDialog.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            storeDialogCallback = null;
+            if (restoreFocus && storeDialogTrigger && storeDialogTrigger.isConnected) storeDialogTrigger.focus();
+        }
+
+        document.getElementById('cancelStoreDialog').addEventListener('click', function () { closeStoreDialog(true); });
+        document.getElementById('confirmStoreDialog').addEventListener('click', function () {
+            const callback = storeDialogCallback;
+            closeStoreDialog(false);
+            if (callback) callback();
+        });
+        storeDialog.addEventListener('click', function (event) {
+            if (event.target === storeDialog) closeStoreDialog(true);
+        });
+        document.addEventListener('keydown', function (event) {
+            if (!storeDialog.classList.contains('open')) return;
+            if (event.key === 'Escape') closeStoreDialog(true);
+            else if (event.key === 'Tab') {
+                const focusable = Array.from(storeDialog.querySelectorAll('button:not([hidden])'));
+                if (focusable.length < 2) {
+                    event.preventDefault();
+                    return;
+                }
+                if (event.shiftKey && document.activeElement === focusable[0]) {
+                    event.preventDefault();
+                    focusable[focusable.length - 1].focus();
+                } else if (!event.shiftKey && document.activeElement === focusable[focusable.length - 1]) {
+                    event.preventDefault();
+                    focusable[0].focus();
+                }
+            }
+        });
 
         if (!storeRecord) {
             document.getElementById('storeAccessNotice').hidden = false;
         } else {
             LV.renderNav('store', 'dashboard');
+            const logoutButton = document.querySelector('#lv-nav .lv-dropdown-item.danger');
+            if (logoutButton) logoutButton.onclick = function (event) {
+                event.preventDefault();
+                openStoreDialog('Sign out?', 'Are you sure you want to sign out of your store account?', {
+                    cancelText: 'Stay signed in',
+                    confirmText: 'Sign out',
+                    focusConfirm: true,
+                    onConfirm: LV.logout
+                });
+            };
             document.getElementById('storePortal').hidden = false;
             populateStoreForm();
             renderStoreOverview();
@@ -226,7 +311,7 @@
                 large: Number(document.getElementById('priceLarge').value)
             };
             if (Object.keys(prices).some(function (size) { return !Number.isFinite(prices[size]) || prices[size] <= 0; })) {
-                error.textContent = 'Enter a valid price above zero for every bag size.';
+                openStoreDialog('Check your prices', 'Enter a valid price above zero for every bag size.');
                 return;
             }
 
@@ -248,9 +333,9 @@
                 if (!storeRecord) throw new Error('Store not found. Reload the page and try again.');
                 populateStoreForm();
                 renderStoreOverview();
-                LV.toast('Store information saved.');
+                openStoreDialog('Changes saved', 'Your store information and order settings have been updated.');
             } catch (saveError) {
-                error.textContent = saveError.message || 'Unable to save store changes.';
+                openStoreDialog('Unable to save changes', saveError.message || 'Unable to save store changes.');
             }
         });
     </script>

@@ -307,6 +307,16 @@
                 gap: 6px;
             }
         }
+        .history-modal { position: fixed; inset: 0; z-index: 2000; display: none; align-items: center; justify-content: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); overflow-y: auto; overscroll-behavior: contain; background: rgba(38, 0, 26, .58); }
+        .history-modal.open { display: flex; }
+        .history-modal-card { width: min(100%, 420px); max-height: calc(100vh - 40px); max-height: calc(100dvh - 40px); margin: auto; overflow-y: auto; overscroll-behavior: contain; padding: 24px; border-radius: 18px; background: #fff; box-shadow: 0 20px 60px rgba(35, 0, 24, .3); }
+        .history-modal-card h2 { margin: 0 0 10px; color: #5a003c; }
+        .history-modal-card p { margin: 0; color: #45002e; }
+        .history-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+        .history-modal-actions button { min-height: 42px; padding: 10px 16px; border: 0; border-radius: 8px; cursor: pointer; font: inherit; font-weight: 700; }
+        .history-modal-cancel { background: #f8f3f7; color: #5a003c; }
+        .history-modal-confirm { background: #5a003c; color: #fff; }
+        @media (max-width: 480px) { .history-modal-actions { flex-direction: column-reverse; } .history-modal-actions button { width: 100%; } }
     </style>
     <link rel="stylesheet" href="rider_header.css">
     <script src="lavandera_demo.js"></script>
@@ -334,7 +344,7 @@
                 <a href="lavandera_rider_dashboard.html"><i class="fa-solid fa-house"></i>Dashboard</a>
                 <a href="Rider_Orders_Page.html"><i class="fa-solid fa-boxes-stacked"></i>Current Orders</a>
                 <a href="Rider_Profile_Page.html"><i class="fa-solid fa-user"></i>Profile</a>
-                <a href="Log_In_Page.html" onclick="LV.logout(); return false;"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
+                <a href="Log_In_Page.html" onclick="openHistoryLogoutModal(); return false;"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
             </div>
         </div>
     </header>
@@ -405,8 +415,61 @@
         </div>
     </div>
 
+    <div class="history-modal" id="historyLogoutModal" aria-hidden="true">
+        <section class="history-modal-card" role="dialog" aria-modal="true" aria-labelledby="historyLogoutTitle" aria-describedby="historyLogoutMessage" tabindex="-1">
+            <h2 id="historyLogoutTitle">Sign out?</h2>
+            <p id="historyLogoutMessage">Are you sure you want to sign out of your rider account?</p>
+            <div class="history-modal-actions">
+                <button class="history-modal-cancel" type="button" id="cancelHistoryLogout">Stay signed in</button>
+                <button class="history-modal-confirm" type="button" id="confirmHistoryLogout">Sign out</button>
+            </div>
+        </section>
+    </div>
+
 
     <script>
+        let historyLogoutTrigger = null;
+
+        function openHistoryLogoutModal() {
+            historyLogoutTrigger = document.activeElement;
+            const modal = document.getElementById('historyLogoutModal');
+            modal.classList.add('open');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            document.getElementById('cancelHistoryLogout').focus();
+        }
+
+        function closeHistoryLogoutModal(restoreFocus) {
+            const modal = document.getElementById('historyLogoutModal');
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            if (restoreFocus && historyLogoutTrigger && historyLogoutTrigger.isConnected) historyLogoutTrigger.focus();
+        }
+
+        document.getElementById('cancelHistoryLogout').addEventListener('click', function () { closeHistoryLogoutModal(true); });
+        document.getElementById('confirmHistoryLogout').addEventListener('click', function () { LV.logout(); });
+        document.getElementById('historyLogoutModal').addEventListener('click', function (event) {
+            if (event.target === this) closeHistoryLogoutModal(true);
+        });
+        document.addEventListener('keydown', function (event) {
+            if (!document.getElementById('historyLogoutModal').classList.contains('open')) return;
+            if (event.key === 'Escape') {
+                closeHistoryLogoutModal(true);
+                return;
+            }
+            if (event.key === 'Tab') {
+                const buttons = Array.from(document.querySelectorAll('#historyLogoutModal button'));
+                if (event.shiftKey && document.activeElement === buttons[0]) {
+                    event.preventDefault();
+                    buttons[1].focus();
+                } else if (!event.shiftKey && document.activeElement === buttons[1]) {
+                    event.preventDefault();
+                    buttons[0].focus();
+                }
+            }
+        });
+
         function toggleMenu() {
             const menu = document.getElementById('navDropdown');
             const button = document.querySelector('.menu-btn');

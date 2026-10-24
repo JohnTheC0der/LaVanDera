@@ -6,6 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LAVANDERA - Rider Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="lavandera_theme.css">
+
+    <!-- JQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 
     <style>
         * {
@@ -640,11 +648,62 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
+            text-decoration: none;
         }
 
         .btn-secondary:hover {
             background-color: #fff5fa;
             border-color: #5a003c;
+        }
+
+        .btn-primary:focus-visible,
+        .btn-secondary:focus-visible,
+        .btn-accept:focus-visible,
+        .btn-decline:focus-visible {
+            outline: 3px solid #3bb2b8;
+            outline-offset: 3px;
+        }
+
+        .btn-primary:disabled,
+        .btn-accept:disabled,
+        .btn-decline:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .delivery-item.accepted {
+            border-left-color: #22a06b;
+            background: #f1fbf5;
+        }
+
+        .delivery-accepted {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: #e2f5e9;
+            color: #176b3a;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .status-badge.offline {
+            background: #f0e8ee;
+            color: #6b5262;
+        }
+
+        .status-badge.offline .status-indicator {
+            background-color: #9ca3af;
+            animation: none;
+        }
+
+        .empty-deliveries {
+            padding: 14px 0;
+            color: #666;
+            text-align: center;
         }
 
         /* RESPONSIVE */
@@ -694,13 +753,17 @@
             display: none;
             position: fixed;
             z-index: 2000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
+            width: auto;
+            min-height: 100vh;
+            min-height: 100dvh;
             background-color: rgba(0, 0, 0, 0.5);
             overflow-y: auto;
-            padding: 20px;
+            overscroll-behavior: contain;
+            padding: max(12px, env(safe-area-inset-top, 0px))
+                max(12px, env(safe-area-inset-right, 0px))
+                max(12px, env(safe-area-inset-bottom, 0px))
+                max(12px, env(safe-area-inset-left, 0px));
         }
 
         .modal.show {
@@ -714,8 +777,11 @@
             border-radius: 18px;
             width: 90%;
             max-width: 600px;
-            max-height: 90vh;
+            max-height: calc(100vh - 40px);
+            max-height: calc(100dvh - 40px);
+            margin: auto;
             overflow-y: auto;
+            overscroll-behavior: contain;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
 
@@ -907,6 +973,66 @@
             font-size: 15px;
         }
 
+        .lv-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1100;
+            display: none;
+            place-items: center;
+            background: rgba(43, 13, 30, 0.45);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            padding: 20px;
+        }
+
+        .lv-modal-overlay.open {
+            display: grid;
+        }
+
+        .lv-modal {
+            background: #fff;
+            border-radius: var(--lv-radius);
+            box-shadow: var(--lv-shadow-lg);
+            width: 100%;
+            max-width: 620px;
+            max-height: 85vh;
+            overflow: auto;
+        }
+
+        .skip-order-modal {
+            max-width: 460px;
+            padding: 26px;
+        }
+
+        .skip-order-modal-icon {
+            width: 48px;
+            height: 48px;
+            display: grid;
+            place-items: center;
+            border-radius: 15px;
+            background: var(--lv-pink-tint);
+            color: #b42318;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .skip-order-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 22px;
+        }
+
+        @media (max-width: 480px) {
+            .skip-order-modal-actions {
+                flex-direction: column-reverse;
+            }
+
+            .skip-order-modal-actions .lv-btn {
+                width: 100%;
+            }
+        }
+
         /* FOOTER */
         footer {
             background-color: #45002e;
@@ -928,6 +1054,36 @@
 
 <body>
 
+    <!-- SKIP ORDER MODAL -->
+    <div class="lv-modal-overlay" id="skipOrderModal" aria-hidden="true">
+        <div class="lv-modal skip-order-modal" role="dialog" aria-modal="true" aria-labelledby="skipOrderTitle"
+            aria-describedby="skipOrderMessage" tabindex="-1">
+            <div class="skip-order-modal-icon"><i class="fa-solid fa-ban" aria-hidden="true"></i></div>
+            <h2 class="lv-section-title" id="skipOrderTitle">Skip order?</h2>
+            <p class="lv-sub" id="skipOrderMessage" style="max-width:none; margin-top:8px;"></p>
+            <div class="skip-order-modal-actions">
+                <button class="lv-btn lv-btn-outline" type="button" id="cancelSkipBtn">Keep order</button>
+                <button class="lv-btn lv-btn-danger" type="button" id="confirmSkipBtn">
+                    <i class="fa-solid fa-ban" aria-hidden="true"></i> Skip Order
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="lv-modal-overlay" id="acceptOrderModal" aria-hidden="true">
+        <div class="lv-modal skip-order-modal" role="dialog" aria-modal="true" aria-labelledby="acceptOrderTitle"
+            aria-describedby="acceptOrderMessage" tabindex="-1">
+            <div class="skip-order-modal-icon"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i></div>
+            <h2 class="lv-section-title" id="acceptOrderTitle">Accept delivery?</h2>
+            <p class="lv-sub" id="acceptOrderMessage" style="max-width:none; margin-top:8px;"></p>
+            <div class="skip-order-modal-actions">
+                <button class="lv-btn lv-btn-outline" type="button" id="cancelAcceptBtn">Not now</button>
+                <button class="lv-btn lv-btn-primary" type="button" id="confirmAcceptBtn">
+                    <i class="fa-solid fa-check" aria-hidden="true"></i> Accept delivery
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- HEADER -->
     <header class="rider-site-header">
         <a href="lavandera_rider_dashboard.html" class="logo">
@@ -935,20 +1091,21 @@
         </a>
 
         <div class="menu-container">
-            <button class="menu-btn" type="button" onclick="toggleMenu()" aria-label="Toggle navigation menu"
+            <button class="menu-btn" type="button" id="menuToggleBtn" aria-label="Toggle navigation menu"
                 aria-expanded="false" aria-controls="navDropdown">
                 <i class="fa-solid fa-bars"></i>
             </button>
             <div class="dropdown-menu" id="navDropdown" role="navigation" aria-label="Rider navigation">
                 <div class="dropdown-header">
-                    <div class="user-avatar">A</div>
-                    <div class="user-name">Alex Rodriguez</div>
-                    <div class="user-email">alex.rodriguez@email.com</div>
+                    <div class="user-avatar" id="riderAvatar">R</div>
+                    <div class="user-name" id="riderMenuName">Rider</div>
+                    <div class="user-email" id="riderMenuEmail"></div>
                 </div>
-                <a href="lavandera_rider_dashboard.html" aria-current="page"><i class="fa-solid fa-house"></i>Dashboard</a>
+                <a href="lavandera_rider_dashboard.html" aria-current="page"><i
+                        class="fa-solid fa-house"></i>Dashboard</a>
                 <a href="Rider_Orders_Page.html"><i class="fa-solid fa-boxes-stacked"></i>Current Orders</a>
                 <a href="Rider_Profile_Page.html"><i class="fa-solid fa-user"></i>Profile</a>
-                <a href="Log_In_Page.html" onclick="LV.logout(); return false;"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
+                <a href="#" id="logoutLink"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
             </div>
         </div>
     </header>
@@ -957,23 +1114,23 @@
     <div class="dashboard-wrapper">
 
         <!-- WELCOME SECTION -->
-        <a href="Rider_Orders_Page.html" class="card-wrapper">
-            <div class="welcome-section">
+        <section class="card-wrapper" aria-label="Rider status">
+            <div href="Rider_Profile_Page.html" class="welcome-section">
                 <div class="welcome-header">
                     <div class="welcome-profile">
                         <img src="jaime-rider.jpg" alt="Rider Avatar" class="welcome-avatar">
                     </div>
                     <div class="welcome-text">
-                        <h1>Welcome back, Alex! 👋</h1>
+                        <h1 id="welcomeHeading">Welcome back!</h1>
                         <p>You're on fire today! Keep up the momentum.</p>
                     </div>
-                    <div class="status-badge">
+                    <div class="status-badge" id="onlineStatusBadge">
                         <div class="status-indicator"></div>
                         Online
                     </div>
                 </div>
             </div>
-        </a>
+        </section>
 
         <!-- QUICK STATS -->
         <div class="quick-stats">
@@ -1007,12 +1164,12 @@
 
             <!-- ACTIVE DELIVERIES -->
             <div class="deliveries-panel">
-                <div class="panel-title">
+                <div class="panel-title" tabindex="-1">
                     <i class="fa-solid fa-truck-fast"></i>
                     Active Deliveries
                 </div>
 
-                <div class="delivery-item">
+                <div class="delivery-item" data-delivery-id="demo-001">
                     <div class="delivery-header">
                         <div class="delivery-shop">Mama Mo Laundry</div>
                         <div class="delivery-distance">2.3 km</div>
@@ -1026,12 +1183,12 @@
                         <span><i class="fa-solid fa-money-bill"></i> ₱150</span>
                     </div>
                     <div class="delivery-actions">
-                        <button class="btn-accept">Accept</button>
-                        <button class="btn-decline">Skip</button>
+                        <button class="btn-accept" type="button">Accept</button>
+                        <button class="btn-decline" type="button">Skip</button>
                     </div>
                 </div>
 
-                <div class="delivery-item">
+                <div class="delivery-item" data-delivery-id="demo-002">
                     <div class="delivery-header">
                         <div class="delivery-shop">Kuya Mo Laundry</div>
                         <div class="delivery-distance">3.1 km</div>
@@ -1045,12 +1202,12 @@
                         <span><i class="fa-solid fa-money-bill"></i> ₱200</span>
                     </div>
                     <div class="delivery-actions">
-                        <button class="btn-accept">Accept</button>
-                        <button class="btn-decline">Skip</button>
+                        <button class="btn-accept" type="button">Accept</button>
+                        <button class="btn-decline" type="button">Skip</button>
                     </div>
                 </div>
 
-                <div class="delivery-item">
+                <div class="delivery-item" data-delivery-id="demo-003">
                     <div class="delivery-header">
                         <div class="delivery-shop">Lola Mo Dry Cleaning</div>
                         <div class="delivery-distance">1.8 km</div>
@@ -1064,8 +1221,8 @@
                         <span><i class="fa-solid fa-money-bill"></i> ₱175</span>
                     </div>
                     <div class="delivery-actions">
-                        <button class="btn-accept">Accept</button>
-                        <button class="btn-decline">Skip</button>
+                        <button class="btn-accept" type="button">Accept</button>
+                        <button class="btn-decline" type="button">Skip</button>
                     </div>
                 </div>
             </div>
@@ -1182,26 +1339,26 @@
 
         <!-- ACTION BUTTONS -->
         <div class="action-buttons">
-            <button class="btn-primary">
+            <button class="btn-primary" id="onlineToggleBtn" type="button" aria-label="Go offline">
                 <i class="fa-solid fa-pause"></i>
                 Go Offline
             </button>
-            <button class="btn-secondary">
+            <a class="btn-secondary" href="Rider_Order_History_Page.html">
                 <i class="fa-solid fa-history"></i>
                 View History
-            </button>
+            </a>
         </div>
     </div>
 
     <!-- LOGOUT MODAL -->
-    <div class="modal" id="logoutModal" role="dialog" aria-labelledby="logoutTitle" aria-hidden="true">
-        <div class="modal-content">
+    <div class="modal lv-modal-overlay" id="logoutModal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="logoutTitle" tabindex="-1">
             <div class="modal-header">
                 <div class="modal-title" id="logoutTitle">
                     <i class="fa-solid fa-sign-out-alt" aria-hidden="true"></i>
                     Log Out
                 </div>
-                <button class="close-btn" onclick="closeLogoutModal()" aria-label="Close logout dialog">
+                <button class="close-btn" type="button" id="closeLogoutBtn" aria-label="Close logout dialog">
                     <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                 </button>
             </div>
@@ -1209,8 +1366,9 @@
             <div class="modal-body">
                 <p>Are you sure you want to log out?</p>
                 <div class="modal-actions">
-                    <button class="modal-btn modal-btn-primary" onclick="confirmLogout()">Yes, Log Out</button>
-                    <button class="modal-btn modal-btn-secondary" onclick="closeLogoutModal()">Cancel</button>
+                    <button class="modal-btn modal-btn-primary" type="button" id="confirmLogoutBtn">Yes, Log
+                        Out</button>
+                    <button class="modal-btn modal-btn-secondary" type="button" id="cancelLogoutBtn">Cancel</button>
                 </div>
             </div>
         </div>
@@ -1222,44 +1380,208 @@
     </footer>
 
     <script>
-        // Toggle menu
-        function toggleMenu() {
-            const menu = document.getElementById("navDropdown");
-            const isOpen = menu.classList.toggle("show");
-            document.querySelector('.menu-btn').setAttribute('aria-expanded', String(isOpen));
-        }
+        $(document).ready(function () {
+            let activeDeliveryItem = null;
+            let modalTrigger = null;
+            let previousBodyOverflow = '';
+            const skipModal = document.getElementById('skipOrderModal');
+            const acceptModal = document.getElementById('acceptOrderModal');
+            const logoutModal = document.getElementById('logoutModal');
+            const riderSession = LV.session();
+            const rider = riderSession && riderSession.role === 'rider'
+                ? LV.riders().find(function (item) { return item.id === riderSession.id; })
+                : LV.requireRole('rider');
 
-        function confirmLogout() {
-            LV.logout();
-        }
-
-        // Close menu when clicking elsewhere
-        window.onclick = function (event) {
-            if (!event.target.matches('.menu-btn') && !event.target.matches('.menu-btn *')) {
-                const dropdown = document.getElementById("navDropdown");
-                dropdown.classList.remove('show');
-                document.querySelector('.menu-btn').setAttribute('aria-expanded', 'false');
+            if (rider) {
+                const name = rider.name || 'Rider';
+                const initials = LV.initials(name);
+                $('#riderAvatar').text(initials);
+                $('#riderMenuName').text(name);
+                $('#riderMenuEmail').text(rider.email || '');
+                $('#welcomeHeading').text('Welcome back, ' + name.split(/\s+/)[0] + '!');
             }
-        }
 
-        // Accept delivery button functionality
-        const acceptBtns = document.querySelectorAll('.btn-accept');
-        acceptBtns.forEach(btn => {
-            btn.addEventListener('click', function () {
-                const deliveryItem = this.closest('.delivery-item');
-                const shopName = deliveryItem.querySelector('.delivery-shop').textContent;
-                alert(`Delivery from ${shopName} accepted!`);
-            });
-        });
+            const onlineStorageKey = 'lv_rider_online_' + (rider ? rider.id : 'demo');
+            let isOnline = localStorage.getItem(onlineStorageKey) !== 'false';
 
-        // Decline delivery button functionality
-        const declineBtns = document.querySelectorAll('.btn-decline');
-        declineBtns.forEach(btn => {
-            btn.addEventListener('click', function () {
-                const deliveryItem = this.closest('.delivery-item');
-                deliveryItem.style.opacity = '0.5';
-                this.closest('.delivery-actions').innerHTML = '<span style="color: #999; font-size: 12px;">Declined</span>';
+            function updateOnlineStatus() {
+                const badge = document.getElementById('onlineStatusBadge');
+                const toggle = document.getElementById('onlineToggleBtn');
+                badge.classList.toggle('offline', !isOnline);
+                badge.innerHTML = '<div class="status-indicator"></div>' + (isOnline ? 'Online' : 'Offline');
+                toggle.innerHTML = '<i class="fa-solid ' + (isOnline ? 'fa-pause' : 'fa-play') +
+                    '" aria-hidden="true"></i> ' + (isOnline ? 'Go Offline' : 'Go Online');
+                toggle.setAttribute('aria-label', isOnline ? 'Go offline' : 'Go online');
+                document.querySelectorAll('.delivery-item:not(.accepted) .btn-accept, .delivery-item:not(.accepted) .btn-decline')
+                    .forEach(function (button) { button.disabled = !isOnline; });
+            }
+
+            function closeActionModal(modal, restoreFocus) {
+                modal.classList.remove('open');
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = previousBodyOverflow;
+                activeDeliveryItem = null;
+                if (restoreFocus && modalTrigger && modalTrigger.isConnected) modalTrigger.focus();
+                modalTrigger = null;
+            }
+
+            function openActionModal(modal, trigger, focusTarget) {
+                modalTrigger = trigger;
+                previousBodyOverflow = document.body.style.overflow;
+                document.body.style.overflow = 'hidden';
+                modal.classList.add('open');
+                modal.setAttribute('aria-hidden', 'false');
+                focusTarget.focus();
+            }
+
+            // Header Dropdown Menu Toggle
+            $("#menuToggleBtn").on("click", function (e) {
+                e.stopPropagation();
+                const dropdown = $("#navDropdown");
+                const isOpen = dropdown.toggleClass("show").hasClass("show");
+                $(this).attr("aria-expanded", String(isOpen));
             });
+
+            // Close Header Dropdown on Outside Click
+            $(document).on("click", function (e) {
+                if (!$(e.target).closest(".menu-container").length) {
+                    $("#navDropdown").removeClass("show");
+                    $("#menuToggleBtn").attr("aria-expanded", "false");
+                }
+            });
+
+            // The dashboard's sample deliveries are local demo cards.
+            $(".btn-accept").on("click", function () {
+                if (!isOnline) return;
+                const item = this.closest('.delivery-item');
+                if (!item || item.classList.contains('accepted')) return;
+                const shop = item.querySelector('.delivery-shop');
+                const shopName = shop ? shop.textContent.trim() : 'Delivery';
+                activeDeliveryItem = item;
+                document.getElementById('acceptOrderMessage').textContent =
+                    'Accept the delivery request from ' + shopName + '?';
+                openActionModal(acceptModal, this, document.getElementById('confirmAcceptBtn'));
+            });
+
+            $("#cancelAcceptBtn").on("click", function () {
+                closeActionModal(acceptModal, true);
+            });
+
+            $("#confirmAcceptBtn").on("click", function () {
+                const item = activeDeliveryItem;
+                if (!item || !item.isConnected) {
+                    closeActionModal(acceptModal, false);
+                    return;
+                }
+                const shop = item.querySelector('.delivery-shop');
+                const shopName = shop ? shop.textContent.trim() : 'Delivery';
+                item.classList.add('accepted');
+                item.querySelector('.delivery-actions').innerHTML =
+                    '<span class="delivery-accepted"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Accepted</span>';
+                closeActionModal(acceptModal, false);
+                LV.toast(shopName + ' accepted.', 'fa-circle-check');
+            });
+
+            // --- SKIP MODAL ---
+            $(".btn-decline").on("click", function () {
+                if (!isOnline) return;
+                activeDeliveryItem = this.closest('.delivery-item');
+                if (!activeDeliveryItem) return;
+                const shop = activeDeliveryItem.querySelector('.delivery-shop');
+                const shopName = shop ? shop.textContent.trim() : 'this delivery';
+                document.getElementById('skipOrderMessage').textContent =
+                    'Remove the delivery from ' + shopName + ' from your available orders?';
+                openActionModal(skipModal, this, document.getElementById('confirmSkipBtn'));
+            });
+
+            $("#cancelSkipBtn").on("click", function () {
+                closeActionModal(skipModal, true);
+            });
+
+            $("#confirmSkipBtn").on("click", function () {
+                if (!activeDeliveryItem || !activeDeliveryItem.isConnected) {
+                    closeActionModal(skipModal, false);
+                    return;
+                }
+                const shop = activeDeliveryItem.querySelector('.delivery-shop');
+                const shopName = shop ? shop.textContent.trim() : 'Delivery';
+                activeDeliveryItem.remove();
+                closeActionModal(skipModal, false);
+                const nextAction = document.querySelector(
+                    '.delivery-item:not(.accepted) .btn-accept, .delivery-item:not(.accepted) .btn-decline'
+                );
+                (nextAction || document.getElementById('onlineToggleBtn')).focus();
+                if (!document.querySelector('.deliveries-panel .delivery-item')) {
+                    const empty = document.createElement('p');
+                    empty.className = 'empty-deliveries';
+                    empty.textContent = 'No available deliveries right now.';
+                    document.querySelector('.deliveries-panel').appendChild(empty);
+                }
+                LV.toast(shopName + ' removed from available deliveries.', 'fa-circle-check');
+            });
+
+            // --- LOGOUT MODAL ---
+            $("#logoutLink").on("click", function (e) {
+                e.preventDefault();
+                $("#navDropdown").removeClass("show");
+                $("#menuToggleBtn").attr("aria-expanded", "false");
+                openActionModal(logoutModal, document.getElementById('menuToggleBtn'),
+                    document.getElementById('confirmLogoutBtn'));
+            });
+
+            $("#closeLogoutBtn, #cancelLogoutBtn").on("click", function () {
+                closeActionModal(logoutModal, true);
+            });
+
+            $("#confirmLogoutBtn").on("click", function () {
+                LV.logout();
+            });
+
+            [skipModal, acceptModal, logoutModal].forEach(function (modal) {
+                modal.addEventListener('click', function (event) {
+                    if (event.target === modal) closeActionModal(modal, true);
+                });
+            });
+
+            document.getElementById('onlineToggleBtn').addEventListener('click', function () {
+                isOnline = !isOnline;
+                localStorage.setItem(onlineStorageKey, String(isOnline));
+                updateOnlineStatus();
+                LV.toast(isOnline ? 'You are now online.' : 'You are now offline.', isOnline ? 'fa-circle-check' : 'fa-pause');
+            });
+
+            document.addEventListener('keydown', function (event) {
+                const openModal = skipModal.classList.contains('open')
+                    ? skipModal
+                    : acceptModal.classList.contains('open')
+                        ? acceptModal
+                        : logoutModal.classList.contains('open') ? logoutModal : null;
+                if (!openModal) return;
+                if (event.key === 'Escape') {
+                    closeActionModal(openModal, true);
+                    return;
+                }
+                if (event.key !== 'Tab') return;
+
+                const focusable = Array.from(openModal.querySelectorAll(
+                    'button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+                ));
+                if (!focusable.length) {
+                    event.preventDefault();
+                    return;
+                }
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (event.shiftKey && (document.activeElement === first || !openModal.contains(document.activeElement))) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && (document.activeElement === last || !openModal.contains(document.activeElement))) {
+                    event.preventDefault();
+                    first.focus();
+                }
+            });
+
+            updateOnlineStatus();
         });
     </script>
 

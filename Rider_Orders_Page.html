@@ -848,13 +848,17 @@
             display: none;
             position: fixed;
             z-index: 2000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
+            width: auto;
+            min-height: 100vh;
+            min-height: 100dvh;
             background-color: rgba(0, 0, 0, 0.5);
             overflow-y: auto;
-            padding: 20px;
+            overscroll-behavior: contain;
+            padding: max(12px, env(safe-area-inset-top, 0px))
+                max(12px, env(safe-area-inset-right, 0px))
+                max(12px, env(safe-area-inset-bottom, 0px))
+                max(12px, env(safe-area-inset-left, 0px));
         }
 
         .modal.show {
@@ -868,9 +872,34 @@
             border-radius: 18px;
             width: 90%;
             max-width: 600px;
-            max-height: 90vh;
+            max-height: calc(100vh - 40px);
+            max-height: calc(100dvh - 40px);
+            flex: 0 0 auto;
+            margin: auto;
             overflow-y: auto;
+            overscroll-behavior: contain;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        #riderActionModal {
+            z-index: 2100;
+        }
+
+        #riderActionModal .action-dialog {
+            width: min(100%, 440px);
+            padding: 24px;
+        }
+
+        #riderActionModal .action-dialog p {
+            margin: 0;
+            color: var(--color-text);
+        }
+
+        #riderActionModal .action-dialog a {
+            display: inline-block;
+            margin-top: 12px;
+            color: var(--color-dark);
+            font-weight: 700;
         }
 
         .modal-header {
@@ -1398,9 +1427,11 @@
                     <div class="user-email">alex.rodriguez@email.com</div>
                 </div>
                 <a href="lavandera_rider_dashboard.html"><i class="fa-solid fa-house"></i>Dashboard</a>
-                <a href="Rider_Orders_Page.html" aria-current="page"><i class="fa-solid fa-boxes-stacked"></i>Current Orders</a>
+                <a href="Rider_Orders_Page.html" aria-current="page"><i class="fa-solid fa-boxes-stacked"></i>Current
+                    Orders</a>
                 <a href="Rider_Profile_Page.html"><i class="fa-solid fa-user"></i>Profile</a>
-                <a href="Log_In_Page.html" onclick="LV.logout(); return false;"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
+                <a href="Log_In_Page.html" onclick="openLogoutModal(); return false;"><i
+                        class="fa-solid fa-sign-out-alt"></i>Logout</a>
             </div>
         </div>
     </header>
@@ -1433,11 +1464,11 @@
             <!-- FILTER & SEARCH -->
             <div class="filter-search-container">
                 <div class="filter-buttons" role="group" aria-label="Filter orders">
-                    <button class="filter-btn active" data-filter="all" onclick="filterOrdersAvailable('all')">All
+                    <button class="filter-btn active" data-filter="all">All
                         Jobs</button>
-                    <button class="filter-btn" data-filter="send" onclick="filterOrdersAvailable('send')">Send
+                    <button class="filter-btn" data-filter="send">Send
                         Orders</button>
-                    <button class="filter-btn" data-filter="return" onclick="filterOrdersAvailable('return')">Return
+                    <button class="filter-btn" data-filter="return">Return
                         Orders</button>
                 </div>
                 <div class="search-box">
@@ -1497,14 +1528,13 @@
             <!-- FILTER & SEARCH -->
             <div class="filter-search-container">
                 <div class="filter-buttons" role="group" aria-label="Filter orders">
-                    <button class="filter-btn active" data-filter="all" onclick="filterOrdersCurrent('all')">All
+                    <button class="filter-btn active" data-filter="all">All
                         Orders</button>
-                    <button class="filter-btn" data-filter="in-transit" onclick="filterOrdersCurrent('in-transit')">In
+                    <button class="filter-btn" data-filter="in-transit">In
                         Transit</button>
-                    <button class="filter-btn" data-filter="pending" onclick="filterOrdersCurrent('pending')">Pending
+                    <button class="filter-btn" data-filter="pending">Pending
                         Pickup</button>
-                    <button class="filter-btn" data-filter="completed"
-                        onclick="filterOrdersCurrent('completed')">Completed</button>
+                    <button class="filter-btn" data-filter="completed">Completed</button>
                 </div>
                 <div class="search-box">
                     <label for="searchCurrent" style="display: none;">Search orders</label>
@@ -1653,7 +1683,7 @@
                     </div>
                     <div class="detail-item">
                         <div class="detail-item-label">Shop Phone</div>
-                        <div class="detail-item-value">+63 2 8123 4567</div>
+                        <div class="detail-item-value" id="modalShopPhone">+63 2 8123 4567</div>
                     </div>
                 </div>
 
@@ -1669,7 +1699,7 @@
                     </div>
                     <div class="detail-item">
                         <div class="detail-item-label">Phone</div>
-                        <div class="detail-item-value">+63 912 345 6789</div>
+                        <div class="detail-item-value" id="modalCustomerPhone">+63 912 345 6789</div>
                     </div>
                 </div>
 
@@ -1738,6 +1768,26 @@
         </div>
     </div>
 
+    <div class="modal" id="riderActionModal" role="dialog" aria-modal="true" aria-labelledby="riderActionTitle"
+        aria-describedby="riderActionMessage" aria-hidden="true">
+        <div class="modal-content action-dialog">
+            <div class="modal-header">
+                <div class="modal-title" id="riderActionTitle">Order action</div>
+                <button class="close-btn" type="button" id="closeRiderAction" aria-label="Close dialog">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="riderActionMessage"></p>
+                <a id="riderActionPhone" hidden></a>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-secondary" type="button" id="cancelRiderAction">Cancel</button>
+                    <button class="modal-btn modal-btn-primary" type="button" id="confirmRiderAction">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- FOOTER -->
     <footer>
         <p>&copy; 2026 LAVANDERA. Rider Orders Manager. All Rights Reserved.</p>
@@ -1789,6 +1839,8 @@
                     status: 'in-transit',
                     progress: 35
                 };
+                sharedJob.shopPhone = store.contact || '';
+                sharedJob.customerPhone = customer.contact || '';
                 if (order.status === 'waiting_for_driver' || order.status === 'waiting_for_return_driver') {
                     availableOrders.push(sharedJob);
                 } else if ((order.status === 'enroute_to_store' || order.status === 'enroute_to_customer') &&
@@ -1856,7 +1908,7 @@
                 </div>
                 <div class="order-footer">
                     <button class="btn-action btn-primary-action current-details-btn" data-id="${o.id}" data-order='${LV.esc(JSON.stringify(o))}'><i class="fa-solid fa-circle-info"></i> View Details</button>
-                    <button class="btn-action btn-secondary-action call-btn"><i class="fa-solid fa-phone"></i> Call</button>
+                    <button class="btn-action btn-secondary-action call-btn" data-order='${LV.esc(JSON.stringify(o))}'><i class="fa-solid fa-phone"></i> Call customer</button>
                 </div>
             </div>
         `).join('');
@@ -1942,18 +1994,93 @@
             function closeLogoutModal() {
                 $('#logoutModal').removeClass('show').attr('aria-hidden', 'true');
                 $('body').css('overflow', 'auto');
+                if (logoutTrigger && logoutTrigger.isConnected) logoutTrigger.focus();
             }
 
+            let logoutTrigger = null;
             window.closeLogoutModal = closeLogoutModal;
 
             window.openLogoutModal = function () {
+                logoutTrigger = document.activeElement;
                 $('#logoutModal').addClass('show').attr('aria-hidden', 'false');
                 $('body').css('overflow', 'hidden');
+                $('#logoutModal .modal-btn-secondary').focus();
             };
 
             window.confirmLogout = function () {
                 LV.logout();
             };
+
+            let activeCurrentDetailsOrder = null;
+            let riderActionCallback = null;
+            let riderActionTrigger = null;
+            const riderActionModal = document.getElementById('riderActionModal');
+
+            function closeRiderAction(restoreFocus) {
+                $(riderActionModal).removeClass('show').attr('aria-hidden', 'true');
+                riderActionCallback = null;
+                $('#riderActionPhone').attr('hidden', true).removeAttr('href').text('');
+                $('body').css('overflow', $('#orderModal').hasClass('show') ? 'hidden' : 'auto');
+                if (restoreFocus && riderActionTrigger && riderActionTrigger.isConnected) riderActionTrigger.focus();
+            }
+
+            function openRiderAction(title, message, options) {
+                options = options || {};
+                riderActionTrigger = document.activeElement;
+                $('#riderActionTitle').text(title);
+                $('#riderActionMessage').text(message);
+                const phoneLink = document.getElementById('riderActionPhone');
+                if (options.phone) {
+                    phoneLink.href = 'tel:' + options.phone.replace(/[^\d+]/g, '');
+                    phoneLink.textContent = 'Call ' + options.phone;
+                    phoneLink.hidden = false;
+                } else {
+                    phoneLink.hidden = true;
+                    phoneLink.removeAttribute('href');
+                    phoneLink.textContent = '';
+                }
+                $('#cancelRiderAction').text(options.cancelText || 'Cancel').prop('hidden', options.cancelText === false);
+                $('#confirmRiderAction').text(options.confirmText || 'Confirm').prop('hidden', options.confirmText === false);
+                riderActionCallback = options.onConfirm || null;
+                $(riderActionModal).addClass('show').attr('aria-hidden', 'false');
+                $('body').css('overflow', 'hidden');
+                (options.phone || options.focusConfirm ? (options.phone ? phoneLink : document.getElementById('confirmRiderAction')) :
+                    document.getElementById('cancelRiderAction')).focus();
+            }
+
+            $('#closeRiderAction, #cancelRiderAction').on('click', function () {
+                closeRiderAction(true);
+            });
+            $('#confirmRiderAction').on('click', function () {
+                const callback = riderActionCallback;
+                closeRiderAction(false);
+                if (callback) callback();
+            });
+            $(riderActionModal).on('click', function (event) {
+                if (event.target === riderActionModal) closeRiderAction(true);
+            });
+            $(document).on('keydown', function (event) {
+                if (!$(riderActionModal).hasClass('show')) return;
+                if (event.key === 'Escape') {
+                    closeRiderAction(true);
+                    return;
+                }
+                if (event.key !== 'Tab') return;
+                const focusable = Array.from(riderActionModal.querySelectorAll('button:not([hidden]), a[href]'));
+                if (!focusable.length) {
+                    event.preventDefault();
+                    return;
+                }
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first.focus();
+                }
+            });
 
             $(document).on('click', '.btn-view-details', function () {
                 const o = JSON.parse($(this).attr('data-order'));
@@ -1966,6 +2093,8 @@
                 $('#modalEarnings').text('₱' + o.earnings);
                 $('#modalBonus').text('+₱' + o.bonus);
                 $('#modalTotal').text('₱' + (parseInt(o.earnings) + parseInt(o.bonus)));
+                $('#modalShopPhone').text(o.shopPhone || 'Not provided');
+                $('#modalCustomerPhone').text(o.customerPhone || 'Not provided');
 
                 $('#modalActions').html(`
             <button class="modal-btn modal-btn-primary accept-modal-btn" data-id="${o.id}"><i class="fa-solid fa-check"></i> Accept Order</button>
@@ -1977,62 +2106,148 @@
 
             $(document).on('click', '.current-details-btn', function () {
                 const o = JSON.parse($(this).attr('data-order'));
+                activeCurrentDetailsOrder = o;
                 $('#modalTitle').text(o.id);
 
                 $('#modalActions').html(`
-            <button class="modal-btn modal-btn-primary" onclick="alert('Order marked as delivered!'); closeModal();"><i class="fa-solid fa-check"></i> Mark as Delivered</button>
-            <button class="modal-btn modal-btn-secondary" onclick="alert('Calling shop...');"><i class="fa-solid fa-phone"></i> Call Shop</button>
+            <button class="modal-btn modal-btn-primary mark-delivered-btn"><i class="fa-solid fa-check"></i> Mark as Delivered</button>
+            <button class="modal-btn modal-btn-secondary call-shop-modal-btn"><i class="fa-solid fa-phone"></i> Call Shop</button>
+            <button class="modal-btn modal-btn-secondary call-customer-modal-btn"><i class="fa-solid fa-phone"></i> Call Customer</button>
         `);
                 $('#orderModal').addClass('show').attr('aria-hidden', 'false');
                 $('body').css('overflow', 'hidden');
             });
 
+            $(document).on('click', '.mark-delivered-btn', function () {
+                const selectedOrder = activeCurrentDetailsOrder;
+                if (!selectedOrder) return;
+                if (selectedOrder.sharedOrderId) {
+                    const message = selectedOrder.type === 'return'
+                        ? 'The customer must confirm the returned laundry before this shared order can be completed.'
+                        : 'The store must confirm receipt of the laundry before processing can continue.';
+                    openRiderAction('Next step belongs to the recipient', message, {
+                        cancelText: false,
+                        confirmText: 'OK'
+                    });
+                    return;
+                }
+                openRiderAction('Mark as delivered?', `Confirm delivery of ${selectedOrder.id}?`, {
+                    confirmText: 'Mark as delivered',
+                    cancelText: 'Not yet',
+                    focusConfirm: true,
+                    onConfirm: function () {
+                        const order = currentOrders.find(function (item) { return item.id === selectedOrder.id; });
+                        if (!order) {
+                            openRiderAction('Order unavailable', 'This delivery is no longer in your current orders.', {
+                                cancelText: false,
+                                confirmText: 'OK'
+                            });
+                            return;
+                        }
+                        order.status = 'completed';
+                        order.progress = 100;
+                        renderCurrentOrders();
+                        filterAndSearch('current');
+                        closeModal();
+                        openRiderAction('Delivery completed', `${selectedOrder.id} was marked as delivered.`, {
+                            cancelText: false,
+                            confirmText: 'OK'
+                        });
+                    }
+                });
+            });
+
             $(document).on('click', '.btn-accept, .accept-modal-btn', function () {
                 const $button = $(this);
                 const id = $button.data('id') || $('#modalTitle').text();
-                if (confirm(`Accept order ${id}?`)) {
-                    const sharedOrderId = $button.data('shared-order-id');
-                    if (sharedOrderId) {
-                        const order = LV.order(sharedOrderId);
-                        if (!order) {
-                            alert('This order is no longer available. Refresh the page and try again.');
+                openRiderAction('Accept this order?', `Accept order ${id} and add it to your current deliveries?`, {
+                    confirmText: 'Accept order',
+                    cancelText: 'Keep browsing',
+                    focusConfirm: true,
+                    onConfirm: function () {
+                        const job = availableOrders.find(function (order) { return order.id === id; });
+                        const sharedOrderId = $button.data('shared-order-id') || (job && job.sharedOrderId);
+                        if (sharedOrderId) {
+                            const order = LV.order(sharedOrderId);
+                            if (!order) {
+                                openRiderAction('Order unavailable', 'This order is no longer available. Refresh the page and try again.', { cancelText: false, confirmText: 'OK' });
+                                return;
+                            }
+                            const nextStatus = order.status === 'waiting_for_return_driver'
+                                ? 'enroute_to_customer'
+                                : 'enroute_to_store';
+                            const updated = LV.setOrderStatus(
+                                sharedOrderId,
+                                nextStatus,
+                                nextStatus === 'enroute_to_store' ? 'Rider accepted send job' : 'Rider accepted return job',
+                                rider.id
+                            );
+                            if (!updated) {
+                                openRiderAction('Unable to accept order', 'The order could not be accepted. Refresh the page and try again.', { cancelText: false, confirmText: 'OK' });
+                                return;
+                            }
+                            const accepted = availableOrders.find(function (availableJob) { return availableJob.sharedOrderId === Number(sharedOrderId); });
+                            if (accepted) {
+                                availableOrders.splice(availableOrders.indexOf(accepted), 1);
+                                currentOrders.unshift(accepted);
+                            }
+                            closeModal();
+                            renderAvailableOrders();
+                            renderCurrentOrders();
+                            filterAndSearch('available');
+                            filterAndSearch('current');
+                            openRiderAction('Order accepted', `Order ${id} is now in your current deliveries.`, { cancelText: false, confirmText: 'OK' });
                             return;
                         }
-                        const nextStatus = order.status === 'waiting_for_return_driver'
-                            ? 'enroute_to_customer'
-                            : 'enroute_to_store';
-                        const updated = LV.setOrderStatus(
-                            sharedOrderId,
-                            nextStatus,
-                            nextStatus === 'enroute_to_store' ? 'Rider accepted send job' : 'Rider accepted return job',
-                            rider.id
-                        );
-                        if (!updated) {
-                            alert('Unable to accept this order. Refresh the page and try again.');
-                            return;
-                        }
-                        const accepted = availableOrders.find(function (job) { return job.sharedOrderId === Number(sharedOrderId); });
-                        if (accepted) {
-                            availableOrders.splice(availableOrders.indexOf(accepted), 1);
-                            currentOrders.unshift(accepted);
+                        if (job) {
+                            availableOrders.splice(availableOrders.indexOf(job), 1);
+                            currentOrders.unshift(Object.assign({}, job, {
+                                status: 'in-transit',
+                                progress: 35,
+                                customer: 'Customer',
+                                delivery: job.delivery
+                            }));
+                            renderAvailableOrders();
+                            renderCurrentOrders();
+                            filterAndSearch('available');
+                            filterAndSearch('current');
                         }
                         closeModal();
-                        renderAvailableOrders();
-                        renderCurrentOrders();
-                        filterAndSearch('available');
-                        filterAndSearch('current');
-                        alert(`Order ${id} accepted and added to your current orders.`);
-                        return;
+                        openRiderAction('Order accepted', `Order ${id} was accepted and moved to your current deliveries.`, { cancelText: false, confirmText: 'OK' });
                     }
-                    alert(`Order ${id} accepted!`);
-                    closeModal();
-                }
+                });
             });
 
-            $(document).on('click', '.call-btn', () => alert('Calling customer...'));
+            $(document).on('click', '.call-shop-modal-btn', function () {
+                const phone = activeCurrentDetailsOrder && activeCurrentDetailsOrder.shopPhone;
+                openRiderAction('Contact the shop', phone ? 'Call the shop about this delivery.' : 'The shop phone number is not available in this demo.', {
+                    phone: phone || null,
+                    cancelText: false,
+                    confirmText: 'Close'
+                });
+            });
 
-            $(window).on('click', (e) => { if ($(e.target).is('#orderModal')) closeModal(); });
-            $(document).on('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+            $(document).on('click', '.call-customer-modal-btn, .call-btn', function () {
+                const order = $(this).hasClass('call-btn')
+                    ? JSON.parse($(this).attr('data-order'))
+                    : activeCurrentDetailsOrder;
+                const phone = order && order.customerPhone;
+                openRiderAction('Contact the customer', phone ? 'Call the customer about this delivery.' : 'The customer phone number is not available in this demo.', {
+                    phone: phone || null,
+                    cancelText: false,
+                    confirmText: 'Close'
+                });
+            });
+
+            $(window).on('click', (e) => {
+                if ($(e.target).is('#orderModal')) closeModal();
+                if ($(e.target).is('#logoutModal')) closeLogoutModal();
+            });
+            $(document).on('keydown', (e) => {
+                if (e.key !== 'Escape' || $(riderActionModal).hasClass('show')) return;
+                if ($('#logoutModal').hasClass('show')) closeLogoutModal();
+                else closeModal();
+            });
 
             // 6. INITIALIZE
             renderAvailableOrders();

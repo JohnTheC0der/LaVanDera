@@ -667,6 +667,18 @@
             color: #991b1b;
             border-left: 4px solid var(--color-error);
         }
+        .profile-dialog-overlay { position: fixed; inset: 0; z-index: 2100; display: none; align-items: center; justify-content: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); overflow-y: auto; overscroll-behavior: contain; background: rgba(38, 0, 26, .58); }
+        .profile-dialog-overlay.open { display: flex; }
+        .profile-dialog { width: min(100%, 460px); max-height: calc(100vh - 40px); max-height: calc(100dvh - 40px); margin: auto; overflow-y: auto; overscroll-behavior: contain; padding: 24px; border-radius: 18px; background: #fff; box-shadow: 0 20px 60px rgba(35, 0, 24, .3); }
+        .profile-dialog h2 { margin: 0 0 10px; color: var(--color-dark); }
+        .profile-dialog p { margin: 0; color: var(--color-text); }
+        .profile-dialog input { width: 100%; margin-top: 14px; padding: 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; }
+        .profile-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+        .profile-dialog-actions button { min-height: 42px; padding: 10px 16px; border: 0; border-radius: 8px; cursor: pointer; font: inherit; font-weight: 700; }
+        .profile-dialog-cancel { color: var(--color-dark); background: var(--color-bg-light); }
+        .profile-dialog-confirm { color: #fff; background: var(--color-dark); }
+        .profile-dialog-confirm.danger { background: var(--color-error); }
+        @media (max-width: 480px) { .profile-dialog-actions { flex-direction: column-reverse; } .profile-dialog-actions button { width: 100%; } }
 
         /* ===== FOOTER ===== */
         footer {
@@ -821,7 +833,7 @@
                 <a href="lavandera_rider_dashboard.html"><i class="fa-solid fa-house"></i>Dashboard</a>
                 <a href="Rider_Orders_Page.html"><i class="fa-solid fa-boxes-stacked"></i>Current Orders</a>
                 <a href="Rider_Profile_Page.html" aria-current="page"><i class="fa-solid fa-user"></i>Profile</a>
-                <a href="Log_In_Page.html" onclick="LV.logout(); return false;"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
+                <a href="Log_In_Page.html" onclick="requestProfileLogout(); return false;"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
             </div>
         </div>
     </header>
@@ -1104,7 +1116,7 @@
                         <i class="fa-solid fa-check"></i>
                         Save Changes
                     </button>
-                    <button class="btn-cancel" onclick="cancelEdit()">
+                    <button class="btn-cancel" onclick="requestCancelEdit()">
                         <i class="fa-solid fa-xmark"></i>
                         Cancel
                     </button>
@@ -1132,6 +1144,18 @@
             </div>
         </div>
 
+    </div>
+
+    <div class="profile-dialog-overlay" id="profileDialog" aria-hidden="true">
+        <section class="profile-dialog" role="dialog" aria-modal="true" aria-labelledby="profileDialogTitle" aria-describedby="profileDialogMessage" tabindex="-1">
+            <h2 id="profileDialogTitle"></h2>
+            <p id="profileDialogMessage"></p>
+            <input id="deletePhrase" type="text" autocomplete="off" hidden aria-label="Type DELETE MY ACCOUNT to confirm">
+            <div class="profile-dialog-actions">
+                <button class="profile-dialog-cancel" type="button" id="cancelProfileDialog">Cancel</button>
+                <button class="profile-dialog-confirm" type="button" id="confirmProfileDialog">Confirm</button>
+            </div>
+        </section>
     </div>
 
     <!-- FOOTER -->
@@ -1165,6 +1189,11 @@
             const toggleText = document.getElementById('toggleText');
             const editToggle = document.querySelector('.edit-toggle');
 
+            if (editForm.classList.contains('active')) {
+                requestCancelEdit();
+                return;
+            }
+
             editForm.classList.toggle('active');
 
             if (editForm.classList.contains('active')) {
@@ -1185,6 +1214,104 @@
             editForm.classList.remove('active');
             toggleText.textContent = 'Edit';
             editToggle.style.backgroundColor = 'var(--color-primary)';
+        }
+
+        const profileDialog = document.getElementById('profileDialog');
+        let profileDialogCallback = null;
+        let profileDialogMode = '';
+        let profileDialogTrigger = null;
+
+        function closeProfileDialog(restoreFocus) {
+            profileDialog.classList.remove('open');
+            profileDialog.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            profileDialogCallback = null;
+            profileDialogMode = '';
+            if (!restoreFocus) return;
+            if (profileDialogTrigger && profileDialogTrigger.isConnected && profileDialogTrigger.getClientRects().length) {
+                profileDialogTrigger.focus();
+            } else {
+                document.querySelector('.edit-toggle').focus();
+            }
+        }
+
+        function openProfileDialog(title, message, options) {
+            options = options || {};
+            profileDialogTrigger = document.activeElement;
+            profileDialogMode = options.mode || '';
+            document.getElementById('profileDialogTitle').textContent = title;
+            document.getElementById('profileDialogMessage').textContent = message;
+            const phrase = document.getElementById('deletePhrase');
+            phrase.hidden = profileDialogMode !== 'delete';
+            phrase.value = '';
+            const cancelButton = document.getElementById('cancelProfileDialog');
+            cancelButton.hidden = options.cancelText === false;
+            cancelButton.textContent = options.cancelText || 'Cancel';
+            const confirmButton = document.getElementById('confirmProfileDialog');
+            confirmButton.textContent = options.confirmText || 'Confirm';
+            confirmButton.classList.toggle('danger', !!options.danger);
+            profileDialogCallback = options.onConfirm || null;
+            profileDialog.classList.add('open');
+            profileDialog.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            (profileDialogMode === 'delete' ? phrase : options.focusConfirm || options.cancelText === false ? confirmButton : cancelButton).focus();
+        }
+
+        document.getElementById('cancelProfileDialog').addEventListener('click', function () { closeProfileDialog(true); });
+        document.getElementById('confirmProfileDialog').addEventListener('click', function () {
+            if (profileDialogMode === 'delete') {
+                if (document.getElementById('deletePhrase').value.trim() !== 'DELETE MY ACCOUNT') {
+                    document.getElementById('profileDialogMessage').textContent = 'Type DELETE MY ACCOUNT exactly to continue.';
+                    document.getElementById('deletePhrase').focus();
+                    return;
+                }
+                closeProfileDialog(false);
+                openProfileDialog('Account deletion unavailable', 'This frontend demo cannot permanently delete account data. No account changes were made.', { cancelText: false, confirmText: 'Close' });
+                return;
+            }
+            const callback = profileDialogCallback;
+            closeProfileDialog(false);
+            if (callback) callback();
+        });
+        profileDialog.addEventListener('click', function (event) {
+            if (event.target === profileDialog) closeProfileDialog(true);
+        });
+        document.addEventListener('keydown', function (event) {
+            if (!profileDialog.classList.contains('open')) return;
+            if (event.key === 'Escape') {
+                closeProfileDialog(true);
+                return;
+            }
+            if (event.key !== 'Tab') return;
+            const focusable = Array.from(profileDialog.querySelectorAll('button:not([hidden]), input:not([hidden])'));
+            if (!focusable.length) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        });
+
+        function requestProfileLogout() {
+            openProfileDialog('Sign out?', 'Are you sure you want to sign out of your rider account?', {
+                cancelText: 'Stay signed in',
+                confirmText: 'Sign out',
+                focusConfirm: true,
+                onConfirm: LV.logout
+            });
+        }
+
+        function requestCancelEdit() {
+            openProfileDialog('Close the edit form?', 'Your unsaved changes will remain in the form until you save them.', {
+                cancelText: 'Keep editing',
+                confirmText: 'Close editor',
+                focusConfirm: true,
+                onConfirm: cancelEdit
+            });
         }
 
         // Save Changes
@@ -1234,40 +1361,26 @@
             document.getElementById('infoAccountName').textContent = accountName;
 
             // Show success notification
+            cancelEdit();
             showNotification('Profile updated successfully!', 'success');
-
-            // Close edit form
-            setTimeout(() => {
-                cancelEdit();
-            }, 1000);
         }
 
         // Delete Account
         function deleteAccount() {
-            if (confirm('Are you absolutely sure? This action cannot be undone.\n\nAll your data, orders, and earnings history will be permanently deleted.\n\nType "DELETE MY ACCOUNT" to confirm:')) {
-                const userInput = prompt('Type DELETE MY ACCOUNT to confirm account deletion:');
-                if (userInput === 'DELETE MY ACCOUNT') {
-                    showNotification('Account deleted successfully. Redirecting...', 'success');
-                    setTimeout(() => {
-                        window.location.href = '#';
-                    }, 2000);
-                } else {
-                    showNotification('Account deletion cancelled', 'error');
-                }
-            }
+            openProfileDialog('Delete rider account?', 'This action is permanent. Type DELETE MY ACCOUNT to continue. This frontend demo does not have a backend deletion service.', {
+                mode: 'delete',
+                cancelText: 'Keep account',
+                confirmText: 'Continue',
+                danger: true
+            });
         }
 
         // Show Notification
         function showNotification(message, type) {
-            const notification = document.getElementById('notification');
-            const notificationText = document.getElementById('notificationText');
-
-            notificationText.textContent = message;
-            notification.className = 'notification show ' + type;
-
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 4000);
+            openProfileDialog(type === 'error' ? 'Check your profile' : 'Profile updated', message, {
+                cancelText: false,
+                confirmText: 'OK'
+            });
         }
 
         // Initialize - Set first letter of name as avatar
