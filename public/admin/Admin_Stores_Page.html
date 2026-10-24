@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stores - LaVanDera</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/lavandera_theme.css">
+    <style>
+        /* page-level additions: detail modal overlay only */
+        .lv-modal-overlay {
+            position: fixed; inset: 0; z-index: 80; display: none; place-items: center;
+            background: rgba(43, 13, 30, 0.45);
+            backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+        }
+        .lv-modal-overlay.open { display: grid; }
+        .lv-modal {
+            background: #fff; border-radius: var(--lv-radius); box-shadow: var(--lv-shadow-lg);
+            width: calc(100% - 40px); max-width: 620px; max-height: 85vh; overflow: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="lv-nav"></div>
+
+    <main class="lv-container">
+
+        <!-- PAGE HEAD -->
+        <section class="lv-page-head">
+            <div class="lv-eyebrow">Partner management</div>
+            <h1 class="lv-title">Stores</h1>
+            <p class="lv-sub">Partner laundromats on the platform. Review shops that just finished their
+                setup and keep the storefront listing healthy.</p>
+        </section>
+
+        <!-- STATS -->
+        <section class="lv-grid lv-grid-4" id="statGrid"></section>
+
+        <!-- TOOLBAR -->
+        <section class="lv-card lv-card-pad lv-mt">
+            <div class="lv-row-between lv-wrap">
+                <div class="lv-search" style="flex:1; min-width:240px;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="storeSearch" class="lv-input" placeholder="Search name, email or contact number...">
+                </div>
+                <div class="lv-wrap" id="filterPills"></div>
+            </div>
+        </section>
+
+        <!-- STORES TABLE -->
+        <section class="lv-card lv-mt">
+            <div class="lv-table-wrap">
+                <table class="lv-table" style="min-width:960px;">
+                    <thead>
+                        <tr>
+                            <th>Store</th>
+                            <th>Contact</th>
+                            <th>Address</th>
+                            <th>Prices</th>
+                            <th>Benefits</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="storeRows"></tbody>
+                </table>
+            </div>
+            <div id="storeEmpty"></div>
+        </section>
+
+    </main>
+
+    <!-- DETAIL MODAL -->
+    <div class="lv-modal-overlay" id="storeModal">
+        <div class="lv-modal" id="storeModalPanel" role="dialog" aria-modal="true" aria-label="Store details"></div>
+    </div>
+
+    <script src="../js/lavandera_demo.js"></script>
+    <script>
+        let activeFilter = 'all';
+        let searchQuery = '';
+
+        const FILTERS = [
+            { key: 'all',              label: 'All' },
+            { key: 'active',           label: 'Active' },
+            { key: 'pending_approval', label: 'Pending approval' },
+            { key: 'setup_required',   label: 'Setup incomplete' },
+            { key: 'rejected',         label: 'Rejected' }
+        ];
+
+        const me = LV.requireRole('admin', '../auth/Log_In_Page.html');
+        if (me) {
+            LV.renderNav('admin', 'stores');
+
+            document.getElementById('storeSearch').addEventListener('input', function () {
+                searchQuery = this.value.trim().toLowerCase();
+                renderTable();
+            });
+            document.getElementById('storeModal').addEventListener('click', function (e) {
+                if (e.target === this) closeModal();
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') closeModal();
+            });
+
+            render();
+        }
+
+        /* ------------------------------------------------ helpers ---- */
+        function getStore(id) {
+            return LV.stores().find(function (s) { return s.id === Number(id); });
+        }
+
+        function hasFreeDelivery(s) {
+            return Array.isArray(s.benefits) && s.benefits.indexOf('Free delivery') > -1;
+        }
+
+        function priceLine(s) {
+            if (!s.prices) return '<span class="lv-muted">&mdash;</span>';
+            return 'S ' + LV.peso(s.prices.small) + ' &middot; M ' + LV.peso(s.prices.medium) +
+                   ' &middot; L ' + LV.peso(s.prices.large);
+        }
+
+        function addressCell(s) {
+            if (!s.address) return '<span class="lv-muted">&mdash;</span>';
+            return '<span title="' + LV.esc(s.address) + '" style="display:block; max-width:200px; overflow:hidden;' +
+                   ' text-overflow:ellipsis; white-space:nowrap;">' + LV.esc(s.address) + '</span>';
+        }
+
+        /* ------------------------------------------------- render ---- */
+        function render() {
+            renderStats();
+            renderPills();
+            renderTable();
+        }
+
+        function renderStats() {
+            const ss = LV.stores();
+            const active = ss.filter(function (s) { return s.status === 'active'; }).length;
+            const pending = ss.filter(function (s) { return s.status === 'pending_approval'; }).length;
+            const incomplete = ss.filter(function (s) { return s.status === 'setup_required'; }).length;
+            const featured = ss.filter(function (s) { return s.featured; }).length;
+
+            const tiles = [
+                { icon: 'fa-store',           value: active,     label: 'Active Stores' },
+                { icon: 'fa-hourglass-half',  value: pending,    label: 'Pending Approval', amber: pending > 0 },
+                { icon: 'fa-screwdriver-wrench', value: incomplete, label: 'Setup Incomplete', amber: incomplete > 0 },
+                { icon: 'fa-star',            value: featured,   label: 'Featured' }
+            ];
+            document.getElementById('statGrid').innerHTML = tiles.map(function (t) {
+                const chip = t.amber ? ' style="background:var(--lv-amber-bg); color:var(--lv-amber);"' : '';
+                return '<div class="lv-card lv-stat">' +
+                    '<div class="lv-stat-icon"' + chip + '><i class="fa-solid ' + t.icon + '"></i></div>' +
+                    '<div class="lv-stat-value">' + t.value + '</div>' +
+                    '<div class="lv-stat-label">' + t.label + '</div></div>';
+            }).join('');
+        }
+
+        function renderPills() {
+            document.getElementById('filterPills').innerHTML = FILTERS.map(function (f) {
+                const cls = f.key === activeFilter ? 'lv-btn lv-btn-primary lv-btn-sm' : 'lv-btn lv-btn-outline lv-btn-sm';
+                return '<button class="' + cls + '" onclick="setFilter(\'' + f.key + '\')">' + f.label + '</button>';
+            }).join('');
+        }
+
+        function setFilter(key) {
+            activeFilter = key;
+            renderPills();
+            renderTable();
+        }
+
+        function filteredStores() {
+            return LV.stores().filter(function (s) {
+                const okStatus = activeFilter === 'all' || s.status === activeFilter;
+                const hay = (s.name + ' ' + s.email + ' ' + (s.contact || '') + ' ' + (s.address || '')).toLowerCase();
+                return okStatus && (!searchQuery || hay.indexOf(searchQuery) > -1);
+            });
+        }
+
+        function renderTable() {
+            const list = filteredStores();
+            const tbody = document.getElementById('storeRows');
+            const empty = document.getElementById('storeEmpty');
+
+            if (!list.length) {
+                tbody.innerHTML = '';
+                empty.innerHTML = '<div class="lv-empty"><i class="fa-solid fa-store-slash"></i>' +
+                    '<h3>No stores found</h3><p>Try another search term or switch the filter.</p></div>';
+                return;
+            }
+            empty.innerHTML = '';
+
+            tbody.innerHTML = list.map(function (s) {
+                return '<tr>' +
+                    '<td><div class="lv-row">' +
+                        '<div class="lv-avatar lv-avatar-sm">' + LV.esc(LV.initials(s.name)) + '</div>' +
+                        '<div><div style="font-weight:800; color:var(--lv-plum);">' + LV.esc(s.name) + '</div>' +
+                        '<div class="lv-muted" style="font-size:12.5px;">' + LV.esc(s.email) + '</div></div>' +
+                    '</div></td>' +
+                    '<td>' + LV.esc(s.contact || '—') + '</td>' +
+                    '<td>' + addressCell(s) + '</td>' +
+                    '<td style="white-space:nowrap;">' + priceLine(s) + '</td>' +
+                    '<td>' + (hasFreeDelivery(s)
+                        ? '<span class="lv-badge lv-tone-green"><i class="fa-solid fa-truck-fast"></i>Free delivery</span>'
+                        : '<span class="lv-muted">&mdash;</span>') + '</td>' +
+                    '<td>' + LV.userStatusBadge(s.status) + '</td>' +
+                    '<td><div class="lv-wrap">' + storeActions(s) + '</div></td>' +
+                '</tr>';
+            }).join('');
+        }
+
+        function storeActions(s) {
+            if (s.status === 'pending_approval') {
+                return '<button class="lv-btn lv-btn-primary lv-btn-sm" onclick="approveStore(' + s.id + ')">' +
+                        '<i class="fa-solid fa-check"></i>Approve</button>' +
+                       '<button class="lv-btn lv-btn-danger lv-btn-sm" onclick="rejectStore(' + s.id + ')">' +
+                        '<i class="fa-solid fa-xmark"></i>Reject</button>';
+            }
+            if (s.status === 'setup_required') {
+                return '<span class="lv-badge lv-tone-gray"><i class="fa-solid fa-triangle-exclamation"></i>Setup incomplete</span>' +
+                       '<button class="lv-btn lv-btn-outline lv-btn-sm" onclick="openStore(' + s.id + ')" ' +
+                        'title="Store has not finished setup"><i class="fa-solid fa-eye"></i>View</button>';
+            }
+            let html = '<button class="lv-btn lv-btn-outline lv-btn-sm" onclick="openStore(' + s.id + ')">' +
+                       '<i class="fa-solid fa-eye"></i>View</button>';
+            if (s.status === 'active') {
+                html += '<button class="lv-btn lv-btn-danger lv-btn-sm" onclick="suspendStore(' + s.id + ')">' +
+                        '<i class="fa-solid fa-ban"></i>Suspend</button>';
+            } else if (s.status === 'suspended') {
+                html += '<button class="lv-btn lv-btn-outline lv-btn-sm" onclick="approveStore(' + s.id + ')">' +
+                        '<i class="fa-solid fa-rotate-right"></i>Reactivate</button>';
+            } else if (s.status === 'rejected') {
+                html += '<button class="lv-btn lv-btn-primary lv-btn-sm" onclick="approveStore(' + s.id + ')">' +
+                        '<i class="fa-solid fa-check"></i>Approve</button>';
+            }
+            return html;
+        }
+
+        /* ---------------------------------------------- mutations ---- */
+        function approveStore(id) {
+            const s = getStore(id); if (!s) return;
+            LV.setUserStatus(s.id, 'active');
+            LV.toast(s.name + ' approved - customers can now find them.');
+            render();
+        }
+
+        function rejectStore(id) {
+            const s = getStore(id); if (!s) return;
+            const reason = prompt('Optional reason for rejecting ' + s.name + ' (leave blank to use the default):');
+            if (reason === null) return;
+            LV.setUserStatus(s.id, 'rejected', reason.trim() || 'Rejected by admin');
+            LV.toast(s.name + ' was rejected.', 'fa-circle-xmark');
+            render();
+        }
+
+        function suspendStore(id) {
+            const s = getStore(id); if (!s) return;
+            if (!confirm('Suspend ' + s.name + '? Customers will no longer see it in the store list.')) return;
+            LV.setUserStatus(s.id, 'suspended');
+            LV.toast(s.name + ' has been suspended.', 'fa-ban');
+            render();
+        }
+
+        /* -------------------------------------------------- modal ---- */
+        function openStore(id) {
+            const s = getStore(id); if (!s) return;
+
+            const banner = s.banner
+                ? '<img class="lv-media" style="height:140px; border-radius:var(--lv-radius) var(--lv-radius) 0 0;" ' +
+                  'src="' + LV.esc(s.banner) + '" alt="' + LV.esc(s.name) + '" ' +
+                  'onerror="this.onerror=null; this.className=\'lv-media lv-fallback\'; this.style.height=\'120px\'; this.removeAttribute(\'src\');">'
+                : '<div class="lv-media lv-fallback" style="height:120px; border-radius:var(--lv-radius) var(--lv-radius) 0 0;"></div>';
+
+            let badges = '';
+            if (s.featured) badges += '<span class="lv-badge lv-tone-pink"><i class="fa-solid fa-star"></i>Featured</span>';
+            if (hasFreeDelivery(s)) badges += '<span class="lv-badge lv-tone-green"><i class="fa-solid fa-truck-fast"></i>Free delivery</span>';
+            badges += s.accepting
+                ? '<span class="lv-badge lv-tone-green"><i class="fa-solid fa-circle-check"></i>Accepting orders</span>'
+                : '<span class="lv-badge lv-tone-gray"><i class="fa-solid fa-pause"></i>Not accepting orders</span>';
+
+            const prices = s.prices
+                ? '<div class="lv-grid lv-grid-3" style="gap:10px;">' +
+                    [['Small', '5kg', s.prices.small], ['Medium', '10kg', s.prices.medium], ['Large', '15kg', s.prices.large]]
+                        .map(function (p) {
+                            return '<div style="background:#fff8fb; border:1.5px solid var(--lv-line); border-radius:16px; padding:13px; text-align:center;">' +
+                                '<div class="lv-muted" style="font-size:11px; font-weight:800; letter-spacing:0.12em; text-transform:uppercase;">' + p[0] + ' (' + p[1] + ')</div>' +
+                                '<div style="font-weight:800; color:var(--lv-pink); font-size:17px; margin-top:4px;">' + LV.peso(p[2]) + '</div></div>';
+                        }).join('') + '</div>'
+                : '<p class="lv-muted" style="font-size:14px;">Prices not set yet.</p>';
+
+            const storeOrders = LV.orders().filter(function (o) { return o.storeId === s.id; });
+            const completed = storeOrders.filter(function (o) { return o.status === 'completed'; });
+            const lifetime = completed.reduce(function (t, o) { return t + Number(o.total); }, 0);
+
+            let ordersHtml;
+            if (storeOrders.length) {
+                ordersHtml = storeOrders.slice(0, 8).map(function (o) {
+                    const cust = LV.customer(o.customerId);
+                    const bag = LV.bagOf(o.bag);
+                    return '<div class="lv-row-between" style="padding:11px 0; border-bottom:1px dashed var(--lv-line); font-size:13.5px; gap:10px;">' +
+                        '<div>' +
+                            '<span style="font-weight:800; color:var(--lv-plum);">#' + o.id + '</span>' +
+                            ' &middot; ' + LV.esc(cust ? cust.name : 'Customer') +
+                            ' &middot; ' + LV.esc(bag.name) +
+                            ' &middot; ' + LV.peso(o.total) +
+                            '<div class="lv-muted" style="font-size:12px;">' + LV.when(o.createdAt) + '</div>' +
+                        '</div>' + LV.statusBadge(o.status) + '</div>';
+                }).join('');
+            } else {
+                ordersHtml = '<p class="lv-muted" style="font-size:14px; padding:10px 0;">No orders yet for this store.</p>';
+            }
+
+            document.getElementById('storeModalPanel').innerHTML =
+                banner +
+                '<div class="lv-card-pad">' +
+                    '<div class="lv-row-between" style="margin-bottom:14px;">' +
+                        '<span class="lv-eyebrow" style="margin-bottom:0;">Store profile</span>' +
+                        '<button class="lv-menu-btn" style="width:36px; height:36px; border-radius:12px; font-size:14px; background:var(--lv-pink-tint); color:var(--lv-plum); box-shadow:none;" onclick="closeModal()" aria-label="Close">' +
+                            '<i class="fa-solid fa-xmark"></i></button>' +
+                    '</div>' +
+                    '<div class="lv-row" style="margin-bottom:12px;">' +
+                        '<div class="lv-avatar lv-avatar-lg">' + LV.esc(LV.initials(s.name)) + '</div>' +
+                        '<div>' +
+                            '<h3 style="font-size:20px; color:var(--lv-plum);">' + LV.esc(s.name) + '</h3>' +
+                            '<div class="lv-muted" style="font-size:13.5px;">' + LV.esc(s.email) + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="lv-wrap" style="margin-bottom:14px;">' + badges +
+                        '<span class="lv-badge lv-tone-blue"><i class="fa-solid fa-star" style="color:inherit;"></i>' +
+                        (s.rating ? Number(s.rating).toFixed(1) + ' rating' : 'No ratings yet') + '</span></div>' +
+                    '<div class="lv-kv"><span>Email</span><span>' + LV.esc(s.email) + '</span></div>' +
+                    '<div class="lv-kv"><span>Contact</span><span>' + LV.esc(s.contact || '—') + '</span></div>' +
+                    '<div class="lv-kv"><span>Address</span><span>' + LV.esc(s.address || 'To be confirmed') + '</span></div>' +
+                    '<div class="lv-kv"><span>Joined</span><span>' + LV.when(s.joined) + '</span></div>' +
+                    '<div class="lv-kv"><span>Status</span><span>' + LV.userStatusBadge(s.status) + '</span></div>' +
+                    (s.statusNote
+                        ? '<div class="lv-kv"><span>' + (s.status === 'rejected' ? 'Rejection reason' : 'Status note') +
+                          '</span><span>' + LV.esc(s.statusNote) + '</span></div>'
+                        : '') +
+                    (s.description
+                        ? '<p style="margin-top:14px; font-size:14.5px; line-height:1.6;">' + LV.esc(s.description) + '</p>'
+                        : '<p class="lv-muted" style="margin-top:14px; font-size:14px;">No description yet.</p>') +
+                    '<hr class="lv-divider">' +
+                    '<h4 style="font-size:15px; color:var(--lv-plum); margin-bottom:10px;">Prices</h4>' +
+                    prices +
+                    '<hr class="lv-divider">' +
+                    '<h4 style="font-size:15px; color:var(--lv-plum); margin-bottom:6px;">Store orders</h4>' +
+                    ordersHtml +
+                    '<div style="margin-top:16px; background:var(--lv-pink-tint); border-radius:16px; padding:14px 16px; text-align:center;">' +
+                        '<div class="lv-muted" style="font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase;">Lifetime value</div>' +
+                        '<div style="font-weight:800; color:var(--lv-plum); font-size:19px; margin-top:4px;">' +
+                            LV.peso(lifetime) + ' <span class="lv-muted" style="font-size:13px; font-weight:600;">from ' +
+                            completed.length + ' completed order' + (completed.length === 1 ? '' : 's') + '</span></div>' +
+                    '</div>' +
+                '</div>';
+            document.getElementById('storeModal').classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('storeModal').classList.remove('open');
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - LaVanDera</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/lavandera_theme.css">
+</head>
+
+<body>
+    <div id="lv-nav"></div>
+
+    <main class="lv-container">
+        <div class="lv-page-head">
+            <div class="lv-eyebrow">Account</div>
+            <h1 class="lv-title">My Profile</h1>
+            <p class="lv-sub">Keep your contact number and address current - riders use them to pick up and drop off
+                your laundry.</p>
+        </div>
+
+        <div class="lv-grid lv-grid-2" style="align-items:start;">
+
+            <!-- ACCOUNT SUMMARY -->
+            <section class="lv-card lv-card-pad">
+                <div class="lv-row" style="gap:16px; margin-bottom:18px;">
+                    <div class="lv-avatar lv-avatar-lg" id="pfpAvatar">?</div>
+                    <div>
+                        <h2 style="font-size:22px; color:var(--lv-plum);" id="pfpName">&nbsp;</h2>
+                        <div class="lv-muted" style="font-size:14px;" id="pfpEmail">&nbsp;</div>
+                        <span class="lv-badge lv-tone-pink" style="margin-top:7px;">
+                            <i class="fa-solid fa-user"></i>Customer
+                        </span>
+                    </div>
+                </div>
+
+                <div class="lv-kv"><span>Member since</span><span id="pfpSince">Recently joined</span></div>
+                <div class="lv-kv"><span>Total orders</span><span id="pfpOrders">0</span></div>
+                <div class="lv-kv"><span>Completed orders</span><span id="pfpDone">0</span></div>
+                <div class="lv-kv"><span>Lifetime spend</span><span id="pfpSpent">&nbsp;</span></div>
+
+                <hr class="lv-divider">
+                <a href="Customer_My_Orders_Page.html" class="lv-btn lv-btn-outline lv-btn-sm">
+                    <i class="fa-solid fa-basket-shopping"></i> View my orders
+                </a>
+            </section>
+
+            <!-- EDIT CONTACT DETAILS -->
+            <section class="lv-card lv-card-pad">
+                <div class="lv-eyebrow">Editable details</div>
+                <h2 class="lv-section-title" style="margin-bottom:16px;">Contact &amp; Address</h2>
+
+                <form onsubmit="saveProfile(event)" novalidate>
+                    <div class="lv-field">
+                        <label class="lv-label" for="pfContact">Contact Number</label>
+                        <input class="lv-input" type="tel" id="pfContact" placeholder="09XX XXX XXXX">
+                    </div>
+                    <div class="lv-field">
+                        <label class="lv-label" for="pfAddress">Pickup / Delivery Address</label>
+                        <textarea class="lv-textarea" id="pfAddress"
+                            placeholder="Unit / street, barangay, city"></textarea>
+                        <p class="lv-form-note" style="margin-top:6px;">
+                            <i class="fa-solid fa-circle-info" style="color:var(--lv-pink);"></i>
+                            New orders will use this address for distance-based rider fees.
+                        </p>
+                    </div>
+
+                    <p class="lv-error" id="pfError"></p>
+
+                    <button type="submit" class="lv-btn lv-btn-primary lv-btn-block">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                    </button>
+                </form>
+            </section>
+
+        </div>
+
+        <!-- RECENT ORDERS -->
+        <section class="lv-mt">
+            <div class="lv-row-between" style="margin-bottom:16px;">
+                <div>
+                    <div class="lv-eyebrow">Account activity</div>
+                    <h2 class="lv-section-title">Recent Orders</h2>
+                </div>
+                <a href="Customer_My_Orders_Page.html" class="lv-link" style="font-size:14px;">All orders
+                    <i class="fa-solid fa-arrow-right" style="font-size:12px;"></i></a>
+            </div>
+            <div class="lv-grid" id="recentOrders"></div>
+        </section>
+    </main>
+
+    <script src="../js/lavandera_demo.js"></script>
+    <script>
+        const me = LV.requireRole('customer', '../auth/Log_In_Page.html');
+        if (me) {
+            LV.renderNav('customer', null);
+            render();
+        }
+
+        function render() {
+            const c = LV.customer(me.id);
+            const mine = LV.ordersOfCustomer(me.id);
+            const done = mine.filter(function (o) { return o.status === 'completed'; });
+            const spent = done.reduce(function (t, o) { return t + Number(o.total); }, 0);
+
+            document.getElementById('pfpAvatar').textContent = LV.initials(c.name);
+            document.getElementById('pfpName').textContent = c.name;
+            document.getElementById('pfpEmail').textContent = c.email;
+
+            if (mine.length) {
+                const oldest = mine.reduce(function (a, o) {
+                    return new Date(o.createdAt) < new Date(a.createdAt) ? o : a;
+                });
+                document.getElementById('pfpSince').textContent =
+                    new Date(oldest.createdAt).toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' });
+            }
+            document.getElementById('pfpOrders').textContent = mine.length;
+            document.getElementById('pfpDone').textContent = done.length;
+            document.getElementById('pfpSpent').textContent = LV.peso(spent);
+
+            document.getElementById('pfContact').value = c.contact || '';
+            document.getElementById('pfAddress').value = c.address || '';
+
+            const recent = mine.slice(0, 3);
+            document.getElementById('recentOrders').innerHTML = recent.length
+                ? recent.map(row).join('')
+                : '<div class="lv-card lv-empty"><i class="fa-solid fa-basket-shopping"></i>' +
+                  '<h3>No orders yet</h3><p>Orders you place will show up here.</p>' +
+                  '<a href="Customer_Place_Order_Page.html" class="lv-btn lv-btn-primary lv-btn-sm" style="margin-top:14px;">Place an Order</a></div>';
+        }
+
+        function row(o) {
+            const store = LV.store(o.storeId), bag = LV.bagOf(o.bag);
+            return '<a class="lv-card lv-card-pad lv-row-between lv-card-click" href="Customer_My_Orders_Page.html?order=' + o.id + '" style="display:flex;">' +
+                '<div class="lv-row">' +
+                    '<div class="lv-avatar"><i class="fa-solid ' + bag.icon + '" style="font-size:18px;"></i></div>' +
+                    '<div>' +
+                        '<div style="font-weight:800; color:var(--lv-plum);">' + LV.esc(store ? store.name : 'Store') + '</div>' +
+                        '<div class="lv-muted" style="font-size:13px;">#' + o.id + ' &middot; ' + bag.name + ' (' + bag.kg + 'kg) &middot; ' + LV.when(o.createdAt) + '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="lv-row" style="gap:16px;">' +
+                    '<span style="font-weight:800;">' + LV.peso(o.total) + '</span>' +
+                    LV.statusBadge(o.status) +
+                '</div></a>';
+        }
+
+        function saveProfile(event) {
+            event.preventDefault();
+            const errBox = document.getElementById('pfError');
+            errBox.textContent = '';
+
+            const contact = document.getElementById('pfContact').value.trim();
+            const address = document.getElementById('pfAddress').value.trim();
+
+            if (!contact || !address) { errBox.textContent = 'Contact number and address are both required.'; return; }
+            if (!/^[0-9+\-\s()]{7,20}$/.test(contact)) { errBox.textContent = 'Please enter a valid contact number.'; return; }
+
+            LV.updateCustomer(me.id, { contact: contact, address: address });
+            LV.toast('Profile updated successfully.');
+            render();
+        }
+    </script>
+</body>
+
+</html>

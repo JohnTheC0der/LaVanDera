@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Become a Partner - LAVANDERA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: #fff7fb;
+            color: #333333;
+        }
+
+        /* HEADER */
+        header {
+            background-color: #e58db5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 5%;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        /* LOGO IMAGE - Frame removed & image darkened */
+        .logo-img {
+            height: 80px;
+            width: auto;
+            display: block;
+            filter: brightness(0.6) contrast(1.2);
+            /* Makes the logo image darker */
+            margin-top: -10px;
+            margin-bottom: -10px;
+        }
+
+        .menu-container {
+            position: relative;
+        }
+
+        .menu-btn {
+            background-color: #5a003c;
+            color: white;
+            border: none;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-btn:hover {
+            background-color: #800055;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 56px;
+            background-color: #5a003c;
+            width: 170px;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+            z-index: 1001;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            color: white;
+            padding: 14px 18px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #800055;
+        }
+
+        /* BANNER */
+        .banner {
+            background: linear-gradient(135deg, rgba(255, 227, 241, 0.800), rgba(224, 245, 246, 0.800)), url('../images/partnership-header.avif') no-repeat center / cover;
+            text-align: center;
+            padding: 60px 8% 55px 8%;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: #800055;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .banner h1 {
+            font-size: 52px;
+            color: #800055;
+            font-weight: 900;
+            margin-bottom: 14px;
+        }
+
+        .banner p {
+            font-size: 18px;
+            color: #444;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto 28px auto;
+        }
+
+        .banner-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-main {
+            background-color: #800055;
+            color: white;
+            padding: 15px 32px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 6px 12px rgba(128, 0, 85, 0.3);
+        }
+
+        .btn-main:hover {
+            background-color: #9d0e6b;
+        }
+
+        .btn-second {
+            background-color: white;
+            color: #800055;
+            border: 2px solid #800055;
+            padding: 13px 30px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .btn-second:hover {
+            background-color: #ffe3f1;
+        }
+
+        /* SECTIONS */
+        .section {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 60px 15px 0 15px;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 30px;
+            color: #800055;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .section-title span {
+            border-bottom: 4px solid #800055;
+            padding-bottom: 6px;
+        }
+
+        .section-sub {
+            text-align: center;
+            font-size: 15px;
+            color: #666;
+            margin: 20px auto 30px auto;
+            max-width: 560px;
+            line-height: 1.6;
+        }
+
+        /* CALL THE MAIN OFFICE */
+        .call-box {
+            background-color: #800055;
+            color: white;
+            border-radius: 25px;
+            padding: 35px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 25px;
+            box-shadow: 0 10px 25px rgba(128, 0, 85, 0.25);
+        }
+
+        .call-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .call-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background-color: #e58db5;
+            color: #5a003c;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .call-left h2 {
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+
+        .call-left p {
+            font-size: 14px;
+            color: #f1d3e3;
+        }
+
+        .call-details p {
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .call-details i {
+            color: #e58db5;
+            width: 22px;
+        }
+
+        .call-details strong {
+            font-size: 22px;
+        }
+
+        /* PERKS */
+        .perks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .perk-card {
+            background-color: white;
+            border-radius: 22px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(128, 0, 85, 0.12);
+        }
+
+        .perk-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: #ffe3f1;
+            color: #800055;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .perk-card h3 {
+            font-size: 18px;
+            color: #800055;
+            margin-bottom: 8px;
+        }
+
+        .perk-card p {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        /* STEPS (these really are in order, so they are numbered) */
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+        }
+
+        .step {
+            text-align: center;
+            padding: 10px;
+        }
+
+        .step-number {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #3bb2b8;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px auto;
+            border: 4px solid white;
+            box-shadow: 0 4px 10px rgba(59, 178, 184, 0.4);
+        }
+
+        .step h3 {
+            font-size: 17px;
+            color: #800055;
+            margin-bottom: 8px;
+        }
+
+        .step p {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        /* FORM */
+        .form-box {
+            background-color: white;
+            border-radius: 25px;
+            padding: 35px;
+            max-width: 750px;
+            margin: 0 auto;
+            box-shadow: 0 8px 22px rgba(128, 0, 85, 0.15);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 240px;
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            color: #800055;
+            margin-bottom: 6px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 14px;
+            border: 2px solid #e58db5;
+            font-size: 15px;
+            outline: none;
+            background-color: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: #800055;
+        }
+
+        .form-group textarea {
+            height: 110px;
+            resize: vertical;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background-color: #800055;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 30px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-submit:hover {
+            background-color: #9d0e6b;
+        }
+
+        .form-note {
+            text-align: center;
+            font-size: 13px;
+            color: #777;
+            margin-top: 14px;
+        }
+
+        /* FOOTER */
+        footer {
+            background-color: #800055;
+            color: white;
+            padding: 40px 8% 20px 8%;
+            margin-top: 70px;
+        }
+
+        .footer-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 30px;
+            max-width: 1100px;
+            margin: 0 auto 30px auto;
+        }
+
+        .footer-info {
+            max-width: 350px;
+        }
+
+        .footer-info h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #e58db5;
+        }
+
+        .footer-info p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #ddd;
+        }
+
+        .footer-links h4,
+        .footer-contact h4 {
+            font-size: 17px;
+            margin-bottom: 15px;
+            color: #e58db5;
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links ul li {
+            margin-bottom: 8px;
+        }
+
+        .footer-links ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .footer-links ul li a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-contact p {
+            font-size: 14px;
+            color: #ddd;
+            margin-bottom: 8px;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 13px;
+            color: #ccc;
+        }
+
+        @media (max-width: 768px) {
+            .banner h1 {
+                font-size: 36px;
+            }
+
+            .form-box {
+                padding: 25px 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <a href="../Home_Screen_Page.html" class="logo">
+            <img src="../images/Lavandera_logo.png" alt="Lavandera Logo" class="logo-img">
+        </a>
+        <div class="menu-container">
+            <button class="menu-btn" onclick="toggleMenu()">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="dropdown-menu" id="navDropdown">
+                <a href="../Home_Screen_Page.html">HOME</a>
+                <a href="Log_In_Page.html">ACCOUNT</a>
+                <a href="../Shop_Menu_Page.html">SHOPS</a>
+                <a href="../Home_Screen_Page.html#about">ABOUT</a>
+                <a href="../Home_Screen_Page.html#contact">CONTACT</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- BANNER -->
+    <section class="banner">
+        <a href="../Shop_Menu_Page.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to shops</a>
+        <h1>Own a laundry shop?</h1>
+        <p>Partner with LAVANDERA and reach more customers with pickup and delivery.</p>
+        <div class="banner-buttons">
+            <a href="#apply" class="btn-main"><i class="fa-solid fa-pen-to-square"></i> Fill up the form</a>
+            <a href="#call" class="btn-second"><i class="fa-solid fa-phone"></i> Call our main office</a>
+        </div>
+    </section>
+
+    <!-- CALL THE MAIN OFFICE -->
+    <section class="section" id="call">
+        <div class="call-box">
+            <div class="call-left">
+                <div class="call-icon"><i class="fa-solid fa-phone-volume"></i></div>
+                <div>
+                    <h2>Prefer to talk to us?</h2>
+                    <p>Call our main office and we will answer your questions about becoming a partner.</p>
+                </div>
+            </div>
+            <div class="call-details">
+                <p><i class="fa-solid fa-phone"></i> <strong>+63 912 345 6789</strong></p>
+                <p><i class="fa-solid fa-envelope"></i> support@lavandera.com</p>
+                <p><i class="fa-regular fa-clock"></i> Monday to Saturday, 8AM - 6PM</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- PERKS -->
+    <section class="section">
+        <div class="section-title"><span>Why partner with us?</span></div>
+        <p class="section-sub">Here is what your shop gets when you join the LAVANDERA family.</p>
+
+        <div class="perks-grid">
+            <div class="perk-card">
+                <div class="perk-icon"><i class="fa-solid fa-users"></i></div>
+                <h3>More customers</h3>
+                <p>Your shop is shown to everyone who uses LAVANDERA, not only the people who walk past your door.</p>
+            </div>
+            <div class="perk-card">
+                <div class="perk-icon"><i class="fa-solid fa-truck-fast"></i></div>
+                <h3>Pickup and delivery</h3>
+                <p>Our riders pick up the laundry and bring it back, so you can focus on washing.</p>
+            </div>
+            <div class="perk-card">
+                <div class="perk-icon"><i class="fa-solid fa-wallet"></i></div>
+                <h3>Easy payments</h3>
+                <p>Customers pay online in one click. No more chasing payments or counting small change.</p>
+            </div>
+            <div class="perk-card">
+                <div class="perk-icon"><i class="fa-solid fa-store"></i></div>
+                <h3>Your own shop page</h3>
+                <p>Show your photos, services, prices and opening hours so customers know what to expect.</p>
+            </div>
+            <div class="perk-card">
+                <div class="perk-icon"><i class="fa-solid fa-star"></i></div>
+                <h3>Ratings and reviews</h3>
+                <p>Good service earns good ratings. Top-rated shops are shown in our Top Laundry Shops list.</p>
+            </div>
+            <div class="perk-card">
+                <div class="perk-icon"><i class="fa-solid fa-headset"></i></div>
+                <h3>Support from our team</h3>
+                <p>Questions or problems with an order? Our main office is just a call away.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- WHAT HAPPENS TO YOUR SHOP -->
+    <section class="section">
+        <div class="section-title"><span>What happens after you apply?</span></div>
+        <p class="section-sub">From your application to your first order, this is how it goes.</p>
+
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>You send the form</h3>
+                <p>Tell us about your shop and how to reach you.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>We call you</h3>
+                <p>Our team contacts you to talk about your shop and answer your questions.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>We set up your shop</h3>
+                <p>We check your shop and add your page, photos and services to LAVANDERA.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <h3>Orders start coming in</h3>
+                <p>Customers find your shop, our riders pick up the laundry, and your business grows.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- APPLICATION FORM -->
+    <section class="section" id="apply">
+        <div class="section-title"><span>Apply to become a partner</span></div>
+        <p class="section-sub">Fill up the form below. It only takes a minute.</p>
+
+        <form class="form-box" onsubmit="sendApplication(event)">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="owner">Your full name</label>
+                    <input type="text" id="owner" name="owner" placeholder="Juan Dela Cruz" required>
+                </div>
+                <div class="form-group">
+                    <label for="shop">Laundry shop name</label>
+                    <input type="text" id="shop" name="shop" placeholder="Juan's Laundry" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="phone">Mobile number</label>
+                    <input type="tel" id="phone" name="phone" placeholder="0912 345 6789" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email address</label>
+                    <input type="email" id="email" name="email" placeholder="you@email.com" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="address">Shop address</label>
+                    <input type="text" id="address" name="address" placeholder="Street, barangay, city" required>
+                </div>
+                <div class="form-group">
+                    <label for="service">Main service</label>
+                    <select id="service" name="service">
+                        <option value="Wash and Fold">Wash &amp; Fold</option>
+                        <option value="Dry Cleaning">Dry Cleaning</option>
+                        <option value="Express">Express</option>
+                        <option value="Self-Service">Self-Service</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="message">Anything you want us to know? (optional)</label>
+                    <textarea id="message" name="message" placeholder="Tell us about your shop..."></textarea>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">
+                <i class="fa-solid fa-paper-plane"></i> Send my application
+            </button>
+            <p class="form-note">Frontend demo only: applications are not sent or saved yet. A backend endpoint can be connected when one is ready.</p>
+        </form>
+    </section>
+
+    <!-- FOOTER -->
+    <footer id="contact">
+        <div class="footer-content">
+            <div class="footer-info">
+                <h3>LAVANDERA</h3>
+                <p>Providing the best, easiest, and fastest laundry pickup and delivery service right to your doorstep.
+                    Clean clothes in just one click!</p>
+            </div>
+            <div class="footer-links">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="../Home_Screen_Page.html">Home</a></li>
+                    <li><a href="../Shop_Menu_Page.html">Shops</a></li>
+                    <li><a href="Become_Partner_Page.html">Partner With Us</a></li>
+                    <li><a href="#contact">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-contact">
+                <h4>Contact Us</h4>
+                <p><i class="fa-solid fa-envelope"></i> support@lavandera.com</p>
+                <p><i class="fa-solid fa-phone"></i> +63 912 345 6789</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 LAVANDERA. All Rights Reserved.
+        </div>
+    </footer>
+
+    <script>
+        // Open and close the menu
+        function toggleMenu() {
+            var menu = document.getElementById("navDropdown");
+            if (menu.classList.contains("show")) {
+                menu.classList.remove("show");
+            } else {
+                menu.classList.add("show");
+            }
+        }
+
+        window.onclick = function (event) {
+            if (!event.target.matches('.menu-btn') && !event.target.matches('.menu-btn *')) {
+                document.getElementById("navDropdown").classList.remove('show');
+            }
+        }
+
+        function sendApplication(event) {
+            event.preventDefault();
+            window.location.href = "Partner_Thanks_page.html";
+        }
+    </script>
+</body>
+
+</html>
