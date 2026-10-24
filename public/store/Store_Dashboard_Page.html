@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="lavandera_theme.css">
+    <link rel="stylesheet" href="../css/lavandera_theme.css">
     <style>
         .store-banner { width: 100%; height: 210px; object-fit: cover; border-radius: 18px; background: var(--lv-pink-tint); }
         .store-avatar { width: 100px; height: 100px; margin-top: -50px; border: 5px solid #fff; border-radius: 22px; object-fit: cover; background: #fff; }
@@ -45,7 +45,7 @@
         <section id="storeAccessNotice" class="lv-card lv-card-pad" hidden>
             <h2 class="lv-section-title">Store sign-in required</h2>
             <p class="lv-sub">Sign in with your store account to manage this store.</p>
-            <a class="lv-btn lv-btn-primary lv-mt" href="Log_In_Page.html">Go to sign in</a>
+            <a class="lv-btn lv-btn-primary lv-mt" href="../auth/Log_In_Page.html">Go to sign in</a>
         </section>
 
         <div id="storePortal" hidden>
@@ -146,7 +146,7 @@
         </section>
     </div>
 
-    <script src="lavandera_demo.js"></script>
+    <script src="../js/lavandera_demo.js"></script>
     <script>
         const storeMe = LV.session();
         let storeRecord = storeMe && storeMe.role === 'store' ? LV.store(storeMe.id) : null;
@@ -237,7 +237,7 @@
                     '<p class="lv-sub">Complete your store information and prices before submitting your account for admin review.</p>' +
                     '<a class="lv-btn lv-btn-primary lv-mt" href="Store_Setup_Page.html">Continue setup</a>';
             } else if (storeRecord.status === 'pending_approval') {
-                showStoreNotice('Your store is waiting for admin approval. Store listings and orders are disabled until approval.', 'Store_Pending_Approval_Page.html');
+                showStoreNotice('Your store is waiting for admin approval. Store listings and orders are disabled until approval.', '../auth/Store_Pending_Approval_Page.html');
             } else if (storeRecord.status === 'rejected') {
                 showStoreNotice('Your store application was rejected: ' + LV.esc(storeRecord.statusNote || 'Please contact support for details.'), null);
             } else if (storeRecord.status === 'suspended') {
@@ -260,8 +260,8 @@
             document.getElementById('storeContact').textContent = storeRecord.contact || '-';
             document.getElementById('storeAddress').textContent = storeRecord.address || '-';
             document.getElementById('storeStatus').innerHTML = LV.userStatusBadge(storeRecord.status);
-            document.getElementById('storeBanner').src = storeRecord.banner || 'lavandera_Background.png';
-            document.getElementById('storeImage').src = storeRecord.image || 'Lavandera_logo.png';
+            document.getElementById('storeBanner').src = storeRecord.banner || '../images/lavandera_Background.png';
+            document.getElementById('storeImage').src = storeRecord.image || '../images/Lavandera_logo.png';
             document.getElementById('accepting').checked = !!storeRecord.accepting;
             document.getElementById('editName').value = storeRecord.name || '';
             document.getElementById('editContact').value = storeRecord.contact || '';

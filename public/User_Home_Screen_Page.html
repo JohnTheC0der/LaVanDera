@@ -54,6 +54,7 @@
             margin-bottom: -10px;
         }
 
+
         .menu-container {
             position: relative;
         }
@@ -71,6 +72,27 @@
             align-items: center;
             justify-content: center;
         }
+
+        .btn-mode {
+            display: inline-block;
+            padding: 10px 24px;
+            background: #7f1d1d;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 4px 15px rgba(127, 29, 29, 0.4);
+            border: none;
+        }
+
+        .btn-mode:hover {
+            background: #991b1b;
+            transform: translateY(-2px);
+        }
+
 
         .menu-btn:hover {
             background-color: #800055;
@@ -618,15 +640,20 @@
     <!-- HEADER -->
     <header>
         <a href="Home_Screen_Page.html" class="logo">
-            <img src="lavandera_logo.png" alt="Lavandera Logo" class="logo-img">
+            <img src="images/Lavandera_logo.png" alt="Lavandera Logo" class="logo-img">
         </a>
+
         <div class="menu-container">
             <button class="menu-btn" onclick="toggleMenu()">
                 <i class="fa-solid fa-bars"></i>
             </button>
             <div class="dropdown-menu" id="navDropdown">
-                <a href="Home_Screen_Page.html">HOME</a>
-                <a href="Log_In_Page.html">ACCOUNT</a>
+                <div class="menu-profile-cont">
+                    <a href="Home_Screen_Page.html">HOME</a>
+                    <button onclick="toggleMode()" class="btn-mode hidden">Pirate Mode</button>
+
+                </div>
+                <a href="auth/Log_In_Page.html">ACCOUNT</a>
                 <a href="Shop_Menu_Page.html">SHOPS</a>
                 <a href="Home_Screen_Page.html#about">ABOUT</a>
                 <a href="Home_Screen_Page.html#contact">CONTACT</a>
@@ -659,7 +686,7 @@
                 </div>
             </div>
             <div class="hero-image">
-                <img src="lavandera_hero_main_page_logo.jpg" alt="Laundry Service">
+                <img src="images/lavandera_hero_main_page_logo.jpg" alt="Laundry Service">
             </div>
         </div>
     </section>

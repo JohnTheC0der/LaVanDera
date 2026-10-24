@@ -11,7 +11,7 @@
         href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="lavandera_theme.css">
+    <link rel="stylesheet" href="../css/lavandera_theme.css">
     <style>
         /* Page-level modal styles for store details and suspension confirmation. */
         .lv-modal-overlay {
@@ -143,7 +143,7 @@
         <div class="lv-modal" id="storeModalPanel" role="dialog" aria-modal="true" aria-label="Store details"></div>
     </div>
 
-    <script src="lavandera_demo.js"></script>
+    <script src="../js/lavandera_demo.js"></script>
     <script>
         let activeFilter = 'all';
         let searchQuery = '';
@@ -159,7 +159,7 @@
             { key: 'suspended', label: 'Suspended' }
         ];
 
-        const me = LV.requireRole('admin', 'Log_In_Page.html');
+        const me = LV.requireRole('admin', '../auth/Log_In_Page.html');
         if (me) {
             LV.renderNav('admin', 'stores');
 

@@ -39,7 +39,7 @@
         }
 
         body {
-            background: url(lavandera_Background.png);
+            background: url(../images/lavandera_Background.png);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -279,7 +279,7 @@
 
         <!-- Brand Logo Header -->
         <div class="flex flex-col items-center justify-center mb-6">
-            <img src="Lavandera_logo.png" alt="Lavandera Logo"
+            <img src="../images/Lavandera_logo.png" alt="Lavandera Logo"
                 class="mx-auto h-20 w-auto object-contain drop-shadow-[0_0_15px_rgba(255,102,204,0.6)] mb-2"
                 onerror="this.onerror=null; this.src='https://placehold.co/200x80/1a0a19/ff66cc?text=LAVANDERA';">
             <h1 class="brand-header text-2xl font-extrabold tracking-wider">LAVANDERA</h1>
@@ -448,7 +448,7 @@
         <span id="toastMsg" class="text-sm">Success!</span>
     </div>
 
-    <script src="lavandera_demo.js"></script>
+    <script src="../js/lavandera_demo.js"></script>
     <script>
         // Toggle Tab Functions (Login vs Sign Up)
         function switchTab(type) {
@@ -544,21 +544,21 @@
                         return;
                     }
                     const destinations = {
-                        admin: 'Admin_Dashboard_Page.html',
-                        customer: 'Customer_Home_Page.html',
-                        rider: 'lavandera_rider_dashboard.html',
+                        admin: '../admin/Admin_Dashboard_Page.html',
+                        customer: '../customer/Customer_Home_Page.html',
+                        rider: '../rider/lavandera_rider_dashboard.html',
                         store: result.user.status === 'setup_required'
-                            ? 'Store_Setup_Page.html'
-                            : 'Store_Dashboard_Page.html'
+                            ? '../store/Store_Setup_Page.html'
+                            : '../store/Store_Dashboard_Page.html'
                     };
                     const allowedNext = {
-                        admin: ['Admin_Dashboard_Page.html', 'Admin_Customers_Page.html', 'Admin_Riders_Page.html', 'Admin_Stores_Page.html'],
-                        customer: ['Customer_Home_Page.html', 'Customer_Stores_Page.html', 'Customer_View_Store_Page.html',
-                            'Customer_Place_Order_Page.html', 'Customer_Confirm_Order.html', 'Customer_My_Orders_Page.html',
-                            'Customer_Profile_Page.html'],
-                        rider: ['lavandera_rider_dashboard.html', 'Rider_Orders_Page.html',
-                            'Rider_Order_History_Page.html', 'Rider_Profile_Page.html'],
-                        store: ['Store_Dashboard_Page.html', 'Store_Orders_Page.html']
+                        admin: ['../admin/Admin_Dashboard_Page.html', '../admin/Admin_Customers_Page.html', '../admin/Admin_Riders_Page.html', '../admin/Admin_Stores_Page.html'],
+                        customer: ['../customer/Customer_Home_Page.html', '../customer/Customer_Stores_Page.html', '../customer/Customer_View_Store_Page.html',
+                            '../customer/Customer_Place_Order_Page.html', '../customer/Customer_Confirm_Order.html', '../customer/Customer_My_Orders_Page.html',
+                            '../customer/Customer_Profile_Page.html'],
+                        rider: ['../rider/lavandera_rider_dashboard.html', '../rider/Rider_Orders_Page.html',
+                            '../rider/Rider_Order_History_Page.html', '../rider/Rider_Profile_Page.html'],
+                        store: ['../store/Store_Dashboard_Page.html', '../store/Store_Orders_Page.html']
                     };
                     const requested = new URLSearchParams(location.search).get('next');
                     const requestedPage = requested ? requested.split(/[?#]/)[0] : '';
@@ -567,7 +567,7 @@
                         ? requested
                         : destinations[result.user.role];
                     const destination = result.user.role === 'store' && result.user.status === 'setup_required'
-                        ? 'Store_Setup_Page.html'
+                        ? '../store/Store_Setup_Page.html'
                         : requestedDestination;
                     location.href = destination;
                     return;
@@ -591,7 +591,7 @@
                     return;
                 }
                 if (signupRole === 'store') {
-                    location.href = 'Store_Setup_Page.html';
+                    location.href = '../store/Store_Setup_Page.html';
                     return;
                 }
                 if (result.pending) {
@@ -602,7 +602,7 @@
                     event.target.reset();
                     return;
                 }
-                location.href = 'Customer_Home_Page.html';
+                location.href = '../customer/Customer_Home_Page.html';
             } catch (error) {
                 showNotification(error.message || 'Unable to complete the request. Please try again.');
             }

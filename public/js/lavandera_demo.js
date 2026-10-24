@@ -441,7 +441,7 @@ const LV = (function () {
 
     function session() { return read(K.session, null); }
     function clearSession() { localStorage.removeItem(K.session); }
-    function logout() { clearSession(); location.href = 'Log_In_Page.html'; }
+    function logout() { clearSession(); location.href = '../auth/Log_In_Page.html'; }
 
     function requireRole(role) {
         const s = session();
@@ -460,25 +460,25 @@ const LV = (function () {
     /* ------------------------------------------------------ nav ----- */
     const NAV = {
         customer: [
-            { key: 'home',    href: 'Customer_Home_Page.html',          label: 'Home',      icon: 'fa-house' },
-            { key: 'stores',  href: 'Customer_Stores_Page.html',        label: 'Stores',    icon: 'fa-store' },
-            { key: 'orders',  href: 'Customer_My_Orders_Page.html',     label: 'My Orders', icon: 'fa-basket-shopping' },
-            { key: 'place',   href: 'Customer_Place_Order_Page.html',   label: 'Place Order', icon: 'fa-plus' }
+            { key: 'home',    href: '../customer/Customer_Home_Page.html',          label: 'Home',      icon: 'fa-house' },
+            { key: 'stores',  href: '../customer/Customer_Stores_Page.html',        label: 'Stores',    icon: 'fa-store' },
+            { key: 'orders',  href: '../customer/Customer_My_Orders_Page.html',     label: 'My Orders', icon: 'fa-basket-shopping' },
+            { key: 'place',   href: '../customer/Customer_Place_Order_Page.html',   label: 'Place Order', icon: 'fa-plus' }
         ],
         admin: [
-            { key: 'dashboard', href: 'Admin_Dashboard_Page.html',  label: 'Dashboard',  icon: 'fa-chart-line' },
-            { key: 'customers', href: 'Admin_Customers_Page.html',  label: 'Customers',  icon: 'fa-users' },
-            { key: 'riders',    href: 'Admin_Riders_Page.html',     label: 'Riders',     icon: 'fa-motorcycle' },
-            { key: 'stores',    href: 'Admin_Stores_Page.html',     label: 'Stores',     icon: 'fa-store' }
+            { key: 'dashboard', href: '../admin/Admin_Dashboard_Page.html',  label: 'Dashboard',  icon: 'fa-chart-line' },
+            { key: 'customers', href: '../admin/Admin_Customers_Page.html',  label: 'Customers',  icon: 'fa-users' },
+            { key: 'riders',    href: '../admin/Admin_Riders_Page.html',     label: 'Riders',     icon: 'fa-motorcycle' },
+            { key: 'stores',    href: '../admin/Admin_Stores_Page.html',     label: 'Stores',     icon: 'fa-store' }
         ],
         store: [
-            { key: 'dashboard', href: 'Store_Dashboard_Page.html', label: 'Dashboard', icon: 'fa-store' },
-            { key: 'orders', href: 'Store_Orders_Page.html', label: 'Orders', icon: 'fa-boxes-stacked' }
+            { key: 'dashboard', href: '../store/Store_Dashboard_Page.html', label: 'Dashboard', icon: 'fa-store' },
+            { key: 'orders', href: '../store/Store_Orders_Page.html', label: 'Orders', icon: 'fa-boxes-stacked' }
         ]
     };
 
     const DROPDOWN = {
-        customer: [{ href: 'Customer_Profile_Page.html', label: 'My Profile', icon: 'fa-user' }],
+        customer: [{ href: '../customer/Customer_Profile_Page.html', label: 'My Profile', icon: 'fa-user' }],
         admin: [],
         store: []
     };
@@ -512,9 +512,9 @@ const LV = (function () {
 
         host.innerHTML =
             '<header class="lv-nav"><div class="lv-nav-inner">' +
-                '<a class="lv-brand" href="' + (role === 'admin' ? 'Admin_Dashboard_Page.html' :
-                    role === 'store' ? 'Store_Dashboard_Page.html' : 'Customer_Home_Page.html') + '">' +
-                    '<img src="LAVANDERA.svg" alt="LaVanDera" onerror="this.onerror=null; this.src=\'Lavandera_logo.png\';">' +
+                '<a class="lv-brand" href="' + (role === 'admin' ? '../admin/Admin_Dashboard_Page.html' :
+                    role === 'store' ? '../store/Store_Dashboard_Page.html' : '../customer/Customer_Home_Page.html') + '">' +
+                    '<img src="../images/LAVANDERA.svg" alt="LaVanDera" onerror="this.onerror=null; this.src=\'Lavandera_logo.png\';">' +
                 '</a>' +
                 '<div class="lv-menu-wrap">' +
                     '<button class="lv-menu-btn" id="lvMenuBtn" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="lvDropdown"><i class="fa-solid fa-bars"></i></button>' +
