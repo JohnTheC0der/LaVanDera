@@ -1,0 +1,120 @@
+.lv-logout-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(69, 0, 46, 0.76);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.18s ease, visibility 0s linear 0.18s;
+}
+
+.lv-logout-overlay.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition-delay: 0s;
+}
+
+.lv-logout-dialog {
+    width: min(100%, 576px);
+    padding: 34px 30px 30px;
+    border-radius: 24px;
+    background: #fff;
+    box-shadow: 0 24px 64px rgba(35, 0, 24, 0.34);
+    color: #5a003c;
+}
+
+.lv-logout-dialog h2 {
+    margin: 0;
+    color: #5a003c;
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.lv-logout-dialog p {
+    margin: 22px 0 28px;
+    color: #5a003c;
+    font-size: 19px;
+    line-height: 1.5;
+}
+
+.lv-logout-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.lv-logout-actions button {
+    min-height: 56px;
+    padding: 12px 22px;
+    border: 0;
+    border-radius: 12px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.lv-logout-cancel {
+    background: #f7f2f5;
+    color: #5a003c;
+}
+
+.lv-logout-cancel:hover {
+    background: #efe4eb;
+}
+
+.lv-logout-confirm {
+    background: #5a003c;
+    color: #fff;
+}
+
+.lv-logout-confirm:hover {
+    background: #800055;
+}
+
+.lv-logout-actions button:hover {
+    transform: translateY(-1px);
+}
+
+.lv-logout-actions button:focus-visible {
+    outline: 3px solid #e58db5;
+    outline-offset: 3px;
+}
+
+body.lv-logout-open {
+    overflow: hidden;
+}
+
+@media (max-width: 520px) {
+    .lv-logout-dialog {
+        padding: 26px 22px 22px;
+    }
+
+    .lv-logout-dialog h2 {
+        font-size: 26px;
+    }
+
+    .lv-logout-dialog p {
+        margin: 18px 0 24px;
+        font-size: 17px;
+    }
+
+    .lv-logout-actions {
+        flex-direction: column-reverse;
+    }
+
+    .lv-logout-actions button {
+        width: 100%;
+        min-height: 50px;
+        font-size: 16px;
+    }
+}

@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="lavandera_theme.css">
+    <link rel="stylesheet" href="../css/lavandera_theme.css">
     <style>
         .setup-form { max-width: 900px; margin: 0 auto 48px; }
         .setup-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
@@ -33,7 +33,7 @@
         <section id="setupAccess" class="lv-card lv-card-pad setup-form" hidden>
             <h2 class="lv-section-title">Store account required</h2>
             <p class="lv-sub">Create or sign in to your store account to complete setup.</p>
-            <a class="lv-btn lv-btn-primary lv-mt" href="Log_In_Page.html">Go to sign in</a>
+            <a class="lv-btn lv-btn-primary lv-mt" href="../auth/Log_In_Page.html">Go to sign in</a>
         </section>
         <form id="setupForm" class="lv-card lv-card-pad setup-form" hidden>
             <p class="setup-note">All three bag prices are required. Images are saved in this browser for the frontend demo and must be 1.5 MB or smaller.</p>
@@ -95,7 +95,7 @@
             </div>
         </section>
     </div>
-    <script src="lavandera_demo.js"></script>
+    <script src="../js/lavandera_demo.js"></script>
     <script>
         const session = LV.session();
         const store = session && session.role === 'store' ? LV.store(session.id) : null;
@@ -191,12 +191,7 @@
         });
 
         document.getElementById('signOutButton').addEventListener('click', function () {
-            openSetupDialog('Sign out?', 'Are you sure you want to sign out before submitting your store application?', {
-                cancelText: 'Stay signed in',
-                confirmText: 'Sign out',
-                focusConfirm: true,
-                onConfirm: LV.logout
-            });
+            LV.requestLogout(this, 'Are you sure you want to sign out before submitting your store application?');
         });
 
         async function submitSetupApplication() {

@@ -806,8 +806,9 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="rider_header.css">
-    <script src="lavandera_demo.js"></script>
+    <link rel="stylesheet" href="../css/rider_header.css">
+    <link rel="stylesheet" href="../css/lavandera_logout.css">
+    <script src="../js/lavandera_demo.js"></script>
     <script>LV.requireRole('rider');</script>
 </head>
 
@@ -816,7 +817,7 @@
     <!-- HEADER -->
     <header class="rider-site-header">
         <a href="lavandera_rider_dashboard.html" class="logo" aria-label="Lavandera Home">
-            <img src="LAVANDERA.svg" alt="Lavandera Logo" class="logo-img">
+            <img src="../images/LAVANDERA.svg" alt="Lavandera Logo" class="logo-img">
         </a>
 
         <div class="menu-container">
@@ -833,7 +834,7 @@
                 <a href="lavandera_rider_dashboard.html"><i class="fa-solid fa-house"></i>Dashboard</a>
                 <a href="Rider_Orders_Page.html"><i class="fa-solid fa-boxes-stacked"></i>Current Orders</a>
                 <a href="Rider_Profile_Page.html" aria-current="page"><i class="fa-solid fa-user"></i>Profile</a>
-                <a href="Log_In_Page.html" onclick="requestProfileLogout(); return false;"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
+                <a href="../auth/Log_In_Page.html" onclick="LV.requestLogout(document.querySelector('.menu-btn')); return false;"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
             </div>
         </div>
     </header>
@@ -1295,15 +1296,6 @@
                 first.focus();
             }
         });
-
-        function requestProfileLogout() {
-            openProfileDialog('Sign out?', 'Are you sure you want to sign out of your rider account?', {
-                cancelText: 'Stay signed in',
-                confirmText: 'Sign out',
-                focusConfirm: true,
-                onConfirm: LV.logout
-            });
-        }
 
         function requestCancelEdit() {
             openProfileDialog('Close the edit form?', 'Your unsaved changes will remain in the form until you save them.', {

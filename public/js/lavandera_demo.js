@@ -443,6 +443,79 @@ const LV = (function () {
     function clearSession() { localStorage.removeItem(K.session); }
     function logout() { clearSession(); location.href = '../auth/Log_In_Page.html'; }
 
+    let logoutDialog = null;
+    let logoutTrigger = null;
+    let previousBodyOverflow = '';
+
+    function closeLogoutDialog(restoreFocus) {
+        if (!logoutDialog || !logoutDialog.classList.contains('open')) return;
+        logoutDialog.classList.remove('open');
+        logoutDialog.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('lv-logout-open');
+        document.body.style.overflow = previousBodyOverflow;
+        if (restoreFocus && logoutTrigger && logoutTrigger.isConnected) logoutTrigger.focus();
+        logoutTrigger = null;
+    }
+
+    function requestLogout(trigger, message) {
+        if (!logoutDialog) {
+            logoutDialog = document.createElement('div');
+            logoutDialog.className = 'lv-logout-overlay';
+            logoutDialog.id = 'lvLogoutOverlay';
+            logoutDialog.setAttribute('aria-hidden', 'true');
+            logoutDialog.innerHTML =
+                '<section class="lv-logout-dialog" role="dialog" aria-modal="true" ' +
+                'aria-labelledby="lvLogoutTitle" aria-describedby="lvLogoutMessage" tabindex="-1">' +
+                '<h2 id="lvLogoutTitle">Sign out?</h2>' +
+                '<p id="lvLogoutMessage"></p>' +
+                '<div class="lv-logout-actions">' +
+                '<button class="lv-logout-cancel" type="button">Stay signed in</button>' +
+                '<button class="lv-logout-confirm" type="button">Sign out</button>' +
+                '</div></section>';
+            document.body.appendChild(logoutDialog);
+
+            logoutDialog.querySelector('.lv-logout-cancel').addEventListener('click', function () {
+                closeLogoutDialog(true);
+            });
+            logoutDialog.querySelector('.lv-logout-confirm').addEventListener('click', logout);
+            logoutDialog.addEventListener('click', function (event) {
+                if (event.target === logoutDialog) closeLogoutDialog(true);
+            });
+            document.addEventListener('keydown', function (event) {
+                if (!logoutDialog.classList.contains('open')) return;
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    closeLogoutDialog(true);
+                    return;
+                }
+                if (event.key !== 'Tab') return;
+                const buttons = Array.from(logoutDialog.querySelectorAll('button'));
+                if (event.shiftKey && document.activeElement === buttons[0]) {
+                    event.preventDefault();
+                    buttons[buttons.length - 1].focus();
+                } else if (!event.shiftKey && document.activeElement === buttons[buttons.length - 1]) {
+                    event.preventDefault();
+                    buttons[0].focus();
+                }
+            });
+        }
+
+        const user = session();
+        const pathRole = location.pathname.split('/').filter(Boolean)[0];
+        const role = user && user.role
+            ? user.role
+            : ['admin', 'customer', 'rider', 'store'].indexOf(pathRole) > -1 ? pathRole : 'account';
+        document.getElementById('lvLogoutMessage').textContent =
+            message || 'Are you sure you want to sign out of your ' + role + ' account?';
+        logoutTrigger = trigger || document.activeElement;
+        previousBodyOverflow = document.body.style.overflow;
+        document.body.classList.add('lv-logout-open');
+        document.body.style.overflow = 'hidden';
+        logoutDialog.classList.add('open');
+        logoutDialog.setAttribute('aria-hidden', 'false');
+        logoutDialog.querySelector('.lv-logout-cancel').focus();
+    }
+
     function requireRole(role) {
         const s = session();
         if (s && s.role === role) return s;
@@ -514,7 +587,7 @@ const LV = (function () {
             '<header class="lv-nav"><div class="lv-nav-inner">' +
                 '<a class="lv-brand" href="' + (role === 'admin' ? '../admin/Admin_Dashboard_Page.html' :
                     role === 'store' ? '../store/Store_Dashboard_Page.html' : '../customer/Customer_Home_Page.html') + '">' +
-                    '<img src="../images/LAVANDERA.svg" alt="LaVanDera" onerror="this.onerror=null; this.src=\'Lavandera_logo.png\';">' +
+                    '<img src="../images/LAVANDERA.svg" alt="LaVanDera" onerror="this.onerror=null; this.src=\'../images/Lavandera_logo.png\';">' +
                 '</a>' +
                 '<div class="lv-menu-wrap">' +
                     '<button class="lv-menu-btn" id="lvMenuBtn" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="lvDropdown"><i class="fa-solid fa-bars"></i></button>' +
@@ -526,16 +599,23 @@ const LV = (function () {
                         '</div>' +
                         links +
                         extra +
-                        '<button class="lv-dropdown-item danger" type="button" onclick="LV.logout()"><i class="fa-solid fa-right-from-bracket"></i>Logout</button>' +
+                        '<button class="lv-dropdown-item danger" type="button"><i class="fa-solid fa-right-from-bracket"></i>Logout</button>' +
                     '</nav>' +
                 '</div>' +
             '</div></header>';
 
         const btn = document.getElementById('lvMenuBtn'), dd = document.getElementById('lvDropdown');
+        const logoutButton = dd.querySelector('.lv-dropdown-item.danger');
         btn.addEventListener('click', function (e) {
             e.stopPropagation();
             const isOpen = dd.classList.toggle('open');
             btn.setAttribute('aria-expanded', String(isOpen));
+        });
+        logoutButton.addEventListener('click', function (e) {
+            e.preventDefault();
+            dd.classList.remove('open');
+            btn.setAttribute('aria-expanded', 'false');
+            requestLogout(btn);
         });
         document.addEventListener('click', function (e) {
             if (!dd.contains(e.target) && !btn.contains(e.target)) {
@@ -604,7 +684,7 @@ const LV = (function () {
         addOrder: addOrder, setOrderStatus: setOrderStatus, setUserStatus: setUserStatus, updateCustomer: updateCustomer,
         updateStore: updateStore,
         login: login, signupAccount: signupAccount, signupCustomer: signupCustomer,
-        session: session, clearSession: clearSession, logout: logout, requireRole: requireRole,
+        session: session, clearSession: clearSession, logout: logout, requestLogout: requestLogout, requireRole: requireRole,
         renderNav: renderNav, toast: toast, adminStats: adminStats, statusBreakdown: statusBreakdown
     };
 })();

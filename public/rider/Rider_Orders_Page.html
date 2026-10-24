@@ -1042,54 +1042,6 @@
             outline-offset: 2px;
         }
 
-        /* ===== LOGOUT MODAL SPECIFIC STYLES ===== */
-        #logoutModal .modal-content {
-            max-width: 420px;
-        }
-
-        #logoutModal .modal-header {
-            flex-direction: column;
-            text-align: center;
-            gap: 0;
-        }
-
-        #logoutModal .modal-title {
-            justify-content: center;
-            font-size: 22px;
-            width: 100%;
-        }
-
-        #logoutModal .close-btn {
-            position: absolute;
-            right: 25px;
-            top: 25px;
-        }
-
-        #logoutModal .modal-body {
-            text-align: center;
-            padding: 35px 30px 30px;
-        }
-
-        #logoutModal .modal-body p {
-            font-size: 16px;
-            color: var(--color-text);
-            margin-bottom: 28px;
-            font-weight: 500;
-            line-height: 1.5;
-        }
-
-        #logoutModal .modal-actions {
-            flex-direction: column;
-            gap: 10px;
-            border-top: none;
-            padding-top: 0;
-        }
-
-        #logoutModal .modal-btn {
-            padding: 14px;
-            font-size: 15px;
-        }
-
         /* ===== HISTORY PANEL ===== */
         .deliveries-panel {
             background-color: white;
@@ -1369,15 +1321,6 @@
                 font-size: 13px;
             }
 
-            #logoutModal .modal-body {
-                padding: 25px 20px 20px;
-            }
-
-            #logoutModal .modal-body p {
-                font-size: 15px;
-                margin-bottom: 20px;
-            }
-
             .delivery-header {
                 flex-direction: column;
                 gap: 8px;
@@ -1402,8 +1345,9 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="rider_header.css">
-    <script src="lavandera_demo.js"></script>
+    <link rel="stylesheet" href="../css/rider_header.css">
+    <link rel="stylesheet" href="../css/lavandera_logout.css">
+    <script src="../js/lavandera_demo.js"></script>
     <script>LV.requireRole('rider');</script>
 </head>
 
@@ -1412,7 +1356,7 @@
     <!-- HEADER -->
     <header class="rider-site-header">
         <a href="lavandera_rider_dashboard.html" class="logo">
-            <img src="LAVANDERA.svg" alt="Lavandera Logo" class="logo-img">
+            <img src="../images/LAVANDERA.svg" alt="Lavandera Logo" class="logo-img">
         </a>
 
         <div class="menu-container">
@@ -1430,7 +1374,7 @@
                 <a href="Rider_Orders_Page.html" aria-current="page"><i class="fa-solid fa-boxes-stacked"></i>Current
                     Orders</a>
                 <a href="Rider_Profile_Page.html"><i class="fa-solid fa-user"></i>Profile</a>
-                <a href="Log_In_Page.html" onclick="openLogoutModal(); return false;"><i
+                <a href="../auth/Log_In_Page.html" onclick="LV.requestLogout(document.querySelector('.menu-btn')); return false;"><i
                         class="fa-solid fa-sign-out-alt"></i>Logout</a>
             </div>
         </div>
@@ -1745,29 +1689,6 @@
         </div>
     </div>
 
-    <!-- LOGOUT MODAL -->
-    <div class="modal" id="logoutModal" role="dialog" aria-labelledby="logoutTitle" aria-hidden="true">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title" id="logoutTitle">
-                    <i class="fa-solid fa-sign-out-alt" aria-hidden="true"></i>
-                    Log Out
-                </div>
-                <button class="close-btn" onclick="closeLogoutModal()" aria-label="Close logout dialog">
-                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-                </button>
-            </div>
-
-            <div class="modal-body">
-                <p>Are you sure you want to log out?</p>
-                <div class="modal-actions">
-                    <button class="modal-btn modal-btn-primary" onclick="confirmLogout()">Yes, Log Out</button>
-                    <button class="modal-btn modal-btn-secondary" onclick="closeLogoutModal()">Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="modal" id="riderActionModal" role="dialog" aria-modal="true" aria-labelledby="riderActionTitle"
         aria-describedby="riderActionMessage" aria-hidden="true">
         <div class="modal-content action-dialog">
@@ -1990,26 +1911,6 @@
             }
 
             window.closeModal = closeModal;
-
-            function closeLogoutModal() {
-                $('#logoutModal').removeClass('show').attr('aria-hidden', 'true');
-                $('body').css('overflow', 'auto');
-                if (logoutTrigger && logoutTrigger.isConnected) logoutTrigger.focus();
-            }
-
-            let logoutTrigger = null;
-            window.closeLogoutModal = closeLogoutModal;
-
-            window.openLogoutModal = function () {
-                logoutTrigger = document.activeElement;
-                $('#logoutModal').addClass('show').attr('aria-hidden', 'false');
-                $('body').css('overflow', 'hidden');
-                $('#logoutModal .modal-btn-secondary').focus();
-            };
-
-            window.confirmLogout = function () {
-                LV.logout();
-            };
 
             let activeCurrentDetailsOrder = null;
             let riderActionCallback = null;
@@ -2241,12 +2142,10 @@
 
             $(window).on('click', (e) => {
                 if ($(e.target).is('#orderModal')) closeModal();
-                if ($(e.target).is('#logoutModal')) closeLogoutModal();
             });
             $(document).on('keydown', (e) => {
                 if (e.key !== 'Escape' || $(riderActionModal).hasClass('show')) return;
-                if ($('#logoutModal').hasClass('show')) closeLogoutModal();
-                else closeModal();
+                closeModal();
             });
 
             // 6. INITIALIZE

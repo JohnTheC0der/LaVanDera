@@ -217,16 +217,6 @@
             document.getElementById('storeAccessNotice').hidden = false;
         } else {
             LV.renderNav('store', 'dashboard');
-            const logoutButton = document.querySelector('#lv-nav .lv-dropdown-item.danger');
-            if (logoutButton) logoutButton.onclick = function (event) {
-                event.preventDefault();
-                openStoreDialog('Sign out?', 'Are you sure you want to sign out of your store account?', {
-                    cancelText: 'Stay signed in',
-                    confirmText: 'Sign out',
-                    focusConfirm: true,
-                    onConfirm: LV.logout
-                });
-            };
             document.getElementById('storePortal').hidden = false;
             populateStoreForm();
             renderStoreOverview();

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LAVANDERA - Rider Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="lavandera_theme.css">
+    <link rel="stylesheet" href="../css/lavandera_theme.css">
 
     <!-- JQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -925,54 +925,6 @@
             outline-offset: 2px;
         }
 
-        /* ===== LOGOUT MODAL SPECIFIC STYLES ===== */
-        #logoutModal .modal-content {
-            max-width: 420px;
-        }
-
-        #logoutModal .modal-header {
-            flex-direction: column;
-            text-align: center;
-            gap: 0;
-        }
-
-        #logoutModal .modal-title {
-            justify-content: center;
-            font-size: 22px;
-            width: 100%;
-        }
-
-        #logoutModal .close-btn {
-            position: absolute;
-            right: 25px;
-            top: 25px;
-        }
-
-        #logoutModal .modal-body {
-            text-align: center;
-            padding: 35px 30px 30px;
-        }
-
-        #logoutModal .modal-body p {
-            font-size: 16px;
-            color: var(--color-text);
-            margin-bottom: 28px;
-            font-weight: 500;
-            line-height: 1.5;
-        }
-
-        #logoutModal .modal-actions {
-            flex-direction: column;
-            gap: 10px;
-            border-top: none;
-            padding-top: 0;
-        }
-
-        #logoutModal .modal-btn {
-            padding: 14px;
-            font-size: 15px;
-        }
-
         .lv-modal-overlay {
             position: fixed;
             inset: 0;
@@ -1047,8 +999,8 @@
             opacity: 0.85;
         }
     </style>
-    <link rel="stylesheet" href="rider_header.css">
-    <script src="lavandera_demo.js"></script>
+    <link rel="stylesheet" href="../css/rider_header.css">
+    <script src="../js/lavandera_demo.js"></script>
     <script>LV.requireRole('rider');</script>
 </head>
 
@@ -1087,7 +1039,7 @@
     <!-- HEADER -->
     <header class="rider-site-header">
         <a href="lavandera_rider_dashboard.html" class="logo">
-            <img src="LAVANDERA.svg" alt="Lavandera Logo" class="logo-img">
+            <img src="../images/LAVANDERA.svg" alt="Lavandera Logo" class="logo-img">
         </a>
 
         <div class="menu-container">
@@ -1118,7 +1070,7 @@
             <div href="Rider_Profile_Page.html" class="welcome-section">
                 <div class="welcome-header">
                     <div class="welcome-profile">
-                        <img src="jaime-rider.jpg" alt="Rider Avatar" class="welcome-avatar">
+                        <img src="../images/jaime-rider.jpg" alt="Rider Avatar" class="welcome-avatar">
                     </div>
                     <div class="welcome-text">
                         <h1 id="welcomeHeading">Welcome back!</h1>
@@ -1350,30 +1302,6 @@
         </div>
     </div>
 
-    <!-- LOGOUT MODAL -->
-    <div class="modal lv-modal-overlay" id="logoutModal" aria-hidden="true">
-        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="logoutTitle" tabindex="-1">
-            <div class="modal-header">
-                <div class="modal-title" id="logoutTitle">
-                    <i class="fa-solid fa-sign-out-alt" aria-hidden="true"></i>
-                    Log Out
-                </div>
-                <button class="close-btn" type="button" id="closeLogoutBtn" aria-label="Close logout dialog">
-                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-                </button>
-            </div>
-
-            <div class="modal-body">
-                <p>Are you sure you want to log out?</p>
-                <div class="modal-actions">
-                    <button class="modal-btn modal-btn-primary" type="button" id="confirmLogoutBtn">Yes, Log
-                        Out</button>
-                    <button class="modal-btn modal-btn-secondary" type="button" id="cancelLogoutBtn">Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- FOOTER -->
     <footer>
         <p>&copy; 2026 LAVANDERA. Rider Dashboard. All Rights Reserved.</p>
@@ -1386,7 +1314,6 @@
             let previousBodyOverflow = '';
             const skipModal = document.getElementById('skipOrderModal');
             const acceptModal = document.getElementById('acceptOrderModal');
-            const logoutModal = document.getElementById('logoutModal');
             const riderSession = LV.session();
             const rider = riderSession && riderSession.role === 'rider'
                 ? LV.riders().find(function (item) { return item.id === riderSession.id; })
@@ -1520,24 +1447,14 @@
                 LV.toast(shopName + ' removed from available deliveries.', 'fa-circle-check');
             });
 
-            // --- LOGOUT MODAL ---
             $("#logoutLink").on("click", function (e) {
                 e.preventDefault();
                 $("#navDropdown").removeClass("show");
                 $("#menuToggleBtn").attr("aria-expanded", "false");
-                openActionModal(logoutModal, document.getElementById('menuToggleBtn'),
-                    document.getElementById('confirmLogoutBtn'));
+                LV.requestLogout(document.getElementById('menuToggleBtn'));
             });
 
-            $("#closeLogoutBtn, #cancelLogoutBtn").on("click", function () {
-                closeActionModal(logoutModal, true);
-            });
-
-            $("#confirmLogoutBtn").on("click", function () {
-                LV.logout();
-            });
-
-            [skipModal, acceptModal, logoutModal].forEach(function (modal) {
+            [skipModal, acceptModal].forEach(function (modal) {
                 modal.addEventListener('click', function (event) {
                     if (event.target === modal) closeActionModal(modal, true);
                 });
@@ -1554,8 +1471,7 @@
                 const openModal = skipModal.classList.contains('open')
                     ? skipModal
                     : acceptModal.classList.contains('open')
-                        ? acceptModal
-                        : logoutModal.classList.contains('open') ? logoutModal : null;
+                        ? acceptModal : null;
                 if (!openModal) return;
                 if (event.key === 'Escape') {
                     closeActionModal(openModal, true);

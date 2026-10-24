@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="lavandera_theme.css">
+    <link rel="stylesheet" href="../css/lavandera_theme.css">
     <style>
         .store-order-list {
             display: grid;
@@ -120,7 +120,7 @@
         <section id="ordersAccess" class="lv-card lv-card-pad" hidden>
             <h2 class="lv-section-title">Store sign-in required</h2>
             <p class="lv-sub">Sign in with an approved store account to manage orders.</p>
-            <a class="lv-btn lv-btn-primary lv-mt" href="Log_In_Page.html">Go to sign in</a>
+            <a class="lv-btn lv-btn-primary lv-mt" href="../auth/Log_In_Page.html">Go to sign in</a>
         </section>
         <section id="ordersDisabled" class="lv-card lv-card-pad" hidden>
             <h2 class="lv-section-title">Store orders are unavailable</h2>
@@ -166,7 +166,7 @@
             </div>
         </section>
     </div>
-    <script src="lavandera_demo.js"></script>
+    <script src="../js/lavandera_demo.js"></script>
     <script>
         const storeSession = LV.session();
         const store = storeSession && storeSession.role === 'store' ? LV.store(storeSession.id) : null;
@@ -183,11 +183,6 @@
             document.getElementById('ordersDisabledMessage').textContent = statusMessages[store.status] || 'This store account cannot manage orders.';
         } else {
             LV.renderNav('store', 'orders');
-            const logoutButton = document.querySelector('#lv-nav .lv-dropdown-item.danger');
-            if (logoutButton) logoutButton.onclick = function (event) {
-                event.preventDefault();
-                openStoreActionModal('logout', null, logoutButton);
-            };
             document.getElementById('orderPortal').hidden = false;
             renderOrders();
         }
@@ -276,8 +271,7 @@
                 confirm: ['Confirm order?', 'Confirm this request and send the pickup job to available riders.'],
                 reject: ['Reject order?', 'Reject this customer request. You may include an optional reason.'],
                 receive: ['Confirm laundry received?', 'Confirm that the rider has delivered the laundry and, if applicable, cash payment.'],
-                ready: ['Return order to customer?', 'Mark this finished order as ready and send a return job to available riders.'],
-                logout: ['Sign out?', 'Are you sure you want to sign out of your store account?']
+                ready: ['Return order to customer?', 'Mark this finished order as ready and send a return job to available riders.']
             }[action];
             if (!settings) return;
             pendingStoreAction = { action: action, id: id };
@@ -341,10 +335,6 @@
             }
             const action = pendingStoreAction.action;
             const id = pendingStoreAction.id;
-            if (action === 'logout') {
-                LV.logout();
-                return;
-            }
             const reason = document.getElementById('rejectReason').value.trim();
             const transitions = {
                 confirm: ['waiting_for_driver', 'Store confirmed order', 'Order confirmed and sent to available riders.'],

@@ -252,6 +252,19 @@
             font-size: 16px;
         }
 
+        .delivery-order {
+            margin-left: 6px;
+            color: #8a6b7d;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .empty-history {
+            padding: 20px 0;
+            color: #777;
+            text-align: center;
+        }
+
         .delivery-distance {
             background-color: #e58db5;
             color: white;
@@ -307,19 +320,10 @@
                 gap: 6px;
             }
         }
-        .history-modal { position: fixed; inset: 0; z-index: 2000; display: none; align-items: center; justify-content: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); overflow-y: auto; overscroll-behavior: contain; background: rgba(38, 0, 26, .58); }
-        .history-modal.open { display: flex; }
-        .history-modal-card { width: min(100%, 420px); max-height: calc(100vh - 40px); max-height: calc(100dvh - 40px); margin: auto; overflow-y: auto; overscroll-behavior: contain; padding: 24px; border-radius: 18px; background: #fff; box-shadow: 0 20px 60px rgba(35, 0, 24, .3); }
-        .history-modal-card h2 { margin: 0 0 10px; color: #5a003c; }
-        .history-modal-card p { margin: 0; color: #45002e; }
-        .history-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
-        .history-modal-actions button { min-height: 42px; padding: 10px 16px; border: 0; border-radius: 8px; cursor: pointer; font: inherit; font-weight: 700; }
-        .history-modal-cancel { background: #f8f3f7; color: #5a003c; }
-        .history-modal-confirm { background: #5a003c; color: #fff; }
-        @media (max-width: 480px) { .history-modal-actions { flex-direction: column-reverse; } .history-modal-actions button { width: 100%; } }
     </style>
-    <link rel="stylesheet" href="rider_header.css">
-    <script src="lavandera_demo.js"></script>
+    <link rel="stylesheet" href="../css/rider_header.css">
+    <link rel="stylesheet" href="../css/lavandera_logout.css">
+    <script src="../js/lavandera_demo.js"></script>
     <script>LV.requireRole('rider');</script>
 </head>
 
@@ -327,7 +331,7 @@
     <!-- HEADER -->
     <header class="rider-site-header">
         <a href="lavandera_rider_dashboard.html" class="logo">
-            <img src="LAVANDERA.svg" alt="Lavandera Logo" class="logo-img">
+            <img src="../images/LAVANDERA.svg" alt="Lavandera Logo" class="logo-img">
         </a>
 
         <div class="menu-container">
@@ -344,7 +348,7 @@
                 <a href="lavandera_rider_dashboard.html"><i class="fa-solid fa-house"></i>Dashboard</a>
                 <a href="Rider_Orders_Page.html"><i class="fa-solid fa-boxes-stacked"></i>Current Orders</a>
                 <a href="Rider_Profile_Page.html"><i class="fa-solid fa-user"></i>Profile</a>
-                <a href="Log_In_Page.html" onclick="openHistoryLogoutModal(); return false;"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
+                <a href="../auth/Log_In_Page.html" onclick="LV.requestLogout(document.querySelector('.menu-btn')); return false;"><i class="fa-solid fa-sign-out-alt"></i>Logout</a>
             </div>
         </div>
     </header>
@@ -367,108 +371,68 @@
         </div>
 
         <!-- DELIVERIES PANEL -->
-        <div class="deliveries-panel">
-            <div class="delivery-item">
-                <div class="delivery-header">
-                    <div class="delivery-shop">Mama Mo Laundry</div>
-                    <div class="delivery-distance">2.3 km</div>
-                </div>
-                <div class="delivery-address">
-                    <i class="fa-solid fa-location-dot"></i>
-                    <span>123 Maple Street, Marikina</span>
-                </div>
-                <div class="delivery-meta">
-                    <span><i class="fa-solid fa-clock"></i> Completed 1 hour ago</span>
-                    <span><i class="fa-solid fa-money-bill"></i> ₱150</span>
-                </div>
-            </div>
-
-            <div class="delivery-item">
-                <div class="delivery-header">
-                    <div class="delivery-shop">Kuya Mo Laundry</div>
-                    <div class="delivery-distance">3.1 km</div>
-                </div>
-                <div class="delivery-address">
-                    <i class="fa-solid fa-location-dot"></i>
-                    <span>456 Oak Avenue, Quezon City</span>
-                </div>
-                <div class="delivery-meta">
-                    <span><i class="fa-solid fa-clock"></i> Completed 2 hours ago</span>
-                    <span><i class="fa-solid fa-money-bill"></i> ₱200</span>
-                </div>
-            </div>
-
-            <div class="delivery-item">
-                <div class="delivery-header">
-                    <div class="delivery-shop">Lola Mo Dry Cleaning</div>
-                    <div class="delivery-distance">1.8 km</div>
-                </div>
-                <div class="delivery-address">
-                    <i class="fa-solid fa-location-dot"></i>
-                    <span>789 Pine Road, Makati</span>
-                </div>
-                <div class="delivery-meta">
-                    <span><i class="fa-solid fa-clock"></i> Completed 3 hours ago</span>
-                    <span><i class="fa-solid fa-money-bill"></i> ₱175</span>
-                </div>
-            </div>
+        <div class="deliveries-panel" id="historyOrders" aria-live="polite">
+            <p class="empty-history">Loading completed deliveries...</p>
         </div>
     </div>
 
-    <div class="history-modal" id="historyLogoutModal" aria-hidden="true">
-        <section class="history-modal-card" role="dialog" aria-modal="true" aria-labelledby="historyLogoutTitle" aria-describedby="historyLogoutMessage" tabindex="-1">
-            <h2 id="historyLogoutTitle">Sign out?</h2>
-            <p id="historyLogoutMessage">Are you sure you want to sign out of your rider account?</p>
-            <div class="history-modal-actions">
-                <button class="history-modal-cancel" type="button" id="cancelHistoryLogout">Stay signed in</button>
-                <button class="history-modal-confirm" type="button" id="confirmHistoryLogout">Sign out</button>
-            </div>
-        </section>
-    </div>
-
-
     <script>
-        let historyLogoutTrigger = null;
-
-        function openHistoryLogoutModal() {
-            historyLogoutTrigger = document.activeElement;
-            const modal = document.getElementById('historyLogoutModal');
-            modal.classList.add('open');
-            modal.setAttribute('aria-hidden', 'false');
-            document.body.style.overflow = 'hidden';
-            document.getElementById('cancelHistoryLogout').focus();
-        }
-
-        function closeHistoryLogoutModal(restoreFocus) {
-            const modal = document.getElementById('historyLogoutModal');
-            modal.classList.remove('open');
-            modal.setAttribute('aria-hidden', 'true');
-            document.body.style.overflow = '';
-            if (restoreFocus && historyLogoutTrigger && historyLogoutTrigger.isConnected) historyLogoutTrigger.focus();
-        }
-
-        document.getElementById('cancelHistoryLogout').addEventListener('click', function () { closeHistoryLogoutModal(true); });
-        document.getElementById('confirmHistoryLogout').addEventListener('click', function () { LV.logout(); });
-        document.getElementById('historyLogoutModal').addEventListener('click', function (event) {
-            if (event.target === this) closeHistoryLogoutModal(true);
-        });
-        document.addEventListener('keydown', function (event) {
-            if (!document.getElementById('historyLogoutModal').classList.contains('open')) return;
-            if (event.key === 'Escape') {
-                closeHistoryLogoutModal(true);
+        function renderHistory() {
+            const rider = LV.requireRole('rider', '../auth/Log_In_Page.html');
+            const host = document.getElementById('historyOrders');
+            if (!rider) {
+                host.innerHTML = '<p class="empty-history">Sign in as a rider to view completed deliveries.</p>';
                 return;
             }
-            if (event.key === 'Tab') {
-                const buttons = Array.from(document.querySelectorAll('#historyLogoutModal button'));
-                if (event.shiftKey && document.activeElement === buttons[0]) {
-                    event.preventDefault();
-                    buttons[1].focus();
-                } else if (!event.shiftKey && document.activeElement === buttons[1]) {
-                    event.preventDefault();
-                    buttons[0].focus();
-                }
+
+            const riderId = Number(rider.id);
+            const completedOrders = LV.orders().map(function (order) {
+                const riderJobs = (order.history || []).filter(function (entry) {
+                    return Number(entry.by) === riderId &&
+                        (entry.status === 'enroute_to_store' || entry.status === 'enroute_to_customer');
+                });
+                const assigned = Number(order.riderId) === riderId || riderJobs.length > 0;
+                const earnings = riderJobs.reduce(function (total, entry) {
+                    return total + Number(entry.status === 'enroute_to_store' ? order.sendFee : order.returnFee);
+                }, 0);
+                return { order: order, assigned: assigned, earnings: earnings };
+            }).filter(function (item) {
+                return item.assigned && item.order.status === 'completed';
+            }).sort(function (a, b) {
+                return new Date(b.order.completedAt || b.order.createdAt) -
+                    new Date(a.order.completedAt || a.order.createdAt);
+            });
+
+            if (!completedOrders.length) {
+                host.innerHTML = '<p class="empty-history">No completed deliveries yet.</p>';
+                return;
             }
-        });
+
+            host.innerHTML = completedOrders.map(function (item) {
+                const order = item.order;
+                const store = LV.store(order.storeId);
+                const customer = LV.customer(order.customerId);
+                const distance = Number(order.distanceKm);
+                return '<article class="delivery-item">' +
+                    '<div class="delivery-header">' +
+                    '<div class="delivery-shop">' + LV.esc(store ? store.name : 'Laundry store') +
+                    ' <span class="delivery-order">#' + LV.esc(order.id) + '</span></div>' +
+                    '<div class="delivery-distance">' +
+                    (Number.isFinite(distance) ? distance.toFixed(1) + ' km' : 'Distance unavailable') +
+                    '</div></div>' +
+                    '<div class="delivery-address"><i class="fa-solid fa-location-dot" aria-hidden="true"></i>' +
+                    '<span>' + LV.esc(customer && customer.address ? customer.address : 'Delivery address unavailable') +
+                    '</span></div>' +
+                    '<div class="delivery-meta">' +
+                    '<span><i class="fa-solid fa-clock" aria-hidden="true"></i> Completed ' +
+                    LV.esc(LV.when(order.completedAt || order.createdAt)) + '</span>' +
+                    '<span><i class="fa-solid fa-money-bill" aria-hidden="true"></i> Earnings ' +
+                    LV.peso(item.earnings) + '</span>' +
+                    '</div></article>';
+            }).join('');
+        }
+
+        renderHistory();
 
         function toggleMenu() {
             const menu = document.getElementById('navDropdown');
