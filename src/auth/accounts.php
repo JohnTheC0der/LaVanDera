@@ -23,7 +23,7 @@ function sign_out_pending_rider($riderId)
 function account_destination($role, $status)
 {
     if ($role === 'admin') {
-        return '../admin/Admin_Dashboard_Page.html';
+        return '../admin/Admin_Dashboard_Page.php';
     }
     if ($role === 'customer') {
         return '../customer/Customer_Home_Page.php';
@@ -98,7 +98,7 @@ function account_signup($role, array $in)
     } catch (PDOException $e) {
         $pdo->rollBack();
         if ($e->getCode() === '23000') {         // 23000 = "duplicate value in a UNIQUE column"
-            if (stripos($e->getMessage(), 'uq_stores_name') !== false) {
+            if (stripos($e->getMessage(), 'uq_stores_name') !== false || stripos($e->getMessage(), 'store_name') !== false) {
                 throw new UserError('That store name is already taken. Please choose another.');
             }
             throw new UserError('That email is already registered. Try signing in instead.');

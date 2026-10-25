@@ -324,21 +324,8 @@
                     </div>
                 </div>
 
-                <!-- Options Row -->
-                <div class="flex items-center justify-between text-xs mb-6 px-1">
-                    <label
-                        class="flex items-center gap-2 cursor-pointer text-pink-100/80 hover:text-white font-medium select-none">
-                        <input type="checkbox" class="custom-checkbox">
-                        <span>Remember me</span>
-                    </label>
-                    <a href="javascript:void(0)"
-                        onclick="showNotification('Password reset is not available in this frontend demo yet.')"
-                        class="text-pink-300 hover:text-pink-100 font-bold hover:underline transition">Forgot
-                        Password?</a>
-                </div>
-
                 <!-- Main CTA Button -->
-                <button type="submit" class="btn-submit mb-4">
+                <button type="submit" class="btn-submit mt-6 mb-4">
                     <span>Log In</span>
                 </button>
             </form>
@@ -394,7 +381,7 @@
                     <label class="block text-xs font-bold text-pink-200 uppercase mb-1.5 ml-1">Create Password</label>
                     <div class="relative">
                         <input type="password" id="signupPassword" name="password" autocomplete="new-password"
-                            minlength="6" required placeholder="At least 6 characters" class="input-field">
+                            minlength="8" maxlength="72" required placeholder="At least 8 characters" class="input-field">
                         <i class="fa-solid fa-key input-icon"></i>
                         <i class="fa-solid fa-eye password-toggle"
                             onclick="togglePasswordVisibility('signupPassword', this)"></i>
