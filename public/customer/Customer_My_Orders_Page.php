@@ -93,16 +93,24 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
         let orders = [];
         try { LV.renderNav('customer', 'orders'); LVApi.fixNavLinks(); LVLinks.fix(); } catch (navError) { console.warn('Navbar failed to render', navError); }
 
-        async function loadOrders() {
+        async function loadOrders(quiet) {
             try {
-                orders = (await LVApi.get('../api/customer/orders.php')).orders;
+                const fresh = (await LVApi.get('../api/customer/orders.php')).orders;
                 document.getElementById('ordersError').textContent = '';
+                // A background refresh only redraws when something really changed, so an open "Status history" stays open.
+                if (quiet && JSON.stringify(fresh) === JSON.stringify(orders)) return;
+                orders = fresh;
                 render();
             } catch (error) {
-                document.getElementById('ordersError').textContent = error.message;
+                if (!quiet) document.getElementById('ordersError').textContent = error.message;
             }
         }
-        loadOrders();
+        loadOrders(false);
+        if (new URLSearchParams(location.search).get('placed')) LV.toast('Order sent to the store for confirmation!');
+
+        // The store, the rider and you all move an order along, so look for news every 30 seconds while the tab is visible.
+        setInterval(function () { if (!document.hidden) loadOrders(true); }, 30000);
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) loadOrders(true); });
 
         function isProgress(o) { return PROGRESS.indexOf(o.status) > -1; }
 
@@ -171,7 +179,8 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
                             '<div style="font-weight:800; color:var(--lv-plum); font-size:16px;">' +
                                 LV.esc(o.storeName || 'Store') + '</div>' +
                             '<div class="lv-muted" style="font-size:13px;">#' + o.id + ' &middot; ' + bag.name + ' (' + bag.kg +
-                                'kg) &middot; ' + pay + ' &middot; placed ' + LV.when(o.createdAt) + '</div>' +
+                                'kg) &middot; ' + pay + (o.payment === 'gcash' && o.gcashRef ? ' (demo ref ' + LV.esc(o.gcashRef) + ')' : '') +
+                                ' &middot; ' + (o.paymentStatus === 'paid' ? 'paid' : 'unpaid') + ' &middot; placed ' + LV.when(o.createdAt) + '</div>' +
                         '</div>' +
                     '</div>' +
                     '<div class="lv-row" style="gap:14px; flex-shrink:0;">' +
@@ -258,7 +267,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
                 return true;
             } catch (error) {
                 document.getElementById('ordersError').textContent = error.message;
-                loadOrders();      // the order may have changed on the server: reload the truth
+                loadOrders(false);      // the order may have changed on the server: reload the truth
                 return false;
             }
         }

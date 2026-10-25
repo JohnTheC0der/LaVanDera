@@ -75,7 +75,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
         const STEP_LABELS = ['Store', 'Payment', 'Bag'];
         const PAYMENTS = [
             { key: 'cash',  icon: 'fa-money-bill-wave',      title: 'Cash',  sub: 'Pay the rider or the store on delivery' },
-            { key: 'gcash', icon: 'fa-mobile-screen-button', title: 'GCash', sub: 'Pay online now - reference number issued' }
+            { key: 'gcash', icon: 'fa-mobile-screen-button', title: 'GCash', sub: 'Demo only: the order is marked paid, but no real money is taken yet' }
         ];
         let step = 1;
         let storeId = null;
@@ -110,9 +110,18 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
                     '<a href="Customer_Home_Page.php" class="lv-btn lv-btn-primary" style="margin-top:16px;">Back to Home</a></div>';
                 return;
             }
-            // deep link ?store=ID preselects a store and jumps to the payment step
-            const q = Number(new URLSearchParams(location.search).get('store'));
-            if (q && list.some(function (s) { return s.id === q; })) { storeId = q; step = 2; }
+            const params = new URLSearchParams(location.search);
+            // "Back to editing" on the confirm page comes here with ?resume=1: bring the draft back so nothing has to be re-picked.
+            let draft = null;
+            if (params.get('resume')) { try { draft = JSON.parse(sessionStorage.getItem('lv_order_draft')); } catch (e) { draft = null; } }
+            if (draft && list.some(function (s) { return s.id === Number(draft.storeId); }) &&
+                ['cash', 'gcash'].indexOf(draft.payment) > -1 && LV.bags.some(function (b) { return b.code === draft.bag; })) {
+                storeId = Number(draft.storeId); payment = draft.payment; bag = draft.bag; notes = String(draft.notes || '').slice(0, 500); step = 3;
+            } else {
+                // deep link ?store=ID preselects a store and jumps to the payment step
+                const q = Number(params.get('store'));
+                if (q && list.some(function (s) { return s.id === q; })) { storeId = q; step = 2; }
+            }
             render();
         }
         init();

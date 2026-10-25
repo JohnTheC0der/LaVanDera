@@ -12,7 +12,7 @@ const CUSTOMER_BAG_CODES = ['small', 'medium', 'large'];
 function customer_load($id)
 {
     $st = db()->prepare(
-        "SELECT u.id, u.email, c.full_name, c.contact_no, c.address, c.latitude, c.longitude
+        "SELECT u.id, u.email, u.created_at, c.full_name, c.contact_no, c.address, c.latitude, c.longitude
          FROM users u JOIN customers c ON c.user_id = u.id
          WHERE u.id = ? AND u.role = 'customer'"
     );
@@ -29,12 +29,14 @@ function customer_load($id)
         'address'   => $r['address'],
         'latitude'  => $r['latitude'] === null ? null : (float) $r['latitude'],
         'longitude' => $r['longitude'] === null ? null : (float) $r['longitude'],
+        'joined'    => date('c', strtotime($r['created_at'])),       // "Member since" on the profile page
     ];
 }
 
-/** Save contact number, address and the map pin (the pin is what makes delivery fees possible). */
+/** Save name (optional), contact number, address and the map pin (the pin is what makes delivery fees possible). */
 function customer_update_profile($id, array $in)
 {
+    $name    = isset($in['name']) ? trim((string) $in['name']) : null;     // null = the caller did not send a name
     $contact = trim(isset($in['contact']) ? (string) $in['contact'] : '');
     $address = trim(isset($in['address']) ? (string) $in['address'] : '');
     $lat     = isset($in['latitude']) ? $in['latitude'] : '';
@@ -51,8 +53,15 @@ function customer_update_profile($id, array $in)
         || (float) $lat < 4 || (float) $lat > 22 || (float) $lng < 115 || (float) $lng > 128) {
         throw new UserError('Pin your address on the map (inside the Philippines) so delivery fees can be calculated.');
     }
-    db()->prepare('UPDATE customers SET contact_no = ?, address = ?, latitude = ?, longitude = ? WHERE user_id = ?')
+    if ($name !== null && ($name === '' || mb_strlen($name) > 120)) {
+        throw new UserError('Enter your full name.');
+    }
+    $pdo = db();
+    $pdo->prepare('UPDATE customers SET contact_no = ?, address = ?, latitude = ?, longitude = ? WHERE user_id = ?')
         ->execute([$contact, $address, round((float) $lat, 7), round((float) $lng, 7), $id]);
+    if ($name !== null) {
+        $pdo->prepare('UPDATE customers SET full_name = ? WHERE user_id = ?')->execute([$name, $id]);
+    }
 }
 
 /** Headline numbers for the profile / home page. */
@@ -149,6 +158,13 @@ function customer_place_order($customerId, array $in)
             throw new UserError('This store does not offer that bag size.');
         }
 
+        // Double-click / double-submit guard: the same bag from the same store in the last 15 seconds is one order.
+        $dup = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE customer_id = ? AND store_id = ? AND bag_type_id = ? AND status = 'pending_store' AND created_at >= ?");
+        $dup->execute([$customerId, $storeId, (int) $bag['bag_id'], date('Y-m-d H:i:s', time() - 15)]);
+        if ((int) $dup->fetchColumn() > 0) {
+            throw new UserError('You just placed this order. Check My Orders.');
+        }
+
         // Fees: one leg = calc_delivery_fee(km). Free-delivery stores charge the customer 0 for both legs.
         $km       = distance_km($me['latitude'], $me['longitude'], (float) $store['latitude'], (float) $store['longitude']);
         $free     = (bool) $store['has_free_delivery'];
@@ -166,15 +182,15 @@ function customer_place_order($customerId, array $in)
             'INSERT INTO orders (customer_id, store_id, bag_type_id, payment_method, payment_status, gcash_reference,
                                  store_fee, send_fee, return_fee, total_price, free_delivery, distance_km,
                                  customer_address, customer_latitude, customer_longitude,
-                                 store_address, store_latitude, store_longitude, notes, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                                 store_address, store_latitude, store_longitude, notes, status, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         )->execute([
             $customerId, $storeId, (int) $bag['bag_id'], $payment, $paymentStatus, $gcashRef,
             sprintf('%.2f', $storeFee), sprintf('%.2f', $leg), sprintf('%.2f', $leg), sprintf('%.2f', $total),
             $free ? 1 : 0, sprintf('%.2f', $km),
             $me['address'], $me['latitude'], $me['longitude'],
             (string) $store['address'], (float) $store['latitude'], (float) $store['longitude'],
-            $notes === '' ? null : $notes, 'pending_store',
+            $notes === '' ? null : $notes, 'pending_store', now(),    // now() = same clock as the timeline rows
         ]);
         $orderId = (int) $pdo->lastInsertId();
         store_order_set_status($orderId, 'pending_store', $customerId, 'Order placed');   // first line of the timeline
@@ -222,7 +238,7 @@ function customer_orders_list($customerId)
         $out[] = [
             'id' => $oid, 'status' => $r['status'], 'storeId' => (int) $r['store_id'], 'storeName' => $r['store_name'],
             'bag' => $r['bag_code'], 'bagLabel' => $r['bag_name'] . ' / ' . $r['weight_kg'] . 'kg',
-            'payment' => $r['payment_method'], 'paymentStatus' => $r['payment_status'],
+            'payment' => $r['payment_method'], 'paymentStatus' => $r['payment_status'], 'gcashRef' => $r['gcash_reference'],
             'storeFee' => (float) $r['store_fee'], 'sendFee' => (float) $r['send_fee'], 'returnFee' => (float) $r['return_fee'],
             'total' => (float) $r['total_price'], 'freeDelivery' => (bool) $r['free_delivery'],
             'distanceKm' => (float) $r['distance_km'], 'notes' => $r['notes'],

@@ -58,7 +58,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
                     </div>
                 </div>
 
-                <div class="lv-kv"><span>Member since</span><span id="pfpSince">Recently joined</span></div>
+                <div class="lv-kv"><span>Member since</span><span id="pfpSince">&nbsp;</span></div>
                 <div class="lv-kv"><span>Total orders</span><span id="pfpOrders">0</span></div>
                 <div class="lv-kv"><span>Completed orders</span><span id="pfpDone">0</span></div>
                 <div class="lv-kv"><span>Lifetime spend</span><span id="pfpSpent">&nbsp;</span></div>
@@ -76,12 +76,16 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
 
                 <form onsubmit="saveProfile(event)" novalidate>
                     <div class="lv-field">
+                        <label class="lv-label" for="pfName">Full Name</label>
+                        <input class="lv-input" type="text" id="pfName" maxlength="120" placeholder="Your full name">
+                    </div>
+                    <div class="lv-field">
                         <label class="lv-label" for="pfContact">Contact Number</label>
-                        <input class="lv-input" type="tel" id="pfContact" placeholder="09XX XXX XXXX">
+                        <input class="lv-input" type="tel" id="pfContact" maxlength="20" placeholder="09XX XXX XXXX">
                     </div>
                     <div class="lv-field">
                         <label class="lv-label" for="pfAddress">Pickup / Delivery Address</label>
-                        <textarea class="lv-textarea" id="pfAddress"
+                        <textarea class="lv-textarea" id="pfAddress" maxlength="500"
                             placeholder="Unit / street, barangay, city"></textarea>
                         <p class="lv-form-note" style="margin-top:6px;">
                             <i class="fa-solid fa-circle-info" style="color:var(--lv-pink);"></i>
@@ -169,15 +173,14 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
             document.getElementById('pfpName').textContent = customer.name;
             document.getElementById('pfpEmail').textContent = customer.email;
 
-            if (orders.length) {
-                const oldest = orders[orders.length - 1];        // the list is newest first, so the last one is the oldest
-                document.getElementById('pfpSince').textContent =
-                    new Date(oldest.createdAt).toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' });
-            }
+            // "Member since" is the day the account was created (users.created_at), not the first order.
+            document.getElementById('pfpSince').textContent =
+                new Date(customer.joined).toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' });
             document.getElementById('pfpOrders').textContent = stats.total;
             document.getElementById('pfpDone').textContent = stats.completed;
             document.getElementById('pfpSpent').textContent = LV.peso(stats.spent);
 
+            document.getElementById('pfName').value = customer.name || '';
             document.getElementById('pfContact').value = customer.contact || '';
             document.getElementById('pfAddress').value = customer.address || '';
             document.getElementById('pfLat').value = customer.latitude == null ? '' : customer.latitude;
@@ -214,22 +217,26 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
             event.preventDefault();
             const errBox = document.getElementById('pfError');
             errBox.textContent = '';
+            const name = document.getElementById('pfName').value.trim();
             const contact = document.getElementById('pfContact').value.trim();
             const address = document.getElementById('pfAddress').value.trim();
             const latitude = document.getElementById('pfLat').value;
             const longitude = document.getElementById('pfLng').value;
 
             // Quick checks for a friendly message; the SERVER repeats every check (never trust the browser).
+            if (!name) { errBox.textContent = 'Please enter your full name.'; return; }
             if (!contact || !address) { errBox.textContent = 'Contact number and address are both required.'; return; }
             if (!/^[0-9+\-\s()]{7,20}$/.test(contact)) { errBox.textContent = 'Please enter a valid contact number.'; return; }
             if (latitude === '' || longitude === '') { errBox.textContent = 'Click "Find address on map" (or drag the pin) so we know where to pick up.'; return; }
 
             try {
                 const result = await LVApi.postJson('../api/customer/profile.php', {
-                    contact: contact, address: address, latitude: latitude, longitude: longitude
+                    name: name, contact: contact, address: address, latitude: latitude, longitude: longitude
                 });
                 customer = result.customer;
                 stats = result.stats;
+                // The navbar shows the name: keep the browser copy of the session in step with the database.
+                try { window.LV_SESSION.name = customer.name; localStorage.setItem('lv_session', JSON.stringify(window.LV_SESSION)); LV.renderNav('customer', null); LVApi.fixNavLinks(); LVLinks.fix(); } catch (e) { /* ignore */ }
                 LV.toast('Profile updated successfully.');
                 render();
             } catch (error) {

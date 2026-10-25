@@ -88,3 +88,20 @@ What a rider sees, and when:
 * A rider never marks a job done. The store's *Confirm delivery* completes the send job and the customer's *Confirm return* completes the return job (see the hand-off table above); the job then moves into the rider's History and earnings.
 * There are no ratings or online/offline status in the database, so the pages do not show them.
 * "Today" is worked out in PHP (Asia/Manila), not with `CURDATE()`, so it matches the time zone that wrote `completed_at`.
+
+## Customer pages and API
+Pages (`public/customer/`): Home, Stores, View Store, Place Order, Confirm Order, My Orders, Profile. All call `guard_customer_page()`.
+
+| Endpoint | Does |
+|---|---|
+| `GET api/customer/stores.php` | Approved stores (view `v_store_listing`) with THIS customer's distance and one-leg delivery fee, plus the fee rule. Distance/fee are `null` until the customer pins an address. |
+| `GET/POST api/customer/profile.php` | Name (optional), contact, address and map pin. `joined` = account creation date. |
+| `GET api/customer/orders.php` | All the customer's orders, newest first, with timelines. |
+| `POST api/customer/orders.php` | `place` (store_id, bag, payment, notes) / `cancel` (only while `pending_store`) / `confirm_return` (only while `enroute_to_customer`). |
+
+Rules the server enforces (the browser only previews):
+* Every price and fee is recalculated on the server; totals sent by the browser are ignored.
+* The customer must have a map pin; the store must be approved, accepting orders, and have all 3 prices and a map pin.
+* The same bag from the same store within 15 seconds counts as one order (double-click guard).
+* Addresses, pins and fees are copied onto the order, so later profile/price changes never rewrite history.
+* GCash is a simulation: the order is marked paid with a `DEMO-` reference and no money moves. The pages say so.

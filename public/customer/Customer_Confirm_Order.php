@@ -150,7 +150,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
                         '<div><div class="lv-option-title">' + LV.esc(bagInfo.name) + '</div><div class="lv-option-sub">Up to ' + bagInfo.kg + ' KG</div></div>' +
                         '<div class="lv-option-price" style="margin-left:auto;">' + LV.peso(f.storeFee) + '</div></div></div>' +
                     '<div class="lv-row-between" style="margin-top:16px;"><span class="lv-muted" style="font-size:13px;">Payment method</span>' +
-                        (gcash ? '<span class="lv-badge lv-tone-blue"><i class="fa-solid fa-mobile-screen"></i>GCash</span>'
+                        (gcash ? '<span class="lv-badge lv-tone-blue"><i class="fa-solid fa-mobile-screen"></i>GCash (demo)</span>'
                                : '<span class="lv-badge lv-tone-green"><i class="fa-solid fa-money-bill-wave"></i>Cash</span>') + '</div>' +
                     (draft.notes ? '<hr class="lv-divider"><div class="lv-label">Your notes</div><div style="font-size:14px; color:var(--lv-ink);">' +
                         '<i class="fa-solid fa-quote-left" style="color:var(--lv-pink-soft);"></i> ' + LV.esc(draft.notes) + '</div>' : '') +
@@ -184,8 +184,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
         }
 
         function backToEdit() {
-            if (history.length > 1) history.back();
-            else location.href = 'Customer_Place_Order_Page.php';
+            location.href = 'Customer_Place_Order_Page.php?resume=1';     // the draft is restored there
         }
 
         async function confirmOrder() {
@@ -200,8 +199,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
                     action: 'place', store_id: draft.storeId, bag: draft.bag, payment: draft.payment, notes: draft.notes
                 });
                 sessionStorage.removeItem('lv_order_draft');
-                LV.toast('Order sent to the store for confirmation!');
-                location.href = 'Customer_My_Orders_Page.php?order=' + result.orderId;
+                location.href = 'Customer_My_Orders_Page.php?order=' + result.orderId + '&placed=1';   // that page shows the toast
             } catch (error) {
                 document.getElementById('confirmError').textContent = error.message;   // e.g. "This store is not accepting orders right now."
                 placing = false;
