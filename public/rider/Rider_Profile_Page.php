@@ -858,22 +858,22 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
 <div class="profile-card">
 <!-- PROFILE HEADER -->
 <div class="profile-header">
-<div class="profile-avatar" id="profileAvatar">A</div>
-<div class="profile-name" id="profileName">Alex Rodriguez</div>
-<div class="profile-email" id="profileEmail">alex.rodriguez@email.com</div>
+<div class="profile-avatar" id="profileAvatar"><?= h(mb_strtoupper(mb_substr($user['name'], 0, 1))) ?></div>
+<div class="profile-name" id="profileName"><?= h($user['name']) ?></div>
+<div class="profile-email" id="profileEmail"><?= h($user['email']) ?></div>
 <div class="profile-status">
 <span class="status-indicator"></span>
-                    Verified Account
+                    Approved Rider
                 </div>
 </div>
 <!-- PROFILE STATS -->
 <div class="profile-stats">
 <div class="stat-item">
-<div class="stat-value" id="statCompletedOrders">187</div>
+<div class="stat-value" id="statCompletedOrders">…</div>
 <div class="stat-label">Completed Orders</div>
 </div>
 <div class="stat-item">
-<div class="stat-value" id="statTotalEarnings">₱18,540</div>
+<div class="stat-value" id="statTotalEarnings">…</div>
 <div class="stat-label">Total Earnings</div>
 </div>
 </div>
@@ -888,15 +888,15 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
 <div class="info-grid">
 <div class="info-item">
 <div class="info-label">Full Name</div>
-<div class="info-value" id="infoFullName">Alex Rodriguez</div>
+<div class="info-value" id="infoFullName"><?= h($user['name']) ?></div>
 </div>
 <div class="info-item">
 <div class="info-label">Email Address</div>
-<div class="info-value" id="infoEmail">alex.rodriguez@email.com</div>
+<div class="info-value" id="infoEmail"><?= h($user['email']) ?></div>
 </div>
 <div class="info-item">
 <div class="info-label">Phone Number</div>
-<div class="info-value" id="infoPhone">+63 917 123 4567</div>
+<div class="info-value" id="infoPhone">…</div>
 </div>
 </div>
 </div>
@@ -923,15 +923,15 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
 <!-- PERSONAL INFO -->
 <div class="form-group">
 <label class="form-label" for="editFullName">Full Name</label>
-<input class="form-input" id="editFullName" placeholder="Enter full name" type="text" value="Alex Rodriguez"/>
+<input class="form-input" id="editFullName" maxlength="120" placeholder="Enter full name" type="text" value="<?= h($user['name']) ?>"/>
 </div>
 <div class="form-group">
 <label class="form-label" for="editEmail">Email Address</label>
-<input class="form-input" id="editEmail" placeholder="Enter email" readonly="readonly" type="email" value="alex.rodriguez@email.com"/>
+<input class="form-input" id="editEmail" placeholder="Enter email" readonly="readonly" type="email" value="<?= h($user['email']) ?>"/>
 </div>
 <div class="form-group">
 <label class="form-label" for="editPhone">Phone Number</label>
-<input class="form-input" id="editPhone" placeholder="Enter phone number" type="tel" value="+63 917 123 4567"/>
+<input class="form-input" id="editPhone" maxlength="20" placeholder="Enter phone number" type="tel" value=""/>
 </div>
 <!-- ADDRESS INFO -->
 <!-- VEHICLE INFO -->

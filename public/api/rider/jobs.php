@@ -1,6 +1,7 @@
 <?php
 /**
  * GET  -> {available, current, history, stats} for the signed-in rider.
+ *          Optional ?history_limit=20&history_offset=0 pages through finished jobs (stats.completed = total).
  * POST -> JSON {"action": "accept", "job_id": 12}; returns the refreshed lists.
  */
 require dirname(__DIR__, 3) . '/src/bootstrap.php';
@@ -17,5 +18,9 @@ api_run(function () {
         }
         rider_accept_job($user['id'], (int) (isset($in['job_id']) ? $in['job_id'] : 0));
     }
-    json_out(['ok' => true] + rider_board($user['id']));
+    json_out(['ok' => true] + rider_board(
+        $user['id'],
+        isset($_GET['history_limit']) ? (int) $_GET['history_limit'] : 50,
+        isset($_GET['history_offset']) ? (int) $_GET['history_offset'] : 0
+    ));
 });

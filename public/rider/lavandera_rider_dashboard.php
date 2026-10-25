@@ -213,10 +213,10 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
 
         .welcome-header {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+            justify-content: flex-start;
+            align-items: center;
             flex-wrap: wrap;
-            gap: 20px;
+            gap: 30px;
         }
 
         .welcome-profile {
@@ -238,7 +238,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
             color: #45002e;
             font-weight: 900;
             margin-bottom: 8px;
-            margin-right: 180px;
+            margin-right: 0;
         }
 
         .welcome-text p {
@@ -247,36 +247,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
             line-height: 1.5;
         }
 
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background-color: #5a003c;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 30px;
-            font-weight: bold;
-        }
 
-        .status-indicator {
-            width: 12px;
-            height: 12px;
-            background-color: #4ade80;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.5;
-            }
-        }
 
         /* QUICK STATS */
         .quick-stats {
@@ -545,77 +516,17 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
             margin-bottom: 40px;
         }
 
-        .performance-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-            margin-bottom: 25px;
-        }
 
-        .performance-metric {
-            background: linear-gradient(135deg, #ffe3f1, #f8e5ff);
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-        }
 
-        .metric-icon {
-            font-size: 28px;
-            color: #e58db5;
-            margin-bottom: 8px;
-        }
 
-        .metric-value {
-            font-size: 20px;
-            font-weight: 900;
-            color: #45002e;
-            margin-bottom: 4px;
-        }
 
-        .metric-name {
-            font-size: 12px;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
 
         /* REVIEWS SECTION */
-        .reviews-container {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
 
-        .review-item {
-            background-color: #f8f3f7;
-            border-radius: 12px;
-            padding: 16px;
-            border-left: 4px solid #3bb2b8;
-        }
 
-        .review-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
 
-        .review-author {
-            font-weight: bold;
-            color: #45002e;
-            font-size: 14px;
-        }
 
-        .review-stars {
-            color: #ffb800;
-            font-size: 13px;
-        }
 
-        .review-text {
-            font-size: 13px;
-            color: #666;
-            line-height: 1.4;
-        }
 
         /* BOTTOM BUTTON SECTION */
         .action-buttons {
@@ -709,10 +620,6 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
 
             .welcome-text h1 {
                 font-size: 22px;
-            }
-
-            .performance-grid {
-                grid-template-columns: repeat(2, 1fr);
             }
         }
 
@@ -992,12 +899,8 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
 </div>
 <div class="welcome-text">
 <h1>Welcome back, <?= h(explode(' ', trim($user['name']))[0]) ?>! 👋</h1>
-<p>You're on fire today! Keep up the momentum.</p>
+<p id="welcomeLine">Checking your jobs&hellip;</p>
 </div>
-<div class="status-badge">
-<div class="status-indicator"></div>
-                        Online
-                    </div>
 </div>
 </div>
 </a>
@@ -1008,7 +911,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
 <i class="fa-solid fa-box"></i>
 </div>
 <div class="stat-value" id="statToday">…</div>
-<div class="stat-label">Deliveries Today</div>
+<div class="stat-label">Delivered Today</div>
 </div>
 <div class="stat-card">
 <div class="stat-icon">
@@ -1024,6 +927,13 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
 <div class="stat-value" id="statDone">…</div>
 <div class="stat-label">Completed Deliveries</div>
 </div>
+<a class="stat-card" href="Rider_Orders_Page.php" style="text-decoration:none;">
+<div class="stat-icon">
+<i class="fa-solid fa-clipboard-list"></i>
+</div>
+<div class="stat-value" id="statOpen">…</div>
+<div class="stat-label">Jobs Available</div>
+</a>
 </div>
 <!-- MAIN DASHBOARD GRID -->
 <div class="dashboard-grid">
@@ -1053,93 +963,33 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
 <span class="breakdown-label">Delivered Today</span>
 <span class="breakdown-value" id="earnToday">…</span>
 </div>
+<div class="breakdown-item">
+<span class="breakdown-label">Earned Today</span>
+<span class="breakdown-value" id="earnTodayPay">…</span>
+</div>
 
 
 </div>
 </div>
 </div>
-<!-- PERFORMANCE SECTION -->
+<!-- RECENT DELIVERIES (real, from the database) -->
 <div class="performance-section">
 <div class="panel-title">
-<i class="fa-solid fa-chart-line"></i>
-                Your Performance
+<i class="fa-solid fa-clock-rotate-left"></i>
+                Recent Deliveries
             </div>
-<div class="performance-grid">
-<div class="performance-metric">
-<div class="metric-icon">
-<i class="fa-solid fa-bullseye"></i>
-</div>
-<div class="metric-value">98%</div>
-<div class="metric-name">On-Time Rate</div>
-</div>
-<div class="performance-metric">
-<div class="metric-icon">
-<i class="fa-solid fa-face-smile"></i>
-</div>
-<div class="metric-value">89</div>
-<div class="metric-name">5-Star Reviews</div>
-</div>
-<div class="performance-metric">
-<div class="metric-icon">
-<i class="fa-solid fa-check-circle"></i>
-</div>
-<div class="metric-value">428</div>
-<div class="metric-name">Total Completed</div>
-</div>
-<div class="performance-metric">
-<div class="metric-icon">
-<i class="fa-solid fa-shield"></i>
-</div>
-<div class="metric-value">0</div>
-<div class="metric-name">Incidents</div>
-</div>
-</div>
-<h3 style="font-size: 18px; color: #45002e; margin-bottom: 15px; font-weight: bold;">
-                Recent Reviews
-            </h3>
-<div class="reviews-container">
-<div class="review-item">
-<div class="review-header">
-<div class="review-author">Maria Santos</div>
-<div class="review-stars">
-<i class="fa-solid fa-star"></i>
-<i class="fa-solid fa-star"></i>
-<i class="fa-solid fa-star"></i>
-<i class="fa-solid fa-star"></i>
-<i class="fa-solid fa-star"></i>
-</div>
-</div>
-<div class="review-text">
-                        "Fast delivery and the clothes were perfectly handled. Will definitely request Alex again!"
-                    </div>
-</div>
-<div class="review-item">
-<div class="review-header">
-<div class="review-author">Juan Dela Cruz</div>
-<div class="review-stars">
-<i class="fa-solid fa-star"></i>
-<i class="fa-solid fa-star"></i>
-<i class="fa-solid fa-star"></i>
-<i class="fa-solid fa-star"></i>
-<i class="fa-regular fa-star"></i>
-</div>
-</div>
-<div class="review-text">
-                        "Great service! Arrived on time and was very professional throughout the delivery."
-                    </div>
-</div>
-</div>
+<div id="recentList"></div>
 </div>
 <!-- ACTION BUTTONS -->
 <div class="action-buttons">
-<button class="btn-primary">
-<i class="fa-solid fa-pause"></i>
-                Go Offline
-            </button>
-<button class="btn-secondary">
+<a class="btn-primary" href="Rider_Orders_Page.php" style="text-decoration:none;">
+<i class="fa-solid fa-clipboard-list"></i>
+                Browse Available Orders
+            </a>
+<a class="btn-secondary" href="Rider_Order_History_Page.php" style="text-decoration:none;">
 <i class="fa-solid fa-history"></i>
                 View History
-            </button>
+            </a>
 </div>
 </div>
 <!-- LOGOUT MODAL -->
@@ -1185,13 +1035,14 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
         };
 
         // One delivery card. Every value that a USER typed (shop, addresses, customer) goes through LV.esc() first.
-        function jobCard(job, withLink) {
+        function jobCard(job, withLink, done) {
             const route = job.type === 'send' ? 'Pick up from the customer, deliver to the store' : 'Pick up at the store, deliver to the customer';
             return '<div class="delivery-item">' +
                 '<div class="delivery-header"><div class="delivery-shop">' + LV.esc(job.shop) + '</div>' +
                     '<div class="delivery-distance">' + job.distanceKm.toFixed(1) + ' km</div></div>' +
                 '<div class="delivery-address"><i class="fa-solid fa-location-dot"></i><span>' + LV.esc(job.pickup) + ' &rarr; ' + LV.esc(job.dropoff) + '</span></div>' +
-                '<div class="delivery-meta"><span><i class="fa-solid fa-route"></i> ' + route + '</span>' +
+                '<div class="delivery-meta">' + (done ? '<span><i class="fa-solid fa-clock"></i> Completed ' + LV.when(job.completedAt) + '</span>' : '') +
+                    '<span><i class="fa-solid fa-route"></i> ' + route + '</span>' +
                     '<span><i class="fa-solid fa-money-bill"></i> ' + LV.peso(job.pay) + '</span></div>' +
                 (withLink ? '<div class="delivery-actions"><a class="btn-accept" href="Rider_Orders_Page.php" style="text-decoration:none; text-align:center;">Open order</a></div>' : '') +
             '</div>';
@@ -1200,15 +1051,25 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
         // Ask the server for this rider's board, then fill in the numbers and the active deliveries.
         async function loadDashboard() {
             try {
-                const data = await LVApi.get('../api/rider/jobs.php');
+                const data = await LVApi.get('../api/rider/jobs.php?history_limit=5');
                 document.getElementById('statToday').textContent = data.stats.today;
                 document.getElementById('statEarned').textContent = LV.peso(data.stats.earned);
                 document.getElementById('statDone').textContent = data.stats.completed;
                 document.getElementById('earnAmount').textContent = LV.peso(data.stats.earned);
                 document.getElementById('earnDone').textContent = data.stats.completed;
                 document.getElementById('earnToday').textContent = data.stats.today;
+                document.getElementById('earnTodayPay').textContent = LV.peso(data.stats.earnedToday);
+                document.getElementById('statOpen').textContent = data.available.length;
+                document.getElementById('welcomeLine').textContent = data.current.length
+                    ? 'You have ' + data.current.length + ' active ' + (data.current.length === 1 ? 'delivery' : 'deliveries') + '. Tap here to manage them.'
+                    : data.available.length
+                        ? data.available.length + ' ' + (data.available.length === 1 ? 'job is' : 'jobs are') + ' waiting for a rider. Tap here to pick one.'
+                        : 'No jobs right now. New ones show up as stores confirm orders.';
+                document.getElementById('recentList').innerHTML = data.history.length
+                    ? data.history.map(function (job) { return jobCard(job, false, true); }).join('')
+                    : '<div class="delivery-item"><div class="delivery-shop">No completed deliveries yet</div></div>';
                 document.getElementById('activeList').innerHTML = data.current.length
-                    ? data.current.map(function (job) { return jobCard(job, true); }).join('')
+                    ? data.current.map(function (job) { return jobCard(job, true, false); }).join('')
                     : '<div class="delivery-item"><div class="delivery-shop">No active deliveries</div>' +
                       '<div class="delivery-address"><span>Open <a href="Rider_Orders_Page.php">Current Orders</a> to accept a job.</span></div></div>';
             } catch (error) {

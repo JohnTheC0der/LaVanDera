@@ -370,7 +370,8 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
 <p class="page-subtitle">View past completed delivery requests</p>
 </div>
 <!-- DELIVERIES PANEL -->
-<div class="deliveries-panel"><p id="histError" style="color:#b3261e;"></p><div id="historyList"></div></div>
+<div class="deliveries-panel"><p id="histError" style="color:#b3261e;"></p><div id="historyList"></div>
+<div style="text-align:center; margin-top:20px;"><button id="loadMore" type="button" style="display:none; padding:10px 32px; background:#e58db5; color:#45002e; border:none; border-radius:24px; font-weight:bold; font-size:14px; cursor:pointer;">Load more</button></div></div>
 </div>
 <script>
         function toggleMenu() {
@@ -398,7 +399,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
         function jobCard(job, withLink) {
             const route = job.type === 'send' ? 'Pick up from the customer, deliver to the store' : 'Pick up at the store, deliver to the customer';
             return '<div class="delivery-item">' +
-                '<div class="delivery-header"><div class="delivery-shop">' + LV.esc(job.shop) + '</div>' +
+                '<div class="delivery-header"><div class="delivery-shop">' + LV.esc(job.shop) + ' <span style="font-weight:normal; color:#888; font-size:12px;">#LV-' + job.orderId + (job.type === 'send' ? '-S' : '-R') + '</span></div>' +
                     '<div class="delivery-distance">' + job.distanceKm.toFixed(1) + ' km</div></div>' +
                 '<div class="delivery-address"><i class="fa-solid fa-location-dot"></i><span>' + LV.esc(job.pickup) + ' &rarr; ' + LV.esc(job.dropoff) + '</span></div>' +
                 '<div class="delivery-meta"><span><i class="fa-solid fa-clock"></i> Completed ' + LV.when(job.completedAt) + '</span><span><i class="fa-solid fa-route"></i> ' + route + '</span>' +
@@ -407,16 +408,30 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
             '</div>';
         }
 
+        // Pages of 20, newest first. stats.completed is the total, so we know when to hide the button.
+        const PAGE = 20;
+        let loaded = 0;
+
         async function loadHistory() {
+            const button = document.getElementById('loadMore');
+            button.disabled = true;
             try {
-                const data = await LVApi.get('../api/rider/jobs.php');
-                document.getElementById('historyList').innerHTML = data.history.length
-                    ? data.history.map(function (job) { return jobCard(job, false); }).join('')
-                    : '<div class="delivery-item"><div class="delivery-shop">No completed deliveries yet</div></div>';
+                const data = await LVApi.get('../api/rider/jobs.php?history_limit=' + PAGE + '&history_offset=' + loaded);
+                const list = document.getElementById('historyList');
+                if (loaded === 0 && !data.history.length) {
+                    list.innerHTML = '<div class="delivery-item"><div class="delivery-shop">No completed deliveries yet</div></div>';
+                } else {
+                    list.insertAdjacentHTML('beforeend', data.history.map(function (job) { return jobCard(job, false); }).join(''));
+                }
+                loaded += data.history.length;
+                button.style.display = (data.history.length === PAGE && loaded < data.stats.completed) ? 'inline-block' : 'none';
             } catch (error) {
                 document.getElementById('histError').textContent = error.message;
+            } finally {
+                button.disabled = false;
             }
         }
+        document.getElementById('loadMore').addEventListener('click', loadHistory);
         loadHistory();
 </script>
 </body>

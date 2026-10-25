@@ -21,9 +21,6 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
     <title>LAVANDERA - Rider Orders</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
 
     <style>
         :root {
@@ -1386,6 +1383,36 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
                 padding: 20px 3% 40px;
             }
         }
+
+        /* ===== ADDED IN THE REWORK ===== */
+        .tab-navigation { top: 90px; }
+        @media (max-width: 600px) { .tab-navigation { top: 76px; } }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px 20px;
+            background: white;
+            border-radius: 18px;
+            color: var(--color-text-light);
+            box-shadow: var(--shadow-md);
+        }
+        .empty-state i { font-size: 34px; color: var(--color-primary); margin-bottom: 10px; display: block; }
+        .empty-state strong { display: block; color: var(--color-text); font-size: 16px; margin-bottom: 4px; }
+
+        .flash {
+            position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px);
+            z-index: 3000; max-width: calc(100vw - 32px);
+            padding: 14px 20px; border-radius: 12px; font-size: 14px; font-weight: 600;
+            background: var(--color-dark); color: white; box-shadow: var(--shadow-lg);
+            opacity: 0; pointer-events: none; transition: opacity .25s ease, transform .25s ease;
+        }
+        .flash.show { opacity: 1; transform: translate(-50%, 0); }
+        .flash.error { background: #b3261e; }
+
+        .btn-action[disabled], .btn-action.is-disabled { opacity: .5; cursor: not-allowed; pointer-events: none; }
+        a.btn-action { text-decoration: none; }
+        .modal-note { font-size: 13px; color: var(--color-text-light); padding: 4px 0; }
     </style>
     <link rel="stylesheet" href="../css/rider_header.css">
     <script>
@@ -1439,7 +1466,6 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
     <div id="available" class="tab-content active">
         <div class="page-wrapper">
 
-            <!-- PAGE HEADER -->
             <div class="page-header">
                 <h1 class="page-title">
                     <i class="fa-solid fa-clipboard-list" aria-hidden="true"></i>
@@ -1448,45 +1474,39 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
                 <p class="page-subtitle">Browse and accept available delivery jobs</p>
             </div>
 
-            <!-- FILTER & SEARCH -->
             <div class="filter-search-container">
                 <div class="filter-buttons" role="group" aria-label="Filter orders">
-                    <button class="filter-btn active" data-filter="all" onclick="filterOrdersAvailable('all')">All
-                        Jobs</button>
-                    <button class="filter-btn" data-filter="send" onclick="filterOrdersAvailable('send')">Send
-                        Orders</button>
-                    <button class="filter-btn" data-filter="return" onclick="filterOrdersAvailable('return')">Return
-                        Orders</button>
+                    <button class="filter-btn active" data-filter="all">All Jobs</button>
+                    <button class="filter-btn" data-filter="send">Send Orders</button>
+                    <button class="filter-btn" data-filter="return">Return Orders</button>
                 </div>
                 <div class="search-box">
                     <label for="searchAvailable" style="display: none;">Search orders</label>
-                    <input type="text" id="searchAvailable" placeholder="Search by shop..."
-                        onkeyup="searchOrdersAvailable()" aria-label="Search orders by shop name">
+                    <input type="text" id="searchAvailable" placeholder="Search by shop or address..."
+                        aria-label="Search available orders">
                     <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
                 </div>
             </div>
 
-            <!-- STATS BAR -->
             <div class="stats-bar">
                 <div class="stat-badge">
-                    <div class="stat-badge-value" id="availableTotalCount">8</div>
+                    <div class="stat-badge-value" id="availableTotalCount">0</div>
                     <div class="stat-badge-label">Available Jobs</div>
                 </div>
                 <div class="stat-badge">
-                    <div class="stat-badge-value" id="availableSendCount">5</div>
+                    <div class="stat-badge-value" id="availableSendCount">0</div>
                     <div class="stat-badge-label">Send Orders</div>
                 </div>
                 <div class="stat-badge">
-                    <div class="stat-badge-value" id="availableReturnCount">3</div>
+                    <div class="stat-badge-value" id="availableReturnCount">0</div>
                     <div class="stat-badge-label">Return Orders</div>
                 </div>
                 <div class="stat-badge">
-                    <div class="stat-badge-value" id="maxEarnings">₱2,340</div>
+                    <div class="stat-badge-value" id="maxEarnings">&#8369;0.00</div>
                     <div class="stat-badge-label">Potential Earnings</div>
                 </div>
             </div>
 
-            <!-- ORDERS GRID -->
             <div class="orders-grid" id="availableOrdersGrid">
                 <!-- Orders generated by JavaScript -->
             </div>
@@ -1497,133 +1517,72 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
     <div id="current" class="tab-content">
         <div class="page-wrapper">
 
-            <!-- PAGE HEADER -->
             <div class="page-header">
-                <div class="page-header-top">
-                    <h1 class="page-title">
-                        <i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i>
-                        Current Orders
-                    </h1>
-                    <div class="online-status">
-                        <span class="status-dot"></span>
-                        Online & Available
-                    </div>
-                </div>
-                <p class="page-subtitle">Track and manage your active deliveries</p>
+                <h1 class="page-title">
+                    <i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i>
+                    Current Orders
+                </h1>
+                <p class="page-subtitle">Jobs you accepted. The store confirms a send delivery and the customer confirms a return, so there is nothing to tick off here.</p>
             </div>
 
-            <!-- FILTER & SEARCH -->
             <div class="filter-search-container">
                 <div class="filter-buttons" role="group" aria-label="Filter orders">
-                    <button class="filter-btn active" data-filter="all" onclick="filterOrdersCurrent('all')">All
-                        Orders</button>
-                    <button class="filter-btn" data-filter="in-transit" onclick="filterOrdersCurrent('in-transit')">In
-                        Transit</button>
-                    <button class="filter-btn" data-filter="pending" onclick="filterOrdersCurrent('pending')">Pending
-                        Pickup</button>
-                    <button class="filter-btn" data-filter="completed"
-                        onclick="filterOrdersCurrent('completed')">Completed</button>
+                    <button class="filter-btn active" data-filter="all">All Orders</button>
+                    <button class="filter-btn" data-filter="send">Send</button>
+                    <button class="filter-btn" data-filter="return">Return</button>
                 </div>
                 <div class="search-box">
                     <label for="searchCurrent" style="display: none;">Search orders</label>
-                    <input type="text" id="searchCurrent" placeholder="Search by order ID or shop..."
-                        onkeyup="searchOrdersCurrent()" aria-label="Search orders by ID or shop name">
+                    <input type="text" id="searchCurrent" placeholder="Search by order ID, shop or customer..."
+                        aria-label="Search current orders">
                     <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
                 </div>
             </div>
 
-            <!-- STATS BAR -->
             <div class="stats-bar">
                 <div class="stat-badge">
-                    <div class="stat-badge-value" id="currentTotalCount">5</div>
+                    <div class="stat-badge-value" id="currentTotalCount">0</div>
                     <div class="stat-badge-label">Total Orders</div>
                 </div>
                 <div class="stat-badge">
-                    <div class="stat-badge-value" id="currentInTransitCount">2</div>
-                    <div class="stat-badge-label">In Transit</div>
+                    <div class="stat-badge-value" id="currentSendCount">0</div>
+                    <div class="stat-badge-label">Send</div>
                 </div>
                 <div class="stat-badge">
-                    <div class="stat-badge-value" id="currentPendingCount">2</div>
-                    <div class="stat-badge-label">Pending</div>
+                    <div class="stat-badge-value" id="currentReturnCount">0</div>
+                    <div class="stat-badge-label">Return</div>
                 </div>
                 <div class="stat-badge">
-                    <div class="stat-badge-value" id="currentCompletedCount">1</div>
-                    <div class="stat-badge-label">Completed</div>
+                    <div class="stat-badge-value" id="currentPay">&#8369;0.00</div>
+                    <div class="stat-badge-label">Pay Pending</div>
                 </div>
             </div>
 
-            <!-- ORDERS GRID -->
             <div class="orders-grid" id="currentOrdersGrid">
                 <!-- Orders generated by JavaScript -->
             </div>
 
-            <!-- HISTORY OF ORDERS -->
+            <!-- HISTORY OF ORDERS (latest 3 from the database) -->
             <div class="deliveries-panel">
                 <div class="panel-title">
                     <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
                     History of Orders
                 </div>
-
-                <div class="delivery-item">
-                    <div class="delivery-header">
-                        <div class="delivery-shop">Mama Mo Laundry</div>
-                        <div class="delivery-distance">2.3 km</div>
-                    </div>
-                    <div class="delivery-address">
-                        <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
-                        <span>123 Maple Street, Marikina</span>
-                    </div>
-                    <div class="delivery-meta">
-                        <span><i class="fa-solid fa-clock" aria-hidden="true"></i> Completed 1 hour ago</span>
-                        <span><i class="fa-solid fa-money-bill" aria-hidden="true"></i> ₱150</span>
-                    </div>
-                </div>
-
-                <div class="delivery-item">
-                    <div class="delivery-header">
-                        <div class="delivery-shop">Kuya Mo Laundry</div>
-                        <div class="delivery-distance">3.1 km</div>
-                    </div>
-                    <div class="delivery-address">
-                        <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
-                        <span>456 Oak Avenue, Quezon City</span>
-                    </div>
-                    <div class="delivery-meta">
-                        <span><i class="fa-solid fa-clock" aria-hidden="true"></i> Completed 2 hours ago</span>
-                        <span><i class="fa-solid fa-money-bill" aria-hidden="true"></i> ₱200</span>
-                    </div>
-                </div>
-
-                <div class="delivery-item">
-                    <div class="delivery-header">
-                        <div class="delivery-shop">Lola Mo Dry Cleaning</div>
-                        <div class="delivery-distance">1.8 km</div>
-                    </div>
-                    <div class="delivery-address">
-                        <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
-                        <span>789 Pine Road, Makati</span>
-                    </div>
-                    <div class="delivery-meta">
-                        <span><i class="fa-solid fa-clock" aria-hidden="true"></i> Completed 3 hours ago</span>
-                        <span><i class="fa-solid fa-money-bill" aria-hidden="true"></i> ₱175</span>
-                    </div>
-                </div>
-
+                <div id="historyPreview"></div>
                 <div class="see-more-container">
-                    <button class="see-more-btn" onclick="window.location.href = 'Rider_Order_History_Page.php'">Load
-                        More</button>
+                    <button class="see-more-btn" onclick="window.location.href = 'Rider_Order_History_Page.php'">View Full History</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ORDER DETAILS MODAL -->
+    <!-- ORDER DETAILS MODAL (filled from the job that was clicked) -->
     <div class="modal" id="orderModal" role="dialog" aria-labelledby="modalTitle" aria-hidden="true">
         <div class="modal-content">
             <div class="modal-header">
                 <div>
                     <div class="modal-label">Order Details</div>
-                    <div class="modal-title" id="modalTitle">#LV-JOB-001</div>
+                    <div class="modal-title" id="modalTitle">#LV-0</div>
                 </div>
                 <button class="close-btn" onclick="closeModal()" aria-label="Close order details">
                     <i class="fa-solid fa-xmark" aria-hidden="true"></i>
@@ -1631,130 +1590,44 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
             </div>
 
             <div class="modal-body">
-                <!-- Route Summary -->
                 <div class="modal-section">
-                    <div class="modal-section-title">
-                        <i class="fa-solid fa-route" aria-hidden="true"></i>
-                        Route & Distance
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-item-label">Total Distance</div>
-                        <div class="detail-item-value" id="modalDistance">2.3 km</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-item-label">Est. Duration</div>
-                        <div class="detail-item-value" id="modalDuration">12 minutes</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-item-label">Pickup Address</div>
-                        <div class="detail-item-value" id="modalPickup">Mama Mo Laundry, 123 Commerce St</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-item-label">Delivery Address</div>
-                        <div class="detail-item-value" id="modalDelivery">123 Maple Street, Marikina</div>
+                    <div class="modal-section-title"><i class="fa-solid fa-route" aria-hidden="true"></i> Route &amp; Distance</div>
+                    <div class="detail-item"><div class="detail-item-label">Job Type</div><div class="detail-item-value" id="modalType"></div></div>
+                    <div class="detail-item"><div class="detail-item-label">Total Distance</div><div class="detail-item-value" id="modalDistance"></div></div>
+                    <div class="detail-item"><div class="detail-item-label">Est. Duration</div><div class="detail-item-value" id="modalDuration"></div></div>
+                    <div class="detail-item"><div class="detail-item-label">Pickup Address</div><div class="detail-item-value" id="modalPickup"></div></div>
+                    <div class="detail-item"><div class="detail-item-label">Delivery Address</div><div class="detail-item-value" id="modalDelivery"></div></div>
+                </div>
+
+                <div class="modal-section">
+                    <div class="modal-section-title"><i class="fa-solid fa-store" aria-hidden="true"></i> Shop Information</div>
+                    <div class="detail-item"><div class="detail-item-label">Shop Name</div><div class="detail-item-value" id="modalShop"></div></div>
+                    <div class="detail-item" id="modalShopPhoneRow"><div class="detail-item-label">Shop Phone</div><div class="detail-item-value" id="modalShopPhone"></div></div>
+                </div>
+
+                <div class="modal-section">
+                    <div class="modal-section-title"><i class="fa-solid fa-user" aria-hidden="true"></i> Customer Information</div>
+                    <div id="modalCustomerHidden" class="modal-note">The customer's name and phone are shown after you accept this job.</div>
+                    <div id="modalCustomerBlock">
+                        <div class="detail-item"><div class="detail-item-label">Name</div><div class="detail-item-value" id="modalCustomer"></div></div>
+                        <div class="detail-item"><div class="detail-item-label">Phone</div><div class="detail-item-value" id="modalCustomerPhone"></div></div>
                     </div>
                 </div>
 
-                <!-- Shop Details -->
                 <div class="modal-section">
-                    <div class="modal-section-title">
-                        <i class="fa-solid fa-store" aria-hidden="true"></i>
-                        Shop Information
-                    </div>
+                    <div class="modal-section-title"><i class="fa-solid fa-money-bill" aria-hidden="true"></i> Earnings</div>
                     <div class="detail-item">
-                        <div class="detail-item-label">Shop Name</div>
-                        <div class="detail-item-value" id="modalShop">Mama Mo Laundry</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-item-label">Service Type</div>
-                        <div class="detail-item-value">Wash & Fold Service</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-item-label">Shop Phone</div>
-                        <div class="detail-item-value">+63 2 8123 4567</div>
+                        <div class="detail-item-label">Your Pay</div>
+                        <div class="detail-item-value" style="font-weight: bold; font-size: 16px; color: var(--color-dark);" id="modalTotal"></div>
                     </div>
                 </div>
 
-                <!-- Customer Details -->
-                <div class="modal-section">
-                    <div class="modal-section-title">
-                        <i class="fa-solid fa-user" aria-hidden="true"></i>
-                        Customer Information
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-item-label">Name</div>
-                        <div class="detail-item-value" id="modalCustomer">Maria Santos</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-item-label">Phone</div>
-                        <div class="detail-item-value">+63 912 345 6789</div>
-                    </div>
-                </div>
-
-                <!-- Earnings Breakdown -->
-                <div class="modal-section">
-                    <div class="modal-section-title">
-                        <i class="fa-solid fa-money-bill" aria-hidden="true"></i>
-                        Earnings Breakdown
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-item-label">Base Rate (per km)</div>
-                        <div class="detail-item-value">₱100/km</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-item-label">Distance Earnings</div>
-                        <div class="detail-item-value" style="font-weight: bold; color: var(--color-primary);"
-                            id="modalEarnings">₱230</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-item-label">Bonuses</div>
-                        <div class="detail-item-value" id="modalBonus">+₱50</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-item-label">Total Earnings</div>
-                        <div class="detail-item-value"
-                            style="font-weight: bold; font-size: 16px; color: var(--color-success);" id="modalTotal">
-                            ₱280</div>
-                    </div>
-                </div>
-
-                <!-- Actions -->
-                <div class="modal-actions" id="modalActions">
-                    <button class="modal-btn modal-btn-primary" onclick="acceptOrderFromModal()">
-                        <i class="fa-solid fa-check" aria-hidden="true"></i>
-                        Accept Order
-                    </button>
-                    <button class="modal-btn modal-btn-secondary" onclick="closeModal()">
-                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-                        Cancel
-                    </button>
-                </div>
+                <div class="modal-actions" id="modalActions"></div>
             </div>
         </div>
     </div>
 
-    <!-- LOGOUT MODAL -->
-    <div class="modal" id="logoutModal" role="dialog" aria-labelledby="logoutTitle" aria-hidden="true">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title" id="logoutTitle">
-                    <i class="fa-solid fa-sign-out-alt" aria-hidden="true"></i>
-                    Log Out
-                </div>
-                <button class="close-btn" onclick="closeLogoutModal()" aria-label="Close logout dialog">
-                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-                </button>
-            </div>
-
-            <div class="modal-body">
-                <p>Are you sure you want to log out?</p>
-                <div class="modal-actions">
-                    <button class="modal-btn modal-btn-primary" onclick="confirmLogout()">Yes, Log Out</button>
-                    <button class="modal-btn modal-btn-secondary" onclick="closeLogoutModal()">Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div class="flash" id="flash" role="status" aria-live="polite"></div>
 
     <!-- FOOTER -->
     <footer>
@@ -1762,266 +1635,261 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
     </footer>
 
     <script>
-        $(document).ready(function () {
+        // ---- small helpers -------------------------------------------------------------------------------
+        var flashTimer = null;
+        function flash(message, type) {
+            var el = document.getElementById('flash');
+            el.textContent = message;
+            el.className = 'flash show' + (type === 'error' ? ' error' : '');
+            clearTimeout(flashTimer);
+            flashTimer = setTimeout(function () { el.classList.remove('show'); }, 4000);
+        }
 
-            // 1. DATA SOURCES
-            // Before: two hard-coded arrays + LV.orders() (browser storage).
-            // Now: both lists start empty and loadJobs() fills them from the PHP API.
-            let availableOrders = [];
-            let currentOrders = [];
-
-            // Adapter: converts ONE job from the API into the object shape the card templates below already use,
-            // so the templates did not need rewriting.
-            function toCard(job) {
-                return {
-                    id: '#LV-' + job.orderId + (job.type === 'send' ? '-S' : '-R'),   // label shown on the card
-                    jobId: job.id,                                                     // the REAL id we send back to accept
-                    sharedOrderId: job.orderId,                                        // truthy -> template skips the fake " Laundry" suffix
-                    shop: job.shop, type: job.type,
-                    distance: job.distanceKm, time: String(job.minutes),
-                    earnings: job.pay, bonus: 0,
-                    pickup: job.pickup, delivery: job.dropoff,
-                    customer: job.customer || '',
-                    status: 'in-transit',
-                    progress: job.type === 'send' ? 35 : 70                            // rough progress bar value
-                };
+        function toggleMenu() {
+            var menu = document.getElementById('navDropdown');
+            var isOpen = menu.classList.toggle('show');
+            document.querySelector('.menu-btn').setAttribute('aria-expanded', String(isOpen));
+        }
+        document.addEventListener('click', function (event) {
+            if (!event.target.closest('.menu-container')) {
+                document.getElementById('navDropdown').classList.remove('show');
+                document.querySelector('.menu-btn').setAttribute('aria-expanded', 'false');
             }
-
-            // Ask the server for the board and redraw everything.
-            async function loadJobs() {
-                try {
-                    const data = await LVApi.get('../api/rider/jobs.php');
-                    availableOrders = data.available.map(toCard);
-                    currentOrders = data.current.map(toCard);
-                    renderAvailableOrders();
-                    renderCurrentOrders();
-                    filterAndSearch('available');   // also refreshes the counters
-                    filterAndSearch('current');
-                } catch (error) {
-                    alert(error.message);
-                }
-            }
-
-            // 2. RENDERING TEMPLATES
-            function renderAvailableOrders() {
-                const html = availableOrders.map(o => `
-            <div class="order-card" data-status="${o.type}" data-shop="${LV.esc(o.shop.toLowerCase())}">
-                <div class="order-header">
-                    <div><div class="order-number">Job ID</div><div class="order-id">${o.id}</div></div>
-                    <div class="job-type-badge"><span class="job-type-dot ${o.type}"></span>${o.type === 'send' ? 'Send Order' : 'Return Order'}</div>
-                </div>
-                <div class="shop-info">
-                    <div class="shop-name"><i class="fa-solid fa-location-dot shop-icon"></i> ${LV.esc(o.sharedOrderId ? o.shop : o.shop + ' Laundry')}</div>
-                    <div class="shop-type">Delivery Service</div>
-                </div>
-                <div class="route-info">
-                    <div class="route-step"><div class="route-icon"><i class="fa-solid fa-store"></i></div><div class="route-content"><div class="route-label">Pickup From</div><div class="route-address">${LV.esc(o.pickup)}</div></div></div>
-                    <div class="route-step"><div class="route-icon"><div class="route-connector"></div><i class="fa-solid fa-home"></i></div><div class="route-content"><div class="route-label">${o.type === 'send' ? 'Deliver To' : 'Return To'}</div><div class="route-address">${LV.esc(o.delivery)}</div></div></div>
-                </div>
-                <div class="order-details">
-                    <div class="detail-row"><i class="fa-solid fa-map detail-icon"></i><div class="detail-content"><div class="detail-label">Distance</div><div class="detail-value">${o.distance} km</div></div></div>
-                    <div class="detail-row"><i class="fa-solid fa-hourglass-end detail-icon"></i><div class="detail-content"><div class="detail-label">Est. Time</div><div class="detail-value">${o.time} minutes</div></div></div>
-                    <div class="earnings-info">
-                        <div class="earnings-row"><span class="earnings-label">Distance Earnings</span><span class="earnings-value">₱${o.earnings}</span></div>
-                        <div class="earnings-row"><span class="earnings-label">Bonus</span><span class="earnings-value">+₱${o.bonus}</span></div>
-                    </div>
-                </div>
-                <div class="order-footer">
-                    <button class="btn-action btn-accept" data-id="${o.id}" data-job-id="${o.jobId}"><i class="fa-solid fa-check"></i> Accept Order</button>
-                    <button class="btn-action btn-view-details" data-order='${LV.esc(JSON.stringify(o))}'><i class="fa-solid fa-circle-info"></i> Details</button>
-                </div>
-            </div>
-        `).join('');
-                $('#availableOrdersGrid').html(html);
-            }
-
-            function renderCurrentOrders() {
-                const html = currentOrders.map(o => `
-            <div class="order-card" data-status="${o.status}" data-shop="${LV.esc(o.shop.toLowerCase())}">
-                <div class="order-header">
-                    <div><div class="order-number">Order</div><div class="order-id">${o.id}</div></div>
-                    <div class="order-status"><span class="status-indicator ${o.status}"></span>${o.status === 'in-transit' ? 'In Transit' : o.status === 'pending' ? 'Pending Pickup' : 'Completed'}</div>
-                </div>
-                <div class="shop-info">
-                    <div class="shop-name"><i class="fa-solid fa-location-dot shop-icon"></i> ${LV.esc(o.sharedOrderId ? o.shop : o.shop + ' Laundry')}</div>
-                    <div class="shop-type">Delivery Service</div>
-                </div>
-                <div class="order-details">
-                    <div class="detail-row"><i class="fa-solid fa-user detail-icon"></i><div class="detail-content"><div class="detail-label">Customer</div><div class="detail-value">${LV.esc(o.customer)}</div></div></div>
-                    <div class="detail-row"><i class="fa-solid fa-map-pin detail-icon"></i><div class="detail-content"><div class="detail-label">${o.status === 'completed' ? 'Delivered To' : 'Delivery To'}</div><div class="detail-value">${LV.esc(o.delivery)}</div></div></div>
-                    <div class="delivery-info">
-                        <div class="delivery-info-row"><span class="delivery-info-label">Distance</span><span class="delivery-info-value">${o.distance} km</span></div>
-                        <div class="delivery-info-row"><span class="delivery-info-label">Est. Time</span><span class="delivery-info-value">${o.time} mins</span></div>
-                        <div class="delivery-info-row"><span class="delivery-info-label">Earnings</span><span class="delivery-info-value">₱${o.earnings}</span></div>
-                    </div>
-                    <div class="progress-tracker">
-                        <div class="progress-label">Trip Progress</div>
-                        <div class="progress-bar"><div class="progress-fill" style="width: ${o.progress}%;"></div></div>
-                    </div>
-                </div>
-                <div class="order-footer">
-                    <button class="btn-action btn-primary-action current-details-btn" data-id="${o.id}" data-order='${LV.esc(JSON.stringify(o))}'><i class="fa-solid fa-circle-info"></i> View Details</button>
-                    <button class="btn-action btn-secondary-action call-btn"><i class="fa-solid fa-phone"></i> Call</button>
-                </div>
-            </div>
-        `).join('');
-                $('#currentOrdersGrid').html(html);
-            }
-
-            // 3. UNIFIED FILTER & SEARCH LOGIC
-            function filterAndSearch(sectionId) {
-                const $section = $(`#${sectionId}`);
-                const activeFilter = $section.find('.filter-btn.active').data('filter') || 'all';
-                const query = $section.find('input[type="text"]').val().toLowerCase();
-
-                let total = 0, counts = {};
-
-                $section.find('.order-card').each(function () {
-                    const $card = $(this);
-                    const status = $card.data('status');
-                    const matchFilter = (activeFilter === 'all' || status === activeFilter);
-                    const matchSearch = $card.text().toLowerCase().includes(query);
-
-                    if (matchFilter && matchSearch) {
-                        $card.css('display', 'flex');
-                        total++;
-                        counts[status] = (counts[status] || 0) + 1;
-                    } else {
-                        $card.css('display', 'none');
-                    }
-                });
-
-                // Dynamically update stats
-                if (sectionId === 'available') {
-                    $('#availableTotalCount').text(total);
-                    $('#availableSendCount').text(counts['send'] || 0);
-                    $('#availableReturnCount').text(counts['return'] || 0);
-                } else {
-                    $('#currentTotalCount').text(total);
-                    $('#currentInTransitCount').text(counts['in-transit'] || 0);
-                    $('#currentPendingCount').text(counts['pending'] || 0);
-                    $('#currentCompletedCount').text(counts['completed'] || 0);
-                }
-            }
-
-            // 4. EVENT LISTENERS
-            window.switchTab = function (tabName) {
-                $('.tab-content, .tab-btn').removeClass('active');
-                $(`#${tabName}`).addClass('active');
-                $(`.tab-btn[onclick*="${tabName}"]`).addClass('active');
-            };
-
-            window.toggleMenu = function () {
-                const $menu = $('#navDropdown');
-                const show = $menu.toggleClass('show').hasClass('show');
-                $('.menu-btn').attr('aria-expanded', show);
-            };
-
-            $(document).on('click', function (e) {
-                if (!$(e.target).closest('.menu-container').length) {
-                    $('#navDropdown').removeClass('show');
-                    $('.menu-btn').attr('aria-expanded', 'false');
-                }
-            });
-
-            $('.filter-btn').on('click', function () {
-                const $btn = $(this);
-                const $section = $btn.closest('.tab-content');
-                $section.find('.filter-btn').removeClass('active');
-                $btn.addClass('active');
-                filterAndSearch($section.attr('id'));
-            });
-
-            $('#searchAvailable, #searchCurrent').on('keyup', function () {
-                filterAndSearch($(this).closest('.tab-content').attr('id'));
-            });
-
-            // 5. MODAL HANDLERS
-            function closeModal() {
-                $('#orderModal').removeClass('show').attr('aria-hidden', 'true');
-                $('body').css('overflow', 'auto');
-            }
-
-            window.closeModal = closeModal;
-
-            function closeLogoutModal() {
-                $('#logoutModal').removeClass('show').attr('aria-hidden', 'true');
-                $('body').css('overflow', 'auto');
-            }
-
-            window.closeLogoutModal = closeLogoutModal;
-
-            window.openLogoutModal = function () {
-                $('#logoutModal').addClass('show').attr('aria-hidden', 'false');
-                $('body').css('overflow', 'hidden');
-            };
-
-            window.confirmLogout = function () {
-                location.href = '../auth/logout.php';   // ends the PHP session (LV.logout only cleared the demo data)
-            };
-
-            $(document).on('click', '.btn-view-details', function () {
-                const o = JSON.parse($(this).attr('data-order'));
-                $('#modalTitle').text(o.id);
-                $('#modalDistance').text(o.distance + ' km');
-                $('#modalDuration').text(o.time + ' minutes');
-                $('#modalPickup').text(o.pickup);
-                $('#modalDelivery').text(o.delivery);
-                $('#modalShop').text(o.sharedOrderId ? o.shop : o.shop + ' Laundry');
-                $('#modalEarnings').text('₱' + o.earnings);
-                $('#modalBonus').text('+₱' + o.bonus);
-                $('#modalTotal').text('₱' + (parseInt(o.earnings) + parseInt(o.bonus)));
-
-                $('#modalActions').html(`
-            <button class="modal-btn modal-btn-primary accept-modal-btn" data-id="${o.id}" data-job-id="${o.jobId}"><i class="fa-solid fa-check"></i> Accept Order</button>
-            <button class="modal-btn modal-btn-secondary" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Cancel</button>
-        `);
-                $('#orderModal').addClass('show').attr('aria-hidden', 'false');
-                $('body').css('overflow', 'hidden');
-            });
-
-            $(document).on('click', '.current-details-btn', function () {
-                const o = JSON.parse($(this).attr('data-order'));
-                $('#modalTitle').text(o.id);
-
-                $('#modalActions').html(`
-            <button class="modal-btn modal-btn-primary" onclick="closeModal();"><i class="fa-solid fa-xmark"></i> Close</button>
-            <button class="modal-btn modal-btn-secondary" onclick="alert('Calling shop...');"><i class="fa-solid fa-phone"></i> Call Shop</button>
-        `);
-                $('#orderModal').addClass('show').attr('aria-hidden', 'false');
-                $('body').css('overflow', 'hidden');
-            });
-
-            // Accept button (on the card AND inside the details popup).
-            // The server decides who wins if two riders click at once; we just show the result.
-            $(document).on('click', '.btn-accept, .accept-modal-btn', async function () {
-                const jobId = $(this).data('job-id');                       // from data-job-id="..."
-                const label = $(this).data('id') || $('#modalTitle').text();
-                if (!confirm(`Accept order ${label}?`)) return;
-                try {
-                    const data = await LVApi.postJson('../api/rider/jobs.php', { action: 'accept', job_id: jobId });
-                    availableOrders = data.available.map(toCard);          // the reply is the refreshed board
-                    currentOrders = data.current.map(toCard);
-                    closeModal();
-                    renderAvailableOrders();
-                    renderCurrentOrders();
-                    filterAndSearch('available');
-                    filterAndSearch('current');
-                    alert(`Order ${label} accepted and added to your current orders.`);
-                } catch (error) {
-                    alert(error.message);        // e.g. "Another rider already took this job."
-                    loadJobs();                   // refresh so the taken job disappears
-                }
-            });
-
-            $(document).on('click', '.call-btn', () => alert('Calling customer...'));
-
-            $(window).on('click', (e) => { if ($(e.target).is('#orderModal')) closeModal(); });
-            $(document).on('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
-
-            // 6. INITIALIZE
-            loadJobs();
         });
+
+        function switchTab(name) {
+            document.querySelectorAll('.tab-content, .tab-btn').forEach(function (el) { el.classList.remove('active'); });
+            document.getElementById(name).classList.add('active');
+            document.querySelectorAll('.tab-btn')[name === 'available' ? 0 : 1].classList.add('active');
+            try { history.replaceState(null, '', '#' + name); } catch (e) { /* ignore */ }
+        }
+
+        // A phone number only goes into a tel: link after everything but digits and + is removed.
+        function telHref(number) { return 'tel:' + String(number || '').replace(/[^0-9+]/g, ''); }
+
+        var availableJobs = [];   // jobs from the server (the real objects, not copies in HTML attributes)
+        var currentJobs = [];
+        var historyJobs = [];
+        var openJob = null;       // the job shown in the details popup
+
+        function jobLabel(job) { return '#LV-' + job.orderId + (job.type === 'send' ? '-S' : '-R'); }
+        function typeLabel(job) { return job.type === 'send' ? 'Send order (customer to store)' : 'Return order (store to customer)'; }
+        function searchText(job) {
+            return [jobLabel(job), job.shop, job.pickup, job.dropoff, job.customer || ''].join(' ').toLowerCase();
+        }
+        function emptyState(icon, title, text) {
+            return '<div class="empty-state"><i class="fa-solid ' + icon + '"></i><strong>' + title + '</strong>' + text + '</div>';
+        }
+
+        // ---- rendering (every value a person typed goes through LV.esc) ------------------------------------
+        function routeBlock(job) {
+            return '<div class="route-info">' +
+                '<div class="route-step"><div class="route-icon"><i class="fa-solid fa-' + (job.type === 'send' ? 'home' : 'store') + '"></i></div>' +
+                    '<div class="route-content"><div class="route-label">Pickup From</div><div class="route-address">' + LV.esc(job.pickup) + '</div></div></div>' +
+                '<div class="route-step"><div class="route-icon"><div class="route-connector"></div><i class="fa-solid fa-' + (job.type === 'send' ? 'store' : 'home') + '"></i></div>' +
+                    '<div class="route-content"><div class="route-label">' + (job.type === 'send' ? 'Deliver To' : 'Return To') + '</div><div class="route-address">' + LV.esc(job.dropoff) + '</div></div></div>' +
+            '</div>';
+        }
+
+        function renderAvailable() {
+            document.getElementById('availableOrdersGrid').innerHTML = availableJobs.map(function (o) {
+                return '<div class="order-card" data-type="' + o.type + '" data-pay="' + o.pay + '" data-search="' + LV.esc(searchText(o)) + '">' +
+                    '<div class="order-header">' +
+                        '<div><div class="order-number">Job ID</div><div class="order-id">' + jobLabel(o) + '</div></div>' +
+                        '<div class="job-type-badge"><span class="job-type-dot ' + o.type + '"></span>' + (o.type === 'send' ? 'Send Order' : 'Return Order') + '</div>' +
+                    '</div>' +
+                    '<div class="shop-info"><div class="shop-name"><i class="fa-solid fa-location-dot shop-icon"></i> ' + LV.esc(o.shop) + '</div><div class="shop-type">Delivery Service</div></div>' +
+                    routeBlock(o) +
+                    '<div class="order-details">' +
+                        '<div class="detail-row"><i class="fa-solid fa-map detail-icon"></i><div class="detail-content"><div class="detail-label">Distance</div><div class="detail-value">' + o.distanceKm.toFixed(1) + ' km</div></div></div>' +
+                        '<div class="detail-row"><i class="fa-solid fa-hourglass-end detail-icon"></i><div class="detail-content"><div class="detail-label">Est. Time</div><div class="detail-value">' + o.minutes + ' minutes</div></div></div>' +
+                        '<div class="earnings-info"><div class="earnings-row"><span class="earnings-label">Your Pay</span><span class="earnings-value">' + LV.peso(o.pay) + '</span></div></div>' +
+                    '</div>' +
+                    '<div class="order-footer">' +
+                        '<button class="btn-action btn-accept" data-job-id="' + o.id + '"><i class="fa-solid fa-check"></i> Accept Order</button>' +
+                        '<button class="btn-action btn-view-details" data-job-id="' + o.id + '" data-list="available"><i class="fa-solid fa-circle-info"></i> Details</button>' +
+                    '</div></div>';
+            }).join('') || emptyState('fa-clipboard-check', 'No jobs available right now', 'New jobs appear here as stores confirm orders. This list refreshes by itself.');
+        }
+
+        function renderCurrent() {
+            document.getElementById('currentOrdersGrid').innerHTML = currentJobs.map(function (o) {
+                var heading = o.type === 'send' ? 'Heading to the store' : 'Heading to the customer';
+                return '<div class="order-card" data-type="' + o.type + '" data-pay="' + o.pay + '" data-search="' + LV.esc(searchText(o)) + '">' +
+                    '<div class="order-header">' +
+                        '<div><div class="order-number">Order</div><div class="order-id">' + jobLabel(o) + '</div></div>' +
+                        '<div class="order-status"><span class="status-indicator in-transit"></span>' + heading + '</div>' +
+                    '</div>' +
+                    '<div class="shop-info"><div class="shop-name"><i class="fa-solid fa-location-dot shop-icon"></i> ' + LV.esc(o.shop) + '</div><div class="shop-type">' + (o.type === 'send' ? 'Send order' : 'Return order') + '</div></div>' +
+                    routeBlock(o) +
+                    '<div class="order-details">' +
+                        '<div class="detail-row"><i class="fa-solid fa-user detail-icon"></i><div class="detail-content"><div class="detail-label">Customer</div><div class="detail-value">' + LV.esc(o.customer) + '</div></div></div>' +
+                        '<div class="delivery-info">' +
+                            '<div class="delivery-info-row"><span class="delivery-info-label">Distance</span><span class="delivery-info-value">' + o.distanceKm.toFixed(1) + ' km</span></div>' +
+                            '<div class="delivery-info-row"><span class="delivery-info-label">Est. Time</span><span class="delivery-info-value">' + o.minutes + ' mins</span></div>' +
+                            '<div class="delivery-info-row"><span class="delivery-info-label">Your Pay</span><span class="delivery-info-value">' + LV.peso(o.pay) + '</span></div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="order-footer">' +
+                        '<button class="btn-action btn-primary-action btn-view-details" data-job-id="' + o.id + '" data-list="current"><i class="fa-solid fa-circle-info"></i> View Details</button>' +
+                        (o.customerContact
+                            ? '<a class="btn-action btn-secondary-action" href="' + LV.esc(telHref(o.customerContact)) + '"><i class="fa-solid fa-phone"></i> Call Customer</a>'
+                            : '<span class="btn-action btn-secondary-action is-disabled"><i class="fa-solid fa-phone"></i> No phone</span>') +
+                    '</div></div>';
+            }).join('') || emptyState('fa-box-open', 'No current orders', 'Accept a job from the Available Orders tab and it will show up here.');
+        }
+
+        function renderHistoryPreview() {
+            document.getElementById('historyPreview').innerHTML = historyJobs.slice(0, 3).map(function (job) {
+                return '<div class="delivery-item">' +
+                    '<div class="delivery-header"><div class="delivery-shop">' + LV.esc(job.shop) + '</div><div class="delivery-distance">' + job.distanceKm.toFixed(1) + ' km</div></div>' +
+                    '<div class="delivery-address"><i class="fa-solid fa-location-dot" aria-hidden="true"></i><span>' + LV.esc(job.pickup) + ' &rarr; ' + LV.esc(job.dropoff) + '</span></div>' +
+                    '<div class="delivery-meta"><span><i class="fa-solid fa-clock" aria-hidden="true"></i> Completed ' + LV.when(job.completedAt) + '</span>' +
+                    '<span><i class="fa-solid fa-money-bill" aria-hidden="true"></i> ' + LV.peso(job.pay) + '</span></div></div>';
+            }).join('') || '<div class="delivery-item"><div class="delivery-shop">No completed deliveries yet</div></div>';
+        }
+
+        // ---- filter, search and the numbers above each list ------------------------------------------------
+        function applyFilters(section) {
+            var root = document.getElementById(section);
+            var activeBtn = root.querySelector('.filter-btn.active');
+            var filter = activeBtn ? activeBtn.getAttribute('data-filter') : 'all';
+            var query = root.querySelector('input[type="text"]').value.trim().toLowerCase();
+            var total = 0, send = 0, ret = 0, pay = 0;
+            root.querySelectorAll('.order-card').forEach(function (card) {
+                var type = card.getAttribute('data-type');
+                var show = (filter === 'all' || filter === type) && (!query || card.getAttribute('data-search').indexOf(query) > -1);
+                card.style.display = show ? 'flex' : 'none';
+                if (show) {
+                    total++; pay += parseFloat(card.getAttribute('data-pay')) || 0;
+                    if (type === 'send') send++; else ret++;
+                }
+            });
+            if (section === 'available') {
+                document.getElementById('availableTotalCount').textContent = total;
+                document.getElementById('availableSendCount').textContent = send;
+                document.getElementById('availableReturnCount').textContent = ret;
+                document.getElementById('maxEarnings').textContent = LV.peso(pay);
+            } else {
+                document.getElementById('currentTotalCount').textContent = total;
+                document.getElementById('currentSendCount').textContent = send;
+                document.getElementById('currentReturnCount').textContent = ret;
+                document.getElementById('currentPay').textContent = LV.peso(pay);
+            }
+        }
+
+        document.querySelectorAll('.filter-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var root = btn.closest('.tab-content');
+                root.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                applyFilters(root.id);
+            });
+        });
+        ['available', 'current'].forEach(function (section) {
+            document.getElementById(section).querySelector('input[type="text"]').addEventListener('input', function () { applyFilters(section); });
+        });
+
+        function showBoard(data) {
+            availableJobs = data.available;
+            currentJobs = data.current;
+            historyJobs = data.history;
+            renderAvailable(); renderCurrent(); renderHistoryPreview();
+            applyFilters('available'); applyFilters('current');
+        }
+
+        async function loadJobs(quiet) {
+            try {
+                showBoard(await LVApi.get('../api/rider/jobs.php?history_limit=3'));
+            } catch (error) {
+                if (!quiet) flash(error.message, 'error');
+            }
+        }
+
+        // ---- details popup ---------------------------------------------------------------------------------
+        function closeModal() {
+            document.getElementById('orderModal').classList.remove('show');
+            document.getElementById('orderModal').setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = 'auto';
+            openJob = null;
+        }
+
+        function openDetails(job, isCurrent) {
+            openJob = job;
+            document.getElementById('modalTitle').textContent = jobLabel(job);
+            document.getElementById('modalType').textContent = typeLabel(job);
+            document.getElementById('modalDistance').textContent = job.distanceKm.toFixed(1) + ' km';
+            document.getElementById('modalDuration').textContent = job.minutes + ' minutes';
+            document.getElementById('modalPickup').textContent = job.pickup;
+            document.getElementById('modalDelivery').textContent = job.dropoff;
+            document.getElementById('modalShop').textContent = job.shop;
+            document.getElementById('modalTotal').textContent = LV.peso(job.pay);
+
+            var shopRow = document.getElementById('modalShopPhoneRow');
+            shopRow.style.display = job.shopContact ? '' : 'none';
+            document.getElementById('modalShopPhone').innerHTML = job.shopContact
+                ? '<a href="' + LV.esc(telHref(job.shopContact)) + '">' + LV.esc(job.shopContact) + '</a>' : '';
+
+            document.getElementById('modalCustomerHidden').style.display = isCurrent ? 'none' : '';
+            document.getElementById('modalCustomerBlock').style.display = isCurrent ? '' : 'none';
+            document.getElementById('modalCustomer').textContent = job.customer || '';
+            document.getElementById('modalCustomerPhone').innerHTML = job.customerContact
+                ? '<a href="' + LV.esc(telHref(job.customerContact)) + '">' + LV.esc(job.customerContact) + '</a>' : 'Not provided';
+
+            document.getElementById('modalActions').innerHTML = isCurrent
+                ? '<button class="modal-btn modal-btn-primary" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Close</button>'
+                : '<button class="modal-btn modal-btn-primary" data-job-id="' + job.id + '" id="modalAccept"><i class="fa-solid fa-check"></i> Accept Order</button>' +
+                  '<button class="modal-btn modal-btn-secondary" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Cancel</button>';
+
+            document.getElementById('orderModal').classList.add('show');
+            document.getElementById('orderModal').setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // ---- accept ----------------------------------------------------------------------------------------
+        var accepting = false;
+        async function acceptJob(jobId) {
+            var job = availableJobs.find(function (j) { return j.id === jobId; });
+            if (!job || accepting) return;
+            if (!confirm('Accept ' + jobLabel(job) + ' from ' + job.shop + '? You will be paid ' + LV.peso(job.pay) + '.')) return;
+            accepting = true;
+            try {
+                var data = await LVApi.postJson('../api/rider/jobs.php?history_limit=3', { action: 'accept', job_id: jobId });
+                closeModal();
+                showBoard(data);
+                flash(jobLabel(job) + ' accepted. It is now in your Current Orders.');
+                switchTab('current');
+            } catch (error) {
+                flash(error.message, 'error');   // e.g. "Another rider already took this job."
+                closeModal();
+                loadJobs(true);                   // refresh so the taken job disappears
+            } finally {
+                accepting = false;
+            }
+        }
+
+        document.addEventListener('click', function (event) {
+            var accept = event.target.closest('.btn-accept, #modalAccept');
+            if (accept) { acceptJob(parseInt(accept.getAttribute('data-job-id'), 10)); return; }
+            var view = event.target.closest('.btn-view-details');
+            if (view) {
+                var isCurrent = view.getAttribute('data-list') === 'current';
+                var id = parseInt(view.getAttribute('data-job-id'), 10);
+                var job = (isCurrent ? currentJobs : availableJobs).find(function (j) { return j.id === id; });
+                if (job) openDetails(job, isCurrent);
+                return;
+            }
+            if (event.target.id === 'orderModal') closeModal();
+        });
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') { closeModal(); document.getElementById('navDropdown').classList.remove('show'); }
+        });
+
+        // ---- start, then keep the board fresh ----------------------------------------------------------------
+        if (location.hash === '#current') switchTab('current');
+        loadJobs(false);
+        setInterval(function () { if (!document.hidden && !openJob && !accepting) loadJobs(true); }, 30000);
+        document.addEventListener('visibilitychange', function () { if (!document.hidden && !openJob) loadJobs(true); });
     </script>
 
 </body>

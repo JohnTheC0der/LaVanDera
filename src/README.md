@@ -70,3 +70,21 @@ Already imported the schema before? Add the two new store benefits without re-im
 | Rider accepts return job | rider | job -> `accepted`; **order -> `enroute_to_customer`** |
 | Confirm return | customer | order -> `completed` (+ `completed_at`); return job completed |
 Write a row to `order_status_history` on every change, as `store_order_set_status()` does.
+
+## Rider pages and API
+Pages (`public/rider/`): `lavandera_rider_dashboard.php`, `Rider_Orders_Page.php`, `Rider_Order_History_Page.php`, `Rider_Profile_Page.php`.
+All four call `guard_rider_page()` (approved riders only) and read everything from the database through two endpoints:
+
+| Endpoint | Does |
+|---|---|
+| `GET api/rider/jobs.php` | `{available, current, history, stats}`. Optional `?history_limit=20&history_offset=0` pages through finished jobs (max 100 per page); `stats.completed` is the total. |
+| `POST api/rider/jobs.php` | `{"action":"accept","job_id":N}` (CSRF header required). Returns the refreshed board. Only one rider can win a job. |
+| `GET/POST api/rider/profile.php` | Rider name + phone (email and status cannot be changed here). |
+
+What a rider sees, and when:
+* **Available** jobs show addresses, distance and pay, but NOT the customer's name or phone.
+* **Current** jobs (accepted, not finished) also show the customer's name/phone and the store's phone.
+* **History** shows finished jobs without any phone numbers.
+* A rider never marks a job done. The store's *Confirm delivery* completes the send job and the customer's *Confirm return* completes the return job (see the hand-off table above); the job then moves into the rider's History and earnings.
+* There are no ratings or online/offline status in the database, so the pages do not show them.
+* "Today" is worked out in PHP (Asia/Manila), not with `CURDATE()`, so it matches the time zone that wrote `completed_at`.
