@@ -17,6 +17,8 @@
 function login_user(array $user)
 {
     session_regenerate_id(true);
+    // drop leftovers from an earlier "waiting for approval" visit, so another account's status is never shown to this user
+    unset($_SESSION['pending_store_id'], $_SESSION['pending_rider_id']);
     $_SESSION['user_id'] = (int) $user['id'];
     $_SESSION['role']    = $user['role'];
 }

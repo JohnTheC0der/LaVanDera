@@ -3,10 +3,16 @@
 ## First-time setup
 1. Install XAMPP, start **Apache** and **MySQL** in the XAMPP Control Panel.
 2. Put the project at `C:\xampp\htdocs\LaVanDera\` (so this folder is `...\LaVanDera\src`).
-3. Open http://localhost/phpmyadmin -> **Import** -> choose `database/lavandera.sql`
-   (then optionally `database/lavandera_sample_data.sql` for demo stores/orders; demo password: `password`).
+3. Open http://localhost/phpmyadmin -> **Import** -> choose `database/lavandera.sql`, then import
+   `database/lavandera_sample_data.sql` (demo stores, riders, customers and orders).
 4. DB credentials live in `src/config/config.php` (XAMPP default: user `root`, no password).
-5. Open http://localhost/LaVanDera/public/store/Store_Dashboard_Page.php
+5. Open **http://localhost/LaVanDera/public/** (goes to the log-in page).
+6. The shared front-end files must be present: `public/css/lavandera_theme.css`, `public/js/lavandera_demo.js`,
+   `public/images/LAVANDERA.svg`, `public/images/Lavandera_logo.png`.
+
+Demo accounts (password `password` for all): admin `admin@lavandera.test`; customers `maria.santos@example.com`,
+`juan.delacruz@example.com`; riders `rico.rider@example.com` (approved), `ana.rider@example.com` (pending);
+stores `kapitolyo.wash@example.com`, `bubbles.laundry@example.com` (free delivery), `newstore.laundry@example.com` (pending).
 
 Already imported the schema before? Add the two new store benefits without re-importing:
 
