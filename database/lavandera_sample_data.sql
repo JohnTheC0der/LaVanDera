@@ -54,16 +54,16 @@ UPDATE users SET reviewed_by = 1, reviewed_at = NOW() WHERE id IN (4, 6, 7);
 
 -- ---- Orders ----------------------------------------------------------
 -- Fee rule: 40 + 10/km beyond 2 km, rounded to whole pesos.
--- #1 COMPLETED   Maria -> Kapitolyo Wash Hub, Medium, GCash, 3.4 km (fee 54 each way)
+-- #1 COMPLETED   Maria -> Kapitolyo Wash Hub, Medium, Cash, 3.4 km (fee 54 each way)
 -- #2 AT LAUNDROMAT Juan -> Bubbles (free delivery), Small, Cash, 1.8 km (rider still earns 40)
 -- #3 WAITING FOR DRIVER Maria -> Kapitolyo Wash Hub, Large, Cash, 3.4 km
--- #4 PENDING STORE Juan -> Kapitolyo Wash Hub, Small, GCash, 2.9 km (fee 49 each way)
+-- #4 PENDING STORE Juan -> Kapitolyo Wash Hub, Small, Cash, 2.9 km (fee 49 each way)
 INSERT INTO orders (id, customer_id, store_id, bag_type_id, payment_method, payment_status,
                     store_fee, send_fee, return_fee, total_price, free_delivery, distance_km,
                     customer_address, customer_latitude, customer_longitude,
                     store_address, store_latitude, store_longitude,
                     status, created_at, completed_at) VALUES
-  (1, 2, 6, 2, 'gcash', 'paid',   90.00, 54.00, 54.00, 198.00, 0, 3.40,
+  (1, 2, 6, 2, 'cash',  'paid',   90.00, 54.00, 54.00, 198.00, 0, 3.40,
       '12 Shaw Blvd, Kapitolyo, Pasig City', 14.5724000, 121.0565000,
       '88 Brixton St, Pasig Palengke, Pasig City', 14.5764000, 121.0851000,
       'completed', NOW() - INTERVAL 5 DAY, NOW() - INTERVAL 3 DAY),
@@ -75,7 +75,7 @@ INSERT INTO orders (id, customer_id, store_id, bag_type_id, payment_method, paym
       '12 Shaw Blvd, Kapitolyo, Pasig City', 14.5724000, 121.0565000,
       '88 Brixton St, Pasig Palengke, Pasig City', 14.5764000, 121.0851000,
       'waiting_for_driver', NOW() - INTERVAL 2 HOUR, NULL),
-  (4, 3, 6, 1, 'gcash', 'paid',   50.00, 49.00, 49.00, 148.00, 0, 2.90,
+  (4, 3, 6, 1, 'cash',  'unpaid',   50.00, 49.00, 49.00, 148.00, 0, 2.90,
       '45 Sandoval Ave, Pinagbuhatan, Pasig City', 14.5590000, 121.0970000,
       '88 Brixton St, Pasig Palengke, Pasig City', 14.5764000, 121.0851000,
       'pending_store', NOW() - INTERVAL 10 MINUTE, NULL);

@@ -110,4 +110,4 @@ Rules the server enforces (the browser only previews):
 * The customer must have a map pin; the store must be approved, accepting orders, and have all 3 prices and a map pin.
 * The same bag from the same store within 15 seconds counts as one order (double-click guard).
 * Addresses, pins and fees are copied onto the order, so later profile/price changes never rewrite history.
-* GCash is a simulation: the order is marked paid with a `DEMO-` reference and no money moves. The pages say so.
+* Cash is the only payment option for now (collected on delivery; the store marks it paid when it receives the laundry). `orders.payment_method` still allows `gcash` and `gcash_reference` is unused, so a real gateway can be added later without a schema change.

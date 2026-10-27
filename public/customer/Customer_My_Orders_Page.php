@@ -169,7 +169,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
         /* ------------------------------------------------- order card -- */
         function orderCard(o) {
             const bag = LV.bagOf(o.bag);   // LV.bagOf is still a pure helper (icon + kg for a bag code)
-            const pay = o.payment === 'gcash' ? 'GCASH' : 'CASH';
+            const pay = 'CASH';
 
             return '<article class="lv-card lv-card-pad" data-order="' + o.id + '">' +
                 '<div class="lv-row-between" style="align-items:flex-start;">' +
@@ -179,7 +179,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
                             '<div style="font-weight:800; color:var(--lv-plum); font-size:16px;">' +
                                 LV.esc(o.storeName || 'Store') + '</div>' +
                             '<div class="lv-muted" style="font-size:13px;">#' + o.id + ' &middot; ' + bag.name + ' (' + bag.kg +
-                                'kg) &middot; ' + pay + (o.payment === 'gcash' && o.gcashRef ? ' (demo ref ' + LV.esc(o.gcashRef) + ')' : '') +
+                                'kg) &middot; ' + pay +
                                 ' &middot; ' + (o.paymentStatus === 'paid' ? 'paid' : 'unpaid') + ' &middot; placed ' + LV.when(o.createdAt) + '</div>' +
                         '</div>' +
                     '</div>' +

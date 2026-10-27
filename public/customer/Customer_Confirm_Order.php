@@ -93,7 +93,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
             let d = null;
             try { d = JSON.parse(sessionStorage.getItem('lv_order_draft')); } catch (e) { d = null; }
             if (!d || !d.storeId) return null;
-            if (d.payment !== 'cash' && d.payment !== 'gcash') return null;
+            if (d.payment !== 'cash') return null;
             if (BAG_CODES.indexOf(d.bag) === -1) return null;
             return { storeId: Number(d.storeId), payment: d.payment, bag: d.bag, notes: String(d.notes || '') };
         }
@@ -127,7 +127,6 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
         function render() {
             const f = computeFees();
             const bagInfo = LV.bagOf(draft.bag);
-            const gcash = draft.payment === 'gcash';
             const freeTag = '<span style="color:var(--lv-green); font-weight:800;">FREE</span>';
 
             const summary =
@@ -150,8 +149,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
                         '<div><div class="lv-option-title">' + LV.esc(bagInfo.name) + '</div><div class="lv-option-sub">Up to ' + bagInfo.kg + ' KG</div></div>' +
                         '<div class="lv-option-price" style="margin-left:auto;">' + LV.peso(f.storeFee) + '</div></div></div>' +
                     '<div class="lv-row-between" style="margin-top:16px;"><span class="lv-muted" style="font-size:13px;">Payment method</span>' +
-                        (gcash ? '<span class="lv-badge lv-tone-blue"><i class="fa-solid fa-mobile-screen"></i>GCash (demo)</span>'
-                               : '<span class="lv-badge lv-tone-green"><i class="fa-solid fa-money-bill-wave"></i>Cash</span>') + '</div>' +
+                        '<span class="lv-badge lv-tone-green"><i class="fa-solid fa-money-bill-wave"></i>Cash</span>' + '</div>' +
                     (draft.notes ? '<hr class="lv-divider"><div class="lv-label">Your notes</div><div style="font-size:14px; color:var(--lv-ink);">' +
                         '<i class="fa-solid fa-quote-left" style="color:var(--lv-pink-soft);"></i> ' + LV.esc(draft.notes) + '</div>' : '') +
                 '</div>';

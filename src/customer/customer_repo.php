@@ -128,7 +128,7 @@ function customer_place_order($customerId, array $in)
     if (!in_array($bagCode, CUSTOMER_BAG_CODES, true)) {
         throw new UserError('Choose a bag size.');
     }
-    if (!in_array($payment, ['cash', 'gcash'], true)) {
+    if ($payment !== 'cash') {   // cash is the only option for now; the payments column can take more later
         throw new UserError('Choose a payment method.');
     }
     $me = customer_load($customerId);
@@ -172,20 +172,19 @@ function customer_place_order($customerId, array $in)
         $storeFee = (float) $bag['price'];
         $total    = round($storeFee + 2 * $leg, 2);       // must equal store_fee + send_fee + return_fee (the SQL CHECK)
 
-        // GCash: no real payment gateway exists yet, so this only SIMULATES a paid order.
-        $paymentStatus = $payment === 'gcash' ? 'paid' : 'unpaid';
-        $gcashRef      = $payment === 'gcash' ? 'DEMO-' . strtoupper(bin2hex(random_bytes(4))) : null;
+        // Cash only: it is collected on delivery, so the order starts unpaid (the store marks it paid on receipt).
+        $paymentStatus = 'unpaid';
 
         // Addresses, coordinates and fees are COPIED onto the order (snapshots) so later profile
         // or price changes never rewrite history.
         $pdo->prepare(
-            'INSERT INTO orders (customer_id, store_id, bag_type_id, payment_method, payment_status, gcash_reference,
+            'INSERT INTO orders (customer_id, store_id, bag_type_id, payment_method, payment_status,
                                  store_fee, send_fee, return_fee, total_price, free_delivery, distance_km,
                                  customer_address, customer_latitude, customer_longitude,
                                  store_address, store_latitude, store_longitude, notes, status, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         )->execute([
-            $customerId, $storeId, (int) $bag['bag_id'], $payment, $paymentStatus, $gcashRef,
+            $customerId, $storeId, (int) $bag['bag_id'], $payment, $paymentStatus,
             sprintf('%.2f', $storeFee), sprintf('%.2f', $leg), sprintf('%.2f', $leg), sprintf('%.2f', $total),
             $free ? 1 : 0, sprintf('%.2f', $km),
             $me['address'], $me['latitude'], $me['longitude'],
@@ -238,7 +237,7 @@ function customer_orders_list($customerId)
         $out[] = [
             'id' => $oid, 'status' => $r['status'], 'storeId' => (int) $r['store_id'], 'storeName' => $r['store_name'],
             'bag' => $r['bag_code'], 'bagLabel' => $r['bag_name'] . ' / ' . $r['weight_kg'] . 'kg',
-            'payment' => $r['payment_method'], 'paymentStatus' => $r['payment_status'], 'gcashRef' => $r['gcash_reference'],
+            'payment' => $r['payment_method'], 'paymentStatus' => $r['payment_status'],
             'storeFee' => (float) $r['store_fee'], 'sendFee' => (float) $r['send_fee'], 'returnFee' => (float) $r['return_fee'],
             'total' => (float) $r['total_price'], 'freeDelivery' => (bool) $r['free_delivery'],
             'distanceKm' => (float) $r['distance_km'], 'notes' => $r['notes'],

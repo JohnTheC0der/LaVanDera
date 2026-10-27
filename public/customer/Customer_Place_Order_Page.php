@@ -41,7 +41,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
         <section class="lv-page-head">
             <div class="lv-eyebrow">Three quick steps</div>
             <h1 class="lv-title">Place an Order</h1>
-            <p class="lv-sub">Select a store &rarr; pick a payment option (Cash or GCash) &rarr; choose your bag,
+            <p class="lv-sub">Select a store &rarr; pick a payment option (Cash for now) &rarr; choose your bag,
                 then review everything before we send it to the shop.</p>
         </section>
 
@@ -74,8 +74,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
 
         const STEP_LABELS = ['Store', 'Payment', 'Bag'];
         const PAYMENTS = [
-            { key: 'cash',  icon: 'fa-money-bill-wave',      title: 'Cash',  sub: 'Pay the rider or the store on delivery' },
-            { key: 'gcash', icon: 'fa-mobile-screen-button', title: 'GCash', sub: 'Demo only: the order is marked paid, but no real money is taken yet' }
+            { key: 'cash',  icon: 'fa-money-bill-wave',      title: 'Cash',  sub: 'Pay the rider or the store on delivery' }
         ];
         let step = 1;
         let storeId = null;
@@ -115,7 +114,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'customer', 'name' => $user['name']
             let draft = null;
             if (params.get('resume')) { try { draft = JSON.parse(sessionStorage.getItem('lv_order_draft')); } catch (e) { draft = null; } }
             if (draft && list.some(function (s) { return s.id === Number(draft.storeId); }) &&
-                ['cash', 'gcash'].indexOf(draft.payment) > -1 && LV.bags.some(function (b) { return b.code === draft.bag; })) {
+                draft.payment === 'cash' && LV.bags.some(function (b) { return b.code === draft.bag; })) {
                 storeId = Number(draft.storeId); payment = draft.payment; bag = draft.bag; notes = String(draft.notes || '').slice(0, 500); step = 3;
             } else {
                 // deep link ?store=ID preselects a store and jumps to the payment step
