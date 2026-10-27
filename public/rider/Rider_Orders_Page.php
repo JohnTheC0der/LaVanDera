@@ -838,6 +838,8 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
         }
 
         .btn-secondary-action,
+        .map-link { display:inline-block; margin-top:4px; font-size:13px; font-weight:700; color:var(--lv-pink, #d63384); text-decoration:none; }
+        .map-link:hover { text-decoration:underline; }
         .btn-view-details {
             background-color: white;
             color: var(--color-dark);
@@ -1595,8 +1597,8 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
                     <div class="detail-item"><div class="detail-item-label">Job Type</div><div class="detail-item-value" id="modalType"></div></div>
                     <div class="detail-item"><div class="detail-item-label">Total Distance</div><div class="detail-item-value" id="modalDistance"></div></div>
                     <div class="detail-item"><div class="detail-item-label">Est. Duration</div><div class="detail-item-value" id="modalDuration"></div></div>
-                    <div class="detail-item"><div class="detail-item-label">Pickup Address</div><div class="detail-item-value" id="modalPickup"></div></div>
-                    <div class="detail-item"><div class="detail-item-label">Delivery Address</div><div class="detail-item-value" id="modalDelivery"></div></div>
+                    <div class="detail-item"><div class="detail-item-label">Pickup Address</div><div class="detail-item-value"><span id="modalPickup"></span> <a class="map-link" id="modalPickupMap" href="#" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> Show on map</a></div></div>
+                    <div class="detail-item"><div class="detail-item-label">Delivery Address</div><div class="detail-item-value"><span id="modalDelivery"></span> <a class="map-link" id="modalDeliveryMap" href="#" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> Show on map</a></div></div>
                 </div>
 
                 <div class="modal-section">
@@ -1732,9 +1734,6 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
                     '</div>' +
                     '<div class="order-footer">' +
                         '<button class="btn-action btn-primary-action btn-view-details" data-job-id="' + o.id + '" data-list="current"><i class="fa-solid fa-circle-info"></i> View Details</button>' +
-                        (o.customerContact
-                            ? '<a class="btn-action btn-secondary-action" href="' + LV.esc(telHref(o.customerContact)) + '"><i class="fa-solid fa-phone"></i> Call Customer</a>'
-                            : '<span class="btn-action btn-secondary-action is-disabled"><i class="fa-solid fa-phone"></i> No phone</span>') +
                     '</div></div>';
             }).join('') || emptyState('fa-box-open', 'No current orders', 'Accept a job from the Available Orders tab and it will show up here.');
         }
@@ -1814,6 +1813,14 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
             openJob = null;
         }
 
+        // Opens OpenStreetMap on the saved pin (falls back to a search on the address if there is no pin).
+        function mapHref(lat, lng, address) {
+            if (lat !== null && lng !== null) {
+                return 'https://www.openstreetmap.org/?mlat=' + lat + '&mlon=' + lng + '#map=17/' + lat + '/' + lng;
+            }
+            return 'https://www.openstreetmap.org/search?query=' + encodeURIComponent(address || '');
+        }
+
         function openDetails(job, isCurrent) {
             openJob = job;
             document.getElementById('modalTitle').textContent = jobLabel(job);
@@ -1822,6 +1829,8 @@ $lvSession = ['id' => $user['id'], 'role' => 'rider', 'name' => $user['name'], '
             document.getElementById('modalDuration').textContent = job.minutes + ' minutes';
             document.getElementById('modalPickup').textContent = job.pickup;
             document.getElementById('modalDelivery').textContent = job.dropoff;
+            document.getElementById('modalPickupMap').href = mapHref(job.pickupLat, job.pickupLng, job.pickup);
+            document.getElementById('modalDeliveryMap').href = mapHref(job.dropoffLat, job.dropoffLng, job.dropoff);
             document.getElementById('modalShop').textContent = job.shop;
             document.getElementById('modalTotal').textContent = LV.peso(job.pay);
 

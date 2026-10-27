@@ -137,6 +137,7 @@ $lvSession = ['id' => $user['id'], 'role' => 'store', 'name' => $user['name'], '
             aria-describedby="storeActionMessage" tabindex="-1">
             <h2 id="storeActionTitle">Confirm order action</h2>
             <p id="storeActionMessage"></p>
+            <style>#storeActionModal [hidden] { display: none !important; }</style>
             <label id="rejectReasonLabel" class="lv-label" for="rejectReason" hidden>Reason (optional)</label>
             <textarea id="rejectReason" maxlength="255" placeholder="Add a reason for rejecting this order"
                 hidden></textarea>

@@ -35,6 +35,11 @@ function rider_update_profile($id, array $in)
 function rider_job_row(array $r, $showCustomer, $showContact = false)
 {
     $km = (float) $r['distance_km'];
+    // Pins are snapshots on the order. A send job goes customer -> store, a return job store -> customer.
+    $cust  = [$r['customer_latitude'] === null ? null : (float) $r['customer_latitude'], $r['customer_longitude'] === null ? null : (float) $r['customer_longitude']];
+    $store = [$r['store_latitude'] === null ? null : (float) $r['store_latitude'], $r['store_longitude'] === null ? null : (float) $r['store_longitude']];
+    $from  = $r['job_type'] === 'send' ? $cust : $store;
+    $to    = $r['job_type'] === 'send' ? $store : $cust;
     return [
         'id'          => (int) $r['id'],                              // the JOB id (not the order id)
         'orderId'     => (int) $r['order_id'],
@@ -42,6 +47,8 @@ function rider_job_row(array $r, $showCustomer, $showContact = false)
         'shop'        => $r['store_name'],
         'pickup'      => $r['pickup_address'],
         'dropoff'     => $r['dropoff_address'],
+        'pickupLat'   => $from[0], 'pickupLng' => $from[1],
+        'dropoffLat'  => $to[0],   'dropoffLng' => $to[1],
         'distanceKm'  => $km,
         'pay'         => (float) $r['rider_pay'],
         'minutes'     => max(5, (int) round($km * 5)),                // rough estimate: 5 minutes per km
@@ -58,7 +65,8 @@ function rider_job_row(array $r, $showCustomer, $showContact = false)
 function rider_jobs_query($where, array $params, $order)
 {
     $st = db()->prepare(
-        "SELECT j.*, s.store_name, s.contact_no AS store_contact, c.full_name, c.contact_no, o.status AS order_status
+        "SELECT j.*, s.store_name, s.contact_no AS store_contact, c.full_name, c.contact_no, o.status AS order_status,
+                o.customer_latitude, o.customer_longitude, o.store_latitude, o.store_longitude
          FROM delivery_jobs j
          JOIN orders o ON o.id = j.order_id
          JOIN stores s ON s.user_id = o.store_id
